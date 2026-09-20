@@ -794,3 +794,11 @@ top-3 candidate distribution per anchor.
 | 7 | Real-image integration test (labeled fixture, assert transliteration) | Final gate |
 | — | `royal_names.json`: add `N5 W14 W22` spelling (grand_glyphs cartouche) | Pending — awaiting identification of the king |
 | — | V5 training (address `d56`, `n23`, `i1`; confusions G1/G5, N5/N33/Aa1, W14) | Deferred |
+
+
+### Project Complete and Shipped
+
+public domain at [sphinx](https://sphinx.tensorgeek.com)
+
+the backend server is OFFline,  request a demo if interested.
+
