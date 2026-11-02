@@ -1,9 +1,5 @@
-"""The agent's evidence tools, as plain functions that return JSON-ready dictionaries.
-
-evidence_store/mcp_server.py exposes these over MCP. Results always say how far to trust them,
-because the agent must never present a weak match or a background note as evidence.
-"""
 import logging
+from typing import Any
 
 from evidence_store import confidence, rerank, retrieve
 
@@ -29,17 +25,21 @@ RELIABILITY_GUIDE = {
 logger = logging.getLogger(__name__)
 
 
-def clamp(value, low, high):
+def clamp(value: int, 
+          low: int, 
+          high: int) -> int:
+    
     return max(low, min(int(value), high))
 
 
-def required(value, label):
+def required(value: str | None, label: str) -> str:
     if not value or not value.strip():
         raise ValueError(f'{label} is required.')
+    
     return value.strip()
 
 
-def sentence_details(ids):
+def sentence_details(ids: list[str]) -> dict[str, dict[str, Any]]:
     """Return {sentence id: citable text and source} for a list of sentences."""
     rows = retrieve.query(
         'SELECT s.id, s.transliteration, s.translation_de, s.translation_en, s.has_lacuna, '
@@ -48,7 +48,10 @@ def sentence_details(ids):
     return {row['id']: {key: value for key, value in row.items() if key != 'id'} for row in rows}
 
 
-def rated(hits, translit, signs):
+def rated(hits: list[dict[str, Any]],
+          translit: str | None,
+          signs: str | None
+          ) -> list[str | None]:
     """Return each hit's label, or None when there is no transliteration to compare."""
     if not translit:
         return [None] * len(hits)
@@ -57,26 +60,40 @@ def rated(hits, translit, signs):
     hits = confidence.enrich(hits)
     words = set(query_words) | {word for hit in hits for word in hit['tokens']}
     weights = confidence.word_weights(words) if words else {}
-    return [confidence.rate_hit(confidence.hit_signals(query_words, query_signs, hit, weights),
+    
+    return [confidence.rate_hit(confidence.hit_signals(query_words, 
+                                                       query_signs, 
+                                                       hit, weights),
                                 len(query_words)) for hit in hits]
 
 
-def reranked_hits(translit, signs, limit, filters):
+def reranked_hits(translit: str,
+                  signs: str | None,
+                  limit: int,
+                  filters: dict[str, Any]
+                  ) -> tuple[list[dict[str, Any]], str]:
     """Return (hits, status). A Cohere failure falls back to hybrid order and says so."""
     try:
-        return rerank.search_reranked(translit, signs, translit, limit, **filters), 'applied'
+        return rerank.search_reranked(translit, signs,
+                                      translit, limit, **filters), 'applied'
     except Exception as error:  # any provider failure must leave search working
         logger.warning('rerank failed: %s', error)
+        
         return retrieve.search(signs, translit, limit, **filters), 'failed, using hybrid order'
 
 
-def matched_by(hit):
-    channels = (('signs', 'sign_rank'), ('transliteration', 'translit_rank'),
+def matched_by(hit: dict[str, Any]) -> list[str]:
+    channels = (('signs', 'sign_rank'),
+                ('transliteration', 'translit_rank'),
                 ('meaning', 'embedding_rank'))
+    
     return [name for name, key in channels if hit.get(key)]
 
 
-def search_verdict(translit, ratings):
+def search_verdict(translit: str | None, 
+                   ratings: list[str | None]
+                   ) -> str:
+    
     if not translit:
         return 'unrated'
     if len(confidence.tokens(translit)) < confidence.MIN_RATED_WORDS:
@@ -84,79 +101,124 @@ def search_verdict(translit, ratings):
     return confidence.overall_rating(set(ratings))
 
 
-def search_parallels(signs=None, translit=None, date=None, include_undated=True, limit=5,
-                     use_rerank=False):
+def search_parallels(signs: str | None = None,
+                     translit: str | None = None,
+                     date: str | None = None,
+                     include_undated: bool = True,
+                     limit: int = 5,
+                     use_rerank: bool = False
+                     ) -> dict[str, Any]:
+    
     if not (signs and signs.strip()) and not (translit and translit.strip()):
         raise ValueError('Give signs, a transliteration, or both.')
     limit = clamp(limit, 1, MAX_LIMIT)
-    filters = {'date': date, 'include_undated': include_undated}
+    
+    filters: dict[str, Any] = {'date': date, 
+                               'include_undated': include_undated
+                               }
     size = max(limit, CANDIDATES)
     status = 'off'
     if use_rerank and translit:
         hits, status = reranked_hits(translit, signs, size, filters)
+        
     else:
         hits = retrieve.search(signs, translit, size, **filters)
+        
     ratings = rated(hits, translit, signs)
-    order = {'strong': 0, 'possible': 1, 'weak': 2, None: 3}
-    ranked = sorted(zip(hits, ratings), key=lambda pair: order[pair[1]])[:limit]
+    order: dict[str | None, int] = {'strong': 0, 
+                                    'possible': 1, 
+                                    'weak': 2, None: 3
+                                    }
+    ranked = sorted(zip(hits, ratings),
+                    key=lambda pair: order[pair[1]])[:limit]
+    
     details = sentence_details([hit['sentence_id'] for hit, _ in ranked])
     verdict = search_verdict(translit, ratings)
-    return {'verdict': verdict, 'guide': VERDICT_GUIDE[verdict], 'rerank': status,
-            'hits': [{'sentence_id': hit['sentence_id'], 'rating': rating or 'unrated',
-                      'matched_by': matched_by(hit), **details[hit['sentence_id']]}
-                     for hit, rating in ranked],
-            'credit': TLA_CREDIT}
+    
+    return {'verdict': verdict, 
+            'guide': VERDICT_GUIDE[verdict], 
+            'rerank': status,
+            'hits': [{
+                'sentence_id': hit['sentence_id'], 
+                'rating': rating or 'unrated',
+                'matched_by': matched_by(hit), **details[hit['sentence_id']]
+                } for hit, rating in ranked],
+            'credit': TLA_CREDIT
+            }
 
 
-def lookup_lemma(text, limit=10):
+def lookup_lemma(text: str,
+                 limit: int = 10
+                 ) -> dict[str, Any]:
+    
     text = required(text, 'A word')
     rows = retrieve.lookup_lemma(text, clamp(limit, 1, MAX_LIMIT))
+    
     return {'found': len(rows),
             'lemmas': [{**{key: row[key] for key in ('id', 'name', 'pos', 'gloss_en', 'gloss_de',
-                                                     'sign_seq')},
-                        'obsolete': row['revision_state'] == 'published-obsolete'} for row in rows],
-            'credit': TLA_CREDIT}
+                                                     'sign_seq')
+                           },
+            'obsolete': row['revision_state'] == 'published-obsolete'} for row in rows],
+            'credit': TLA_CREDIT
+            }
 
 
-def get_context(sentence_id, window=2):
+def get_context(sentence_id: str,
+                window: int = 2
+                ) -> dict[str, Any]:
+    
     sentence_id = required(sentence_id, 'A sentence id')
     rows = retrieve.context(sentence_id, clamp(window, 0, MAX_WINDOW))
     if not rows:
         raise ValueError(f'Unknown sentence id: {sentence_id}')
     source = sentence_details([sentence_id])[sentence_id]
-    return {'text_name': source['text_name'], 'date': source['date'],
+    
+    return {'text_name': source['text_name'], 
+            'date': source['date'],
             'find_spot': source['find_spot'],
             'sentences': [{key: row[key] for key in ('id', 'offset_from_hit', 'transliteration',
                                                      'translation_de', 'translation_en',
-                                                     'has_lacuna')} for row in rows],
-            'credit': TLA_CREDIT}
+                                                     'has_lacuna')
+                           } for row in rows],
+            'credit': TLA_CREDIT
+            }
 
 
-def list_periods():
+def list_periods() -> dict[str, Any]:
+    """Return the periods and a note about how they are used."""
     return {'periods': retrieve.query('SELECT period, sentences FROM date_periods()'),
             'note': 'Filters include child periods, and 1,098 undated sentences are kept unless '
                     'excluded. Century terms are not linked to dynasties.'}
 
 
-def example_sentences(where, limit, **params):
+def example_sentences(where: str, 
+                      limit: int,
+                      **params: Any
+                      ) -> list[dict[str, Any]]:
     """Return citable example sentences, preferring short ones with a translation."""
     rows = retrieve.query(
         "SELECT DISTINCT s.id, s.word_count FROM sentences s "
         f"{where} AND btrim(coalesce(s.translation_de, '')) <> '' AND s.word_count >= 3 "
         'ORDER BY s.word_count, s.id LIMIT %(limit)s', limit=limit, **params)
     details = sentence_details([row['id'] for row in rows])
-    return [{'sentence_id': row['id'], **details[row['id']]} for row in rows]
+    
+    return [{'sentence_id': row['id'],
+             **details[row['id']]
+             } for row in rows]
 
 
-def corpus_mentions(item, examples):
+def corpus_mentions(item: dict[str, Any],
+                    examples: int
+                    ) -> dict[str, Any]:
     """Return how an entity reaches real texts, by lemma, find spot and date."""
-    found = {}
+    found: dict[str, Any] = {}
     if item['lemma_ids']:
         count = retrieve.query('SELECT count(DISTINCT sentence_id) AS n FROM tokens '
                                'WHERE lemma_id = ANY(%(ids)s)', ids=item['lemma_ids'])[0]['n']
         found['by_word'] = {'sentences': count, 'examples': example_sentences(
             'JOIN tokens t ON t.sentence_id = s.id WHERE t.lemma_id = ANY(%(ids)s)', examples,
             ids=item['lemma_ids'])}
+        
     spots = item['attributes'].get('corpus_find_spots') or []
     if spots:
         count = retrieve.query('SELECT count(*) AS n FROM sentences s JOIN documents d '
@@ -177,15 +239,20 @@ def corpus_mentions(item, examples):
         found['inscribed_here'] = {
             'sentences': count,
             'examples': example_sentences('JOIN documents d ON d.id = s.text_id '
-                                          'WHERE d.path LIKE %(prefix)s', examples, prefix=prefix)}
+                                          'WHERE d.path LIKE %(prefix)s',
+                                          examples, prefix=prefix)}
     if item['date_terms']:
-        found['by_date'] = {'date_terms': item['date_terms'], 'sentences': retrieve.query(
-            'SELECT count(*) AS n FROM sentences s WHERE s.text_id IN (SELECT document_id FROM '
-            'document_dates WHERE term = ANY(%(terms)s))', terms=item['date_terms'])[0]['n']}
+        found['by_date'] = {'date_terms': item['date_terms'],
+                            'sentences': retrieve.query(
+                            'SELECT count(*) AS n FROM sentences s WHERE s.text_id IN (SELECT document_id FROM '
+                            'document_dates WHERE term = ANY(%(terms)s))',
+                            terms=item['date_terms'])[0]['n']
+                            }
+        
     return found
 
 
-def entity_links(entity_id):
+def entity_links(entity_id: str) -> list[dict[str, Any]]:
     """Return an entity's links in both directions, naming the entity at the other end."""
     rows = retrieve.query(
         "SELECT CASE WHEN l.source_id = %(id)s THEN 'outgoing' ELSE 'incoming' END AS direction, "
@@ -194,11 +261,16 @@ def entity_links(entity_id):
         'ON o.id = CASE WHEN l.source_id = %(id)s THEN l.target_id ELSE l.source_id END '
         'WHERE l.source_id = %(id)s OR l.target_id = %(id)s '
         'ORDER BY l.relation, o.name', id=entity_id)
+    
     return rows
 
 
-def entity_result(item, examples):
+def entity_result(item: dict[str, Any],
+                  examples: int
+                  ) -> dict[str, Any]:
+    
     links = entity_links(item['id'])
+    
     return {key: item[key] for key in ('id', 'type', 'name', 'aliases', 'start_year', 'end_year',
                                        'attributes', 'source', 'reliability')} | {
         'reliability_guide': RELIABILITY_GUIDE[item['reliability']],
@@ -206,11 +278,17 @@ def entity_result(item, examples):
         'corpus': corpus_mentions(item, examples)}
 
 
-def lookup_entity(name, entity_type=None, limit=3, examples=3):
+def lookup_entity(name: str,
+                  entity_type: str | None = None,
+                  limit: int = 3,
+                  examples: int = 3
+                  ) -> dict[str, Any]:
     name = required(name, 'A name')
     matches = retrieve.query(
-        'SELECT id FROM find_entities(%(name)s, %(type)s, %(limit)s)', name=name, type=entity_type,
+        'SELECT id FROM find_entities(%(name)s, %(type)s, %(limit)s)', 
+        name=name, type=entity_type,
         limit=clamp(limit, 1, 10))
+    
     ids = [row['id'] for row in matches]
     rows = {row['id']: row for row in retrieve.query('SELECT * FROM entities WHERE id = ANY(%(ids)s)',
                                                      ids=ids)}
@@ -218,4 +296,5 @@ def lookup_entity(name, entity_type=None, limit=3, examples=3):
             'entities': [entity_result(rows[key], clamp(examples, 0, 10)) for key in ids],
             'note': 'Only corpus sentences are evidence. Other fields are background, rated by '
                     'reliability.',
-            'credit': TLA_CREDIT}
+            'credit': TLA_CREDIT
+            }

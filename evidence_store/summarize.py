@@ -1,14 +1,15 @@
-"""Combine every saved evaluation run into reports/evaluation_summary.csv and .json.
-
-Usage:
-    python -m evidence_store.summarize
-"""
 import argparse
 import csv
 import json
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 from evidence_store.paths import REPORTS_DIR
+
+# Combine every saved evaluation run into reports/evaluation_summary.csv and .json.
+
+# Usage: python -m evidence_store.summarize
 
 METRICS = ('queries', 'hit@1', 'hit@5', 'hit@10', 'recall@10', 'mrr@10', 'median_ms')
 RUNS = (
@@ -26,40 +27,56 @@ RUNS = (
 )
 
 
-def load_runs(reports):
+def load_runs(reports: Path) -> list[dict[str, Any]]:
     """Return one summary per saved run, skipping any report that doesn't exist."""
-    runs = []
+    runs: list[dict[str, Any]] = []
     for filename, name, date, status, note in RUNS:
         path = reports / filename
         if not path.exists():
             continue
         report = json.loads(path.read_text())
-        runs.append({'run': name, 'date': date, 'status': status, 'note': note, 'file': filename,
+        
+        runs.append({'run': name, 
+                     'date': date,
+                     'status': status,
+                     'note': note, 
+                     'file': filename,
                      'strict_coverage': report.get('coverage'),
                      'loose_coverage': report.get('loose_coverage'),
                      'haiku_usage': report.get('haiku_usage'),
-                     'strict': report.get('modes', {}), 'loose': report.get('loose_modes', {})})
+                     'strict': report.get('modes', {}), 
+                     'loose': report.get('loose_modes', {})
+                     })
+    # returns a list of dicts, each dict contains the summary of a run, 
+    # # including its name, date, status, note, file name, coverage metrics,
+    # and mode metrics for both strict and loose tests.
     return runs
 
 
-def rows(runs):
+def rows(runs: list[dict[str, Any]]) -> Iterator[dict[str, Any]]:
     """Flatten runs into one row per run, test and search mode."""
     for run in runs:
         for test in ('strict', 'loose'):
             for mode, values in run[test].items():
-                yield {'run': run['run'], 'date': run['date'], 'status': run['status'],
-                       'test': test, 'mode': mode, **{m: values.get(m) for m in METRICS},
-                       'note': run['note']}
+                yield {'run': run['run'],
+                       'date': run['date'],
+                       'status': run['status'],
+                       'test': test, 
+                       'mode': mode,
+                       **{m: values.get(m) for m in METRICS},
+                       'note': run['note']
+                       }
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+def main() -> None:
+    parser = argparse.ArgumentParser(description='Combine every saved evaluation run into reports/evaluation_summary.csv and .json.')
     parser.add_argument('--reports', type=Path, default=REPORTS_DIR)
     parser.add_argument('--out', type=Path, default=REPORTS_DIR)
     args = parser.parse_args()
     runs = load_runs(args.reports)
     table = list(rows(runs))
     args.out.mkdir(exist_ok=True)
+    
     with open(args.out / 'evaluation_summary.csv', 'w', newline='', encoding='utf-8') as handle:
         writer = csv.DictWriter(handle, ['run', 'date', 'status', 'test', 'mode', *METRICS, 'note'])
         writer.writeheader()
@@ -69,5 +86,8 @@ def main():
     print(f'{len(runs)} runs, {len(table)} rows written to {args.out}')
 
 
+# Main entry point for the script. 
+# When executed directly, it will call the main function to perform the summarization of evaluation runs.
 if __name__ == '__main__':
+    
     main()

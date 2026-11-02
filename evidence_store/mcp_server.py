@@ -1,9 +1,6 @@
-"""MCP server for the Sphinx agent's corpus and knowledge graph tools. Read-only.
-
-Usage:
-    python -m evidence_store.mcp_server
-"""
+from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
 import psycopg
 from mcp.server.mcpserver import MCPServer
@@ -21,10 +18,10 @@ READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True)
 server = MCPServer('sphinx-evidence', instructions=INSTRUCTIONS)
 
 
-def readable_errors(tool):
+def readable_errors[**P, R](tool: Callable[P, R]) -> Callable[P, R]:
     """Let the agent read why a call failed. The SDK hides ordinary exception text."""
     @wraps(tool)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return tool(*args, **kwargs)
         except ValueError as error:
@@ -38,7 +35,7 @@ def readable_errors(tool):
 @readable_errors
 def search_parallels(signs: str | None = None, translit: str | None = None,
                      date: str | None = None, include_undated: bool = True, limit: int = 5,
-                     use_rerank: bool = False) -> dict:
+                     use_rerank: bool = False) -> dict[str, Any]:
     """Find attested sentences that resemble a reading, to support or challenge it.
 
     Use this after you have a draft reading. Give Gardiner signs separated by spaces, such as
@@ -58,7 +55,7 @@ def search_parallels(signs: str | None = None, translit: str | None = None,
 
 @server.tool(annotations=READ_ONLY)
 @readable_errors
-def lookup_lemma(text: str, limit: int = 10) -> dict:
+def lookup_lemma(text: str, limit: int = 10) -> dict[str, Any]:
     """Look up a word in the Egyptian dictionary by transliteration or English meaning.
 
     Use this to get the meaning of a word, or to find a word from its English sense, such as
@@ -69,7 +66,7 @@ def lookup_lemma(text: str, limit: int = 10) -> dict:
 
 @server.tool(annotations=READ_ONLY)
 @readable_errors
-def get_context(sentence_id: str, window: int = 2) -> dict:
+def get_context(sentence_id: str, window: int = 2) -> dict[str, Any]:
     """Show the sentences around a hit, because many sentences are short fragments.
 
     Use this before relying on a short hit. sentence_id comes from search_parallels or
@@ -80,7 +77,7 @@ def get_context(sentence_id: str, window: int = 2) -> dict:
 
 @server.tool(annotations=READ_ONLY)
 @readable_errors
-def list_periods() -> dict:
+def list_periods() -> dict[str, Any]:
     """List the valid date filters, such as "6. Dyn." or "Altes Reich", with sentence counts.
 
     Use this before filtering search_parallels by date. Names are German, so don't guess them.
@@ -91,7 +88,7 @@ def list_periods() -> dict:
 @server.tool(annotations=READ_ONLY)
 @readable_errors
 def lookup_entity(name: str, entity_type: str | None = None, limit: int = 3,
-                  examples: int = 3) -> dict:
+                  examples: int = 3) -> dict[str, Any]:
     """Look up a god, ruler, temple, pyramid, dynasty or royal name, with links and mentions.
 
     Use this for background on a name you have read, such as "Ramesses II", "Karnak" or

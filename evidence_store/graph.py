@@ -1,14 +1,10 @@
-"""Build the entities and entity_links tables from the knowledge files.
-
-Usage:
-    python -m evidence_store.graph
-    python -m evidence_store.graph --report-only
-"""
 import argparse
 import csv
 import json
 import re
 from collections import Counter, defaultdict
+from collections.abc import Collection
+from typing import Any
 
 from psycopg.types.json import Jsonb
 
@@ -117,27 +113,37 @@ ROMAN = {'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 
          'XXV': 25, 'XXVI': 26, 'XXVII': 27, 'XXVIII': 28, 'XXIX': 29, 'XXX': 30}
 
 
-def fold(text):
+def fold(text: str | None) -> str:
     return re.sub(r'[^a-z0-9]+', ' ', (text or '').lower()).strip()
 
 
-def english_form(text):
+def english_form(text: str | None) -> str:
     """Translate a folded German royal name into the Wikipedia list's spelling."""
     return ' '.join(NAME_SPELLINGS.get(word, word) for word in fold(text).split())
 
 
-def slug(text):
+def slug(text: str) -> str:
     return fold(text).replace(' ', '-')
 
 
-def link(source_id, relation, target_id, detail, source, reliability):
+def link(source_id: str,
+         relation: str,
+         target_id: str,
+         detail: str | None,
+         source: str,
+         reliability: str) -> dict[str, Any]:
     if relation in SYMMETRIC and target_id < source_id:
         source_id, target_id = target_id, source_id
     return {'source_id': source_id, 'relation': relation, 'target_id': target_id,
             'detail': detail, 'source': source, 'reliability': reliability}
 
 
-def entity(id, type, name, source, reliability, **fields):
+def entity(id: str,
+           type: str,
+           name: str,
+           source: str,
+           reliability: str,
+           **fields: Any) -> dict[str, Any]:
     return {'id': id, 'type': type, 'name': name, 'aliases': fields.get('aliases', []),
             'start_year': fields.get('start_year'), 'end_year': fields.get('end_year'),
             'lemma_ids': fields.get('lemma_ids', []), 'date_terms': fields.get('date_terms', []),
@@ -145,24 +151,25 @@ def entity(id, type, name, source, reliability, **fields):
             'reliability': reliability}
 
 
-def family_index():
+def family_index() -> dict[frozenset[str], list[tuple[str, str, str]]]:
     """Return {unordered pair: [(relation, first, second)]} from the reviewed list."""
-    index = defaultdict(list)
+    index: defaultdict[frozenset[str], list[tuple[str, str, str]]] = defaultdict(list)
     for relation, pairs in FAMILY.items():
         for first, second in pairs:
             index[frozenset((first, second))].append((relation, first, second))
     return index
 
 
-def god_id(name):
+def god_id(name: str) -> str:
     return 'god-' + slug(name)
 
 
-def build_gods(deities):
+def build_gods(deities: list[dict[str, Any]]) -> tuple[list[dict[str, Any]],
+                                                       list[dict[str, Any]]]:
     """Return god entities and links. An unreviewed relationship stops the build."""
     index = family_index()
     known = {deity['name'] for deity in deities}
-    wordings = defaultdict(list)
+    wordings: defaultdict[frozenset[str], list[str]] = defaultdict(list)
     for deity in deities:
         for item in deity['relationships']:
             pair = frozenset((deity['name'], item['deity']))
@@ -177,7 +184,7 @@ def build_gods(deities):
     stubs = sorted({name for pair in wordings for name in pair} - known)
     entities += [entity(god_id(name), 'god', name, GODS_SOURCE, 'curated',
                         attributes={'stub': True}) for name in stubs]
-    links = []
+    links: list[dict[str, Any]] = []
     for pair, wording in wordings.items():
         detail = '; '.join(wording)
         links += [link(god_id(first), relation, god_id(second), detail, GODS_SOURCE, 'curated')
@@ -185,14 +192,17 @@ def build_gods(deities):
     return entities, links
 
 
-def dynasty_id(ruler):
+def dynasty_id(ruler: dict[str, Any]) -> str:
     numbers = ruler['dynasty_numbers']
     return 'dynasty-' + ('-'.join(map(str, numbers)) if numbers else slug(ruler['dynasty']))
 
 
-def build_rulers(rulers):
+def build_rulers(rulers: list[dict[str, Any]]) -> tuple[list[dict[str, Any]],
+                                                        list[dict[str, Any]]]:
     """Return ruler and dynasty entities, skipping rows whose name is lost."""
-    entities, links, members = [], [], defaultdict(list)
+    entities: list[dict[str, Any]] = []
+    links: list[dict[str, Any]] = []
+    members: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for ruler in rulers:
         if ruler['name_status'] == 'lost':
             continue
@@ -223,9 +233,11 @@ def build_rulers(rulers):
     return entities, links
 
 
-def ruler_index(rulers, keys=('king_name', 'wikipedia_title', 'greek_name')):
+def ruler_index(rulers: list[dict[str, Any]],
+                keys: tuple[str, ...] = ('king_name', 'wikipedia_title', 'greek_name'),
+                ) -> dict[str, set[str]]:
     """Return {folded name: set of ruler ids} over the given name fields."""
-    index = defaultdict(set)
+    index: defaultdict[str, set[str]] = defaultdict(set)
     for ruler in rulers:
         if ruler['name_status'] == 'lost':
             continue
@@ -235,13 +247,15 @@ def ruler_index(rulers, keys=('king_name', 'wikipedia_title', 'greek_name')):
     return index
 
 
-def rulers_named(names, main, throne):
+def rulers_named(names: Collection[str],
+                 main: dict[str, set[str]],
+                 throne: dict[str, set[str]]) -> set[str]:
     """A ruler's main name beats another ruler's throne name, so Teti means the Sixth Dynasty king."""
-    found = set().union(*(main.get(name, set()) for name in names))
+    found: set[str] = set().union(*(main.get(name, set()) for name in names))
     return found or set().union(*(throne.get(name, set()) for name in names))
 
 
-def match_royal_name(english, rulers):
+def match_royal_name(english: str, rulers: list[dict[str, Any]]) -> str | None:
     """Return the one ruler an English royal name means, or None if unclear."""
     dynasty = re.search(r'Dynasty ([IVX]+)', english)
     number = ROMAN.get(dynasty.group(1)) if dynasty else None
@@ -257,20 +271,24 @@ def match_royal_name(english, rulers):
     return None
 
 
-def royal_reliability(item):
+def royal_reliability(item: dict[str, Any]) -> str:
     """Trust 'verified' only when the source doesn't call the entry generated or unchecked."""
     doubtful = re.search(r'claude-generated|validate', item['source'], re.IGNORECASE)
     return 'verified' if item['verified'] and not doubtful else 'unverified'
 
 
-def gods_in_name(key):
+def gods_in_name(key: str) -> list[str]:
     if key in NAME_GOD_WHOLE:
         return [NAME_GOD_WHOLE[key]]
     return [NAME_GODS[part] for part in key.split('_') if part in NAME_GODS]
 
 
-def build_royal_names(names, rulers):
-    entities, links, unmatched = [], [], []
+def build_royal_names(names: dict[str, dict[str, Any]],
+                      rulers: list[dict[str, Any]],
+                      ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
+    entities: list[dict[str, Any]] = []
+    links: list[dict[str, Any]] = []
+    unmatched: list[str] = []
     for key, item in names.items():
         rating = royal_reliability(item)
         node = f'royal-{slug(key)}'
@@ -289,13 +307,13 @@ def build_royal_names(names, rulers):
     return entities, links, unmatched
 
 
-def lemma_rows():
+def lemma_rows() -> list[dict[str, str]]:
     csv.field_size_limit(10 ** 7)
     with open(BUILD_DIR / 'lemmas.csv', encoding='utf-8') as handle:
         return list(csv.DictReader(handle))
 
 
-def attach_god_lemmas(entities, lemmas):
+def attach_god_lemmas(entities: list[dict[str, Any]], lemmas: list[dict[str, str]]) -> None:
     """Stop the build if a hand-matched lemma isn't a god name in the list."""
     god_ids = {row['id'] for row in lemmas if row['subtype'] == 'gods_name'}
     for item in entities:
@@ -304,12 +322,8 @@ def attach_god_lemmas(entities, lemmas):
             raise ValueError(f"{item['name']}: not gods_name lemmas: {sorted(missing)}")
 
 
-def king_lemma_names(row):
-    """Return folded names a kings_name lemma may refer to, or nothing if it is shared.
-
-    A gloss such as '[Thronname Amenemhets II.]' names the owner, which beats the lemma's own
-    name: minor kings can share a throne name with the king it really means here.
-    """
+def king_lemma_names(row: dict[str, str]) -> set[str]:
+    """Return folded names a kings_name lemma may mean, or none if shared. A named owner wins."""
     english, german = row['gloss_en'] or '', row['gloss_de'] or ''
     if ';' in german or 'several' in english:
         return set()
@@ -324,7 +338,9 @@ def king_lemma_names(row):
     return names - SHARED_KING_NAMES - {''}
 
 
-def attach_king_lemmas(entities, lemmas, rulers):
+def attach_king_lemmas(entities: list[dict[str, Any]],
+                       lemmas: list[dict[str, str]],
+                       rulers: list[dict[str, Any]]) -> int:
     """Link a king's lemma only when its name points at exactly one ruler."""
     main, throne = ruler_index(rulers), ruler_index(rulers, ('throne_name',))
     by_id = {item['id']: item for item in entities if item['type'] == 'pharaoh'}
@@ -339,14 +355,16 @@ def attach_king_lemmas(entities, lemmas, rulers):
     return linked
 
 
-def attach_date_terms(entities, rulers):
+def attach_date_terms(entities: list[dict[str, Any]],
+                      rulers: list[dict[str, Any]]) -> tuple[int, list[str]]:
     """Link corpus date terms such as 'Pepi II.' to the one ruler they name."""
     main, throne = ruler_index(rulers), ruler_index(rulers, ('throne_name',))
     by_id = {item['id']: item for item in entities if item['type'] == 'pharaoh'}
     periods = [row['period'] for row in retrieve.query('SELECT period FROM date_periods()')]
-    linked, unmatched = 0, []
+    linked = 0
+    unmatched: list[str] = []
     for term in periods:
-        found = set()
+        found: set[str] = set()
         for part in term.split('/'):
             words = english_form(re.sub(r'\(.*', '', part)).split()
             found |= (rulers_named([' '.join(words)], main, throne)
@@ -359,9 +377,16 @@ def attach_date_terms(entities, rulers):
     return linked, unmatched
 
 
-def build_temples(temples, rulers_by_id, dynasties, god_names):
+def build_temples(temples: list[dict[str, Any]],
+                  rulers_by_id: dict[str, dict[str, Any]],
+                  dynasties: set[str],
+                  god_names: set[str],
+                  ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     """Return temple entities, new god stubs and links. Audited ids must already exist."""
-    entities, links, stubs, mismatches = [], [], set(), []
+    entities: list[dict[str, Any]] = []
+    links: list[dict[str, Any]] = []
+    stubs: set[str] = set()
+    mismatches: list[str] = []
     for temple in temples:
         node = 'temple-' + slug(temple['Name'])
         rating = 'reference' if temple['Added_by_audit'] else 'curated'
@@ -389,7 +414,7 @@ def build_temples(temples, rulers_by_id, dynasties, god_names):
     return entities, links, mismatches
 
 
-def reign_overlaps(temple, ruler):
+def reign_overlaps(temple: dict[str, Any], ruler: dict[str, Any]) -> bool:
     """Compare a temple's dates with a builder's reign, when both are known."""
     if None in (temple['Start_year'], temple['End_year'], ruler['start_year'], ruler['end_year']):
         return True
@@ -397,20 +422,25 @@ def reign_overlaps(temple, ruler):
             and ruler['start_year'] <= temple['End_year'] + REIGN_MARGIN)
 
 
-def pyramid_years(text):
+def pyramid_years(text: str) -> tuple[int | None, int | None]:
     """Return (start, end) from a year field such as 'c. 2670 BCE – 2650 BCE'."""
     years = [-int(year) for year in re.findall(r'(\d{3,4}) BCE', text)]
     return (years[0], years[-1]) if years else (None, None)
 
 
-def pyramid_aliases(name):
+def pyramid_aliases(name: str) -> list[str]:
     outer, _, inner = name.partition(' (')
     return [outer, inner.rstrip(')')] if inner else []
 
 
-def build_pyramids(pyramids, rulers_by_id, temple_ids):
+def build_pyramids(pyramids: list[dict[str, Any]],
+                   rulers_by_id: dict[str, dict[str, Any]],
+                   temple_ids: set[str],
+                   ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     """Return pyramid entities and links. Every pyramid needs reviewed builders."""
-    entities, links, mismatches = [], [], []
+    entities: list[dict[str, Any]] = []
+    links: list[dict[str, Any]] = []
+    mismatches: list[str] = []
     for pyramid in pyramids:
         name = pyramid['Name']
         if name not in PYRAMID_BUILDERS:
@@ -443,7 +473,7 @@ def build_pyramids(pyramids, rulers_by_id, temple_ids):
     return entities, links, mismatches
 
 
-def build():
+def build() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     gods = json.loads(GODS_FILE.read_text(encoding='utf-8'))['deities']
     rulers = json.loads(RULERS_FILE.read_text(encoding='utf-8'))['rulers']
     names = json.loads(ROYAL_NAMES_FILE.read_text(encoding='utf-8'))['names']
@@ -469,7 +499,7 @@ def build():
     king_lemmas = attach_king_lemmas(entities, lemmas, rulers)
     date_links, date_unmatched = attach_date_terms(entities, rulers)
     report = {'entities': dict(Counter(e['type'] for e in entities)),
-              'links': dict(Counter(link['relation'] for link in links)),
+              'links': dict(Counter(item['relation'] for item in links)),
               'reliability': dict(Counter(e['reliability'] for e in entities)),
               'royal_names_unmatched': royal_unmatched, 'king_lemmas_linked': king_lemmas,
               'temple_reign_mismatches': reign_mismatches,
@@ -478,7 +508,7 @@ def build():
     return entities, links, report
 
 
-def store(entities, links):
+def store(entities: list[dict[str, Any]], links: list[dict[str, Any]]) -> None:
     columns = ('id', 'type', 'name', 'aliases', 'start_year', 'end_year', 'lemma_ids', 'date_terms',
                'attributes', 'source', 'reliability')
     link_columns = ('source_id', 'relation', 'target_id', 'detail', 'source', 'reliability')
@@ -494,8 +524,8 @@ def store(entities, links):
             [tuple(item[c] for c in link_columns) for item in links])
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+def main() -> None:
+    parser = argparse.ArgumentParser(description='Build the entities and entity_links tables from the knowledge files.')
     parser.add_argument('--report-only', action='store_true', help="don't write to the database")
     args = parser.parse_args()
     entities, links, report = build()

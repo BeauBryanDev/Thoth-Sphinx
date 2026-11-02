@@ -1,8 +1,8 @@
-"""Draft translations from Claude Haiku, standing in for the agent's first reading of a sentence."""
 import json
 from functools import cache
 
 import anthropic
+from anthropic.types import JSONOutputFormatParam, MessageParam, OutputConfigParam
 from dotenv import dotenv_values
 
 from evidence_store.paths import ENV_FILE
@@ -15,20 +15,22 @@ SYSTEM = ('You read Ancient Egyptian transliteration. The reading may contain er
           'words. Translate the sentence into {language} as best you can, even if unsure, as one '
           'short plain sentence.')
 # Without a schema, Haiku often reasons in its visible reply, and those notes would be embedded.
-OUTPUT_FORMAT = {'type': 'json_schema',
-                 'schema': {'type': 'object',
-                            'properties': {'translation': {'type': 'string'}},
-                            'required': ['translation'],
-                            'additionalProperties': False}}
+OUTPUT_FORMAT: JSONOutputFormatParam = {
+    'type': 'json_schema',
+    'schema': {'type': 'object',
+               'properties': {'translation': {'type': 'string'}},
+               'required': ['translation'],
+               'additionalProperties': False}}
+OUTPUT_CONFIG: OutputConfigParam = {'effort': 'low', 'format': OUTPUT_FORMAT}
 
 
 @cache
-def client():
+def client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=dotenv_values(ENV_FILE)['ANTHROPIC_API_KEY'],
                                max_retries=5)
 
 
-def prompt(transliteration, before=None, after=None):
+def prompt(transliteration: str, before: str | None = None, after: str | None = None) -> str:
     """Build the request; neighbours help with meaning but must not be translated."""
     if not (before or after):
         return f'Sentence: {transliteration}'
@@ -37,14 +39,29 @@ def prompt(transliteration, before=None, after=None):
             f'Translate only this sentence: {transliteration}')
 
 
-def translate(transliteration, language='German', before=None, after=None, api=None):
+def translate(transliteration: str,
+              language: str = 'German',
+              before: str | None = None,
+              after: str | None = None,
+              api: anthropic.Anthropic | None = None
+              ) -> tuple[str, int, int]:
     """Return (draft, input tokens, output tokens). A refusal or cut-off gives a blank draft."""
+    messages: list[MessageParam] = [
+        {'role': 'user',
+         'content': prompt(transliteration, before, after)}]
+    
     message = (api or client()).messages.create(
-        model=MODEL, max_tokens=MAX_TOKENS, output_config={'effort': 'low', 'format': OUTPUT_FORMAT},
+        model=MODEL,
+        max_tokens=MAX_TOKENS, 
+        output_config=OUTPUT_CONFIG,
         system=SYSTEM.format(language=language),
-        messages=[{'role': 'user', 'content': prompt(transliteration, before, after)}])
+        messages=messages)
+    
     usage = message.usage.input_tokens, message.usage.output_tokens
+    
     if message.stop_reason != 'end_turn':
         return '', *usage
+    
     text = next(block.text for block in message.content if block.type == 'text')
+    
     return json.loads(text)['translation'].strip(), *usage
