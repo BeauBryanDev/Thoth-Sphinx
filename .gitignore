@@ -151,6 +151,7 @@ activemq-data/
 .env
 .envrc
 .venv
+thoth/
 env/
 venv/
 ENV/
@@ -258,6 +259,13 @@ _mosaic_test_2/
 
 # Ignore all SQL Files
 *.sql
+
+# ...except the Thoth evidence store: its search logic lives in db/*.sql,
+# its measured results in reports/, and the knowledge-graph sources in knowledge/.
+!db/*.sql
+!reports/*.json
+!reports/*.csv
+!knowledge/*.json
 
 # Inogre all .pt files
 

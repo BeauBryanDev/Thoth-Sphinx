@@ -16,6 +16,7 @@ htmlcov
 
 #   Virtual environment
 .venv
+thoth
 venv
 env
 ENV
