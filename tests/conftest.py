@@ -24,8 +24,8 @@ ARTIFACTS = REPO_ROOT / 'artifacts'
 
 @pytest.fixture(scope='session')
 def royal_names():
-    from cartouche_matcher import load_royal_names
-    names = load_royal_names()          # repo-root royal_names.json
+    from vision.cartouche_matcher import load_royal_names
+    names = load_royal_names()          # vision/royal_names.json
     assert 'wnjs' in names, 'royal_names.json must contain wnjs'
     return names
 
@@ -38,7 +38,7 @@ def corrector():
     confusion = ARTIFACTS / 'confusion_matrix_v9_normalized.csv'
     if not trie_pkl.exists() or not parquet.exists():
         pytest.skip('corrector artifacts missing')
-    from sphinx_corrector import load_corrector
+    from vision.sphinx_corrector import load_corrector
     return load_corrector(
         trie_pkl, parquet,
         confusion_csv=confusion if confusion.exists() else None,
@@ -51,7 +51,7 @@ def sphinx_pipeline():
     from app.core.config import settings
     if not settings.onnx_path.exists():
         pytest.skip('ONNX model missing')
-    from pipeline import SphinxPipeline
+    from vision.pipeline import SphinxPipeline
     return SphinxPipeline()
 
 

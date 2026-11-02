@@ -9,7 +9,7 @@ from app.core.config import settings
  
 # Domain core lives at repo root, not under app/
 # pipeline.py is the standalone module that wraps the full inference flow
-from pipeline import SphinxPipeline
+from vision.pipeline import SphinxPipeline
 # the pipeline module stays out of the app/ namespace for testing
  
 logger = logging.getLogger('sphinxeyes.lifespan')

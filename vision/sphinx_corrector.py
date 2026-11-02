@@ -46,8 +46,8 @@ Algorithms used
        SourceRecord provides the ground-truth code the Unknown was substituted for.
 
 Usage
-    from sphinx_corrector import build_bigram_model, correct, CorrectionResult
-    from sphinx_trie import SphinxTrie
+    from vision.sphinx_corrector import build_bigram_model, correct, CorrectionResult
+    from vision.sphinx_trie import SphinxTrie
 
     trie      = SphinxTrie.from_pickle('sphinx_trie_v4.pkl')
     log_prob, unigrams = build_bigram_model('bbaw_clean.parquet')
@@ -75,7 +75,7 @@ from typing import Optional
 # Public re-export so callers only need to import this module
 
 try:
-    from sphinx_trie import SphinxTrie, SourceRecord, UNKNOWN_TOKEN
+    from vision.sphinx_trie import SphinxTrie, SourceRecord, UNKNOWN_TOKEN
 except ImportError:
     # Allow the module to be imported standalone for unit tests
     SphinxTrie     = None       # type: ignore

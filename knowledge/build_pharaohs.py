@@ -1,12 +1,3 @@
-"""Build a clean ruler list from a saved copy of Wikipedia's List of pharaohs.
-
-Only the ruler tables are read. The page's king-list comparison tables repeat the same rulers
-under other names, so they are skipped. Years are negative for BC and positive for AD.
-
-Usage:
-    python -m knowledge.build_pharaohs
-    python -m knowledge.build_pharaohs --html "List of pharaohs .html" --out master_pharaohs_v2.json
-"""
 import argparse
 import json
 import re
@@ -361,7 +352,7 @@ def summary(records):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description="Build a clean ruler list from a saved copy of Wikipedia's List of pharaohs.")
     parser.add_argument('--html', type=Path, default=DEFAULT_HTML)
     parser.add_argument('--out', type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()

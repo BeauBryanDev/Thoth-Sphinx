@@ -20,10 +20,19 @@ import json
 import pickle
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 
 UNKNOWN_TOKEN = 'Unknown'
+
+
+class _TrieUnpickler(pickle.Unpickler):
+    """Tries pickled before the move to vision/ name their module 'sphinx_trie'."""
+
+    def find_class(self, module: str, name: str) -> Any:
+        if module == 'sphinx_trie':
+            module = __name__
+        return super().find_class(module, name)
 
 
 @dataclass
@@ -278,7 +287,7 @@ class SphinxTrie:
     @classmethod
     def from_pickle(cls, path: str | Path) -> 'SphinxTrie':
         with open(path, 'rb') as f:
-            obj = pickle.load(f)
+            obj = _TrieUnpickler(f).load()
         if not isinstance(obj, cls):
             raise TypeError(f'Not a SphinxTrie: {type(obj)}')
         return obj

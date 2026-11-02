@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from cartouche_matcher import (
+from vision.cartouche_matcher import (
     apply_panel_consensus,
     load_royal_names,
     match_cartouche,

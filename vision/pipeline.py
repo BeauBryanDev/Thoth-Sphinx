@@ -12,11 +12,11 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-import cartouche_matcher as CM
-import enhance_img
-import layout_detector
-import spatial_logic as SL
-import sphinx_corrector as SC
+from vision import cartouche_matcher as CM
+from vision import enhance_img
+from vision import layout_detector
+from vision import spatial_logic as SL
+from vision import sphinx_corrector as SC
 """
 pipeline.py — end-to-end glue (V4).
 
@@ -32,10 +32,10 @@ cartouches: per-cartouche RO (single_line=True)
                 + cartouche_matcher.match_cartouche + apply_panel_consensus
 
 Smoke test:
-    python pipeline.py <image>
+    python -m vision.pipeline <image>
 """
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent   # repo root, where artifacts/ lives
 
 # Drop cartouches whose bbox sits within this fraction of the image border.
 # Egyptian cartouches always have both bracket ends visible; a clipped one
@@ -344,7 +344,7 @@ def main():
     # No default image: test_image_vn5.png is CONTAMINATED (CLAUDE.md
     # fragile breakpoint #8) — always require an explicit path.
     if len(sys.argv) < 2:
-        sys.exit('usage: python pipeline.py <image> '
+        sys.exit('usage: python -m vision.pipeline <image> '
                  '(e.g. Unas1c.jpg, image_2_test.jpg)')
     img = sys.argv[1]
     if not Path(img).exists():

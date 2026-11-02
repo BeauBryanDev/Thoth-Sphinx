@@ -39,7 +39,7 @@ Design decisions
 
 Usage
 -----
-    from spatial_logic import Detection, postprocess_onnx, \
+    from vision.spatial_logic import Detection, postprocess_onnx, \
         tag_cartouche_members, cartouche_reentry
 
     raw  = sess.run([out.name], {inp.name: x})[0]      # [1, 154, N]

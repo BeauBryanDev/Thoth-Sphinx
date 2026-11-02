@@ -54,13 +54,7 @@ COPY --from=builder --chown=sphinx:sphinx /opt/venv /opt/venv
 WORKDIR /app
  
 # Copy source  
-COPY --chown=sphinx:sphinx pipeline.py             /app/pipeline.py
-COPY --chown=sphinx:sphinx sphinx_trie.py          /app/sphinx_trie.py
-COPY --chown=sphinx:sphinx sphinx_corrector.py     /app/sphinx_corrector.py
-COPY --chown=sphinx:sphinx spatial_logic.py        /app/spatial_logic.py
-COPY --chown=sphinx:sphinx cartouche_matcher.py    /app/cartouche_matcher.py
-COPY --chown=sphinx:sphinx layout_detector.py      /app/layout_detector.py
-COPY --chown=sphinx:sphinx enhance_img.py          /app/enhance_img.py
+COPY --chown=sphinx:sphinx vision/                 /app/vision/
 COPY --chown=sphinx:sphinx app/                    /app/app/
  
 # Artifacts are mounted at runtime  

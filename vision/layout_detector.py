@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from spatial_logic import Detection
+    from vision.spatial_logic import Detection
 
 
 CARTOUCHE_CLASS = 'cartouche'

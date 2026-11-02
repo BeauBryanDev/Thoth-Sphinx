@@ -7,7 +7,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from spatial_logic import (
+from vision.spatial_logic import (
     CARTOUCHE_CLASS,
     Detection,
     assemble_reading_order,

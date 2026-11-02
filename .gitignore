@@ -244,9 +244,9 @@ _mosaic_test_2/
 # Ignore all JSON Files
 *.json
 
-# ...except the runtime lexicon priors, which pipeline.py loads from the
-# repo root via Path(__file__).parent. Without these the import chain and
-# the test suite fail on a clean checkout (i.e. in CI).
+# ...except the runtime lexicon priors in vision/, which cartouche_matcher.py
+# and sphinx_corrector.py load via Path(__file__).parent. Without these the
+# import chain and the test suite fail on a clean checkout (i.e. in CI).
 !royal_names.json
 !determinatives.json
 !initial_particles.json

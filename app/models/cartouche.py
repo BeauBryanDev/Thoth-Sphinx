@@ -1,1 +1,1 @@
-from cartouche_matcher import RoyalMatch  # noqa: F401
+from vision.cartouche_matcher import RoyalMatch  # noqa: F401

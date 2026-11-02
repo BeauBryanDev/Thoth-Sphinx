@@ -6,7 +6,7 @@ This module exists as the correct future home if spatial_logic is ever split
 for testability. At Phase 5 it re-exports the relevant helpers so callers
 import from one place.
 """
-from spatial_logic import (   # noqa: F401
+from vision.spatial_logic import (   # noqa: F401
     postprocess_onnx,
     CONF_THRESHOLD,
     NMS_IOU,
