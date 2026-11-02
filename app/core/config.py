@@ -50,10 +50,21 @@ class Settings(BaseSettings):
                                          #   (raised from 20 2026-09-08: longer
                                          #    segments = more grammar per call)
     translit_temperature: float = 0.25   # low, but not flat — 0.1 froze the prose
+                                         # OpenAI settings above go in step 2,
+                                         #   once the services move to app/llm/
 
-    # Debug: dump the exact system + per-chunk user prompts + raw LLM
-    # replies to debug_prompts/ (SPHINX_DEBUG_PROMPTS=1 in .env). Payload
-    # only — never the API key. Read per-request, so no restart needed.
+    # Anthropic (app/llm/). anthropic_api_key reads ANTHROPIC_API_KEY; empty = disabled
+    anthropic_api_key   : str   = ''
+    haiku_model         : str   = 'claude-haiku-5-5'
+    sonnet_model        : str   = 'claude-sonnet-5-5'
+    chat_effort         : str   = 'low'
+    translit_effort     : str   = 'medium'
+    reverse_effort      : str   = 'medium'
+    llm_timeout         : float = 120.0  # seconds per request, SDK retries on top
+
+    # Debug: app/llm/ dumps each request's system prompt, messages and reply
+    # to debug_prompts/ (SPHINX_DEBUG_PROMPTS=1 in .env). Payload only, never
+    # the API key; image data is redacted. Read per call, so no restart needed.
     debug_prompts       : bool  = False
 
     # Metadata
