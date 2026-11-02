@@ -156,6 +156,9 @@ export const fetchDecodingHistory = async (): Promise<
 export const transliterateGlyphs = async (
   detection: PredictResponse,
   context: TextContext,
+  // The raw upload as a data URL (never the annotated image); the backend
+  // downscales it to 640 px and shows it to the LLM next to the codes.
+  image?: string,
 ): Promise<TransliterationOut> => {
   const { correction } = detection.outer;
   const body = {
@@ -177,6 +180,7 @@ export const transliterateGlyphs = async (
     direction: detection.direction,
     layout: detection.layout,
     context,
+    image,
   };
   const { data } = await http.post<TransliterationOut>(
     "/transliterate/",

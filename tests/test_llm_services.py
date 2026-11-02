@@ -99,15 +99,20 @@ def test_transliteration_failure_keeps_partial(stub: StubMessages) -> None:
     assert [c.transliteration for c in out.chunks] == ['nb tAwy']
 
 
-def test_prompts_kept_verbatim() -> None:
-    # Byte-identical to the Space copy, which still runs on gpt-4o.
+NOISE_OLD = 'comparable to a worn wall read from a photograph — and you have full licence to emend it:'
+
+
+def test_prompt_differs_from_space_only_in_noise_lines() -> None:
+    # The Space copy (gpt-4o) keeps the old "worn wall" wording; the rest is shared.
     space = REPO_ROOT / 'space' / 'src' / 'llm.py'
     if not space.exists():
         pytest.skip('space/src/llm.py missing')
     tree = ast.parse(space.read_text())
     consts = {t.id: n.value.value for n in ast.walk(tree) if isinstance(n, ast.Assign)
               for t in n.targets if isinstance(t, ast.Name) and isinstance(n.value, ast.Constant)}
-    assert consts['SYSTEM_PROMPT'] == SYSTEM_PROMPT
+    old_head, old_tail = consts['SYSTEM_PROMPT'].split(NOISE_OLD)
+    assert SYSTEM_PROMPT.startswith(old_head) and SYSTEM_PROMPT.endswith(old_tail)
+    assert 'worn wall' not in SYSTEM_PROMPT and 'the noise comes from the detector' in SYSTEM_PROMPT
 
 
 def test_app_never_imports_openai() -> None:
@@ -116,3 +121,50 @@ def test_app_never_imports_openai() -> None:
         names = [a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names]
         names += [n.module or '' for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
         assert not any(name.split('.')[0] == 'openai' for name in names), path
+
+
+def test_transliteration_sends_raw_photo_once_cached(stub: StubMessages) -> None:
+    import numpy as np
+    stub.response = _response(parsed=_chunk('kA nxt xa m WAst'))
+    bgr = np.full((2000, 1000, 3), 200, dtype=np.uint8)
+    TransliterationService().transliterate_sequence(
+        ['E1', 'D40', 'X1', 'G17'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext(), image_bgr=bgr)
+    blocks = [kw['messages'][0]['content'] for _, kw in stub.calls]
+    assert len(blocks) == 2 and all(b[0]['type'] == 'image' for b in blocks)
+    # Same image bytes in both calls, so system + image form a cached prefix.
+    assert blocks[0][0] == blocks[1][0] and blocks[0][0]['cache_control'] == {'type': 'ephemeral'}
+    assert 'THE PHOTOGRAPH' in blocks[0][1]['text'] and 'read ltr' in blocks[0][1]['text']
+
+
+def test_transliteration_without_photo_is_plain_text(stub: StubMessages) -> None:
+    stub.response = _response(parsed=_chunk('nb'))
+    TransliterationService().transliterate_sequence(
+        ['V30'], [0.9], [], [], direction='rtl', layout='rows', ctx=TextContext())
+    content = stub.calls[0][1]['messages'][0]['content']
+    assert isinstance(content, str) and 'THE PHOTOGRAPH' not in content
+
+
+def test_downscale_fits_640_and_never_upscales() -> None:
+    import numpy as np
+    from app.llm import images
+    assert images.downscale(np.zeros((3000, 1500, 3), np.uint8)).shape[:2] == (640, 320)
+    assert images.downscale(np.zeros((300, 200, 3), np.uint8)).shape[:2] == (300, 200)
+
+
+def test_decode_data_url_roundtrip_and_rejects_garbage() -> None:
+    import base64
+
+    import cv2
+    import numpy as np
+    from app.llm import images
+    ok, buf = cv2.imencode('.png', np.zeros((10, 20, 3), np.uint8))
+    url = 'data:image/png;base64,' + base64.b64encode(buf.tobytes()).decode()
+    assert images.decode_data_url(url).shape == (10, 20, 3)
+    with pytest.raises(ValueError):
+        images.decode_data_url('data:image/png;base64,bm90IGFuIGltYWdl')
+
+
+def test_transliterate_endpoint_rejects_bad_image(client) -> None:  # noqa: ANN001
+    r = client.post('/transliterate/', json={'codes': ['G17'], 'image': 'data:image/png;base64,eA=='})
+    assert r.status_code == 422 and 'image' in r.json()['detail']

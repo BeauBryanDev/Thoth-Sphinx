@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     anthropic_api_key   : str   = ''
     haiku_model         : str   = 'claude-haiku-5-5'
     sonnet_model        : str   = 'claude-sonnet-5-5'
+    translit_model      : str   = 'claude-haiku-5-5'   # per-chunk reader; Sonnet is the A/B option
     chat_effort         : str   = 'low'
     translit_effort     : str   = 'medium'
     reverse_effort      : str   = 'medium'

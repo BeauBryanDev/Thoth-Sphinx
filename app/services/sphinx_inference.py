@@ -49,7 +49,7 @@ class InferenceService:
 
         if translate:
             response.transliteration = TransliterationService().transliterate(
-                raw, context or TextContext(),
+                raw, context or TextContext(), image_bgr=bgr,   # raw upload, pre-enhance
             )
         return response
 

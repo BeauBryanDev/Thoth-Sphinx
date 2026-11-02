@@ -144,7 +144,7 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
       try {
         // Usually already resolved — the user spent ~10 s on the form.
         const detection = await ensureDetection(image.file, direction, layout);
-        const translit = await transliterateGlyphs(detection, context);
+        const translit = await transliterateGlyphs(detection, context, image.preview);
         set({
           result: mergeDecodingResult(detection, translit, image.preview),
           error: translit.error ?? null,

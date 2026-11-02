@@ -1039,6 +1039,20 @@
       "verified": false,
       "source": "claude-generated, prenomen wHm-jb-ra, nomen nkaw. Validate against Beckerath p.204-205"
     },
+    "jaHms_ii": {
+      "translit": "xnm-jb-ra (jaH-ms)",
+      "english": "Amasis / Ahmose II (Dynasty XXVI)",
+      "spellings": [
+        [
+          "N5",
+          "W14",
+          "F34"
+        ]
+      ],
+      "freq": 15,
+      "verified": true,
+      "source": "prenomen xnm-jb-ra = N5 W9 F34, identified by Beau on grand_glyphs.jpeg 2026-11-02. W9 is not a YOLO class and reads as W14, so the spelling records W14. Nomen jaH-ms needs N11 (not a class), so it is left out."
+    },
     "djoser": {
       "translit": "dsr (ntry-xt)",
       "english": "Djoser (Dynasty III)",

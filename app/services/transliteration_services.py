@@ -4,10 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Literal
 
+import numpy as np
 from pydantic import BaseModel
 
 from app import llm
 from app.core.config import settings
+from app.llm import images
 from app.schemas.transliterations import (
     ChunkTransliteration,
     TextContext,
@@ -57,7 +59,7 @@ def segment_into_chunks(
 
 # The role/methodology half of the prompt. Static -> sent as the system
 # prompt, which app/llm/ marks for prompt caching across the per-chunk calls.
-# Kept byte-identical to space/src/llm.py (the Space stays on gpt-4o).
+# Differs from space/src/llm.py (gpt-4o) only in the detector-noise lines of INPUT PROVENANCE.
 SYSTEM_PROMPT = """You are a working Egyptologist producing a publishable reading of a Middle \
 Egyptian inscription from Gardiner sign codes. Deliver the best philological reading the evidence \
 supports — do not catalogue everything that might be wrong with the input.
@@ -65,7 +67,9 @@ supports — do not catalogue everything that might be wrong with the input.
 INPUT PROVENANCE
 The codes come from a computer-vision pipeline (YOLO detector -> spatial reading-order ->
 lexicon/Viterbi corrector -> royal-name matcher). The sequence is therefore a NOISY COPY —
-comparable to a worn wall read from a photograph — and you have full licence to emend it:
+the noise comes from the detector, not from the stone — and you have full licence to emend it:
+- Never describe the monument's condition (worn, damaged, degraded, broken): the photographs
+  are usually clean. Attribute any uncertainty to the detection.
 - EMEND FREELY. Substitute a confusable sign, restore an omitted phonetic complement or
   determinative, or fix a local transposition whenever it yields coherent Middle Egyptian.
   Do it silently in the obvious cases; report only emendations that change the meaning.
@@ -114,6 +118,7 @@ def build_egyptologist_prompt(
     previous_context : str | None,
     chunk_info       : str,
     full_sequence    : str = '',
+    has_image        : bool = False,
 ) -> str:
     """Build the per-chunk USER message (the system message is static)."""
     signs = ' — '.join(
@@ -155,6 +160,16 @@ def build_egyptologist_prompt(
         f'— keep names, epithets and topic consistent with them):\n'
         f'{previous_context}\n' if previous_context else ''
     )
+    # The raw photograph rides along as an image block; this tells the model how to use it.
+    photo_block = (
+        '\nTHE PHOTOGRAPH (attached, unprocessed, downscaled): find this segment on it — segments '
+        f'follow the physical {layout} in reading order, read {direction}. Check every detected '
+        'sign against the stone. The detector knows only 148 Gardiner signs and misreads the '
+        'others as a look-alike (e.g. N28 xa comes out as X1): where the photograph clearly shows '
+        'a different or a missed sign, read the photograph and say so in linguistic_notes. The '
+        'photograph outranks the detector; if it contradicts a cartouche match, say that too.\n'
+        if has_image else ''
+    )
 
     return f"""DETECTED SIGN SEQUENCE ({chunk_info}; each segment is one physical line of text; Gardiner codes with detector confidence):
 {signs}
@@ -170,7 +185,7 @@ ARCHAEOLOGICAL CONTEXT (fields marked 'unknown' were not supplied by the user �
 - Reading direction: {direction}
 - Layout: {layout}
 - {cartouche_block}
-{whole_block}{previous_block}
+{whole_block}{previous_block}{photo_block}
 Transliterate and gloss this segment. JSON only."""
 
 
@@ -198,6 +213,7 @@ class TransliterationService:
         self,
         raw       : dict,          # SphinxPipeline.run() output
         ctx       : TextContext,
+        image_bgr : np.ndarray | None = None,   # the raw upload, never the enhanced image
     ) -> TransliterationOut:
         outer = raw['outer']
         codes = outer['correction']['flat_corrected_seq']
@@ -230,6 +246,7 @@ class TransliterationService:
         return self.transliterate_sequence(
             codes, confs, outer['boundary_hints'], cartouche_names,
             direction=raw['direction'], layout=raw['layout'], ctx=ctx,
+            image_bgr=image_bgr,
         )
         
 
@@ -243,14 +260,15 @@ class TransliterationService:
         direction       : str,
         layout          : str,
         ctx             : TextContext,
+        image_bgr       : np.ndarray | None = None,
     ) -> TransliterationOut:
-        
+
         if not self.enabled:
             
             return TransliterationOut(
                 
                 chunks=[], full_transliteration='', full_translation='',
-                model=settings.haiku_model, n_chunks=0,
+                model=settings.translit_model, n_chunks=0,
                 error='ANTHROPIC_API_KEY not configured — transliteration disabled.',
             )
 
@@ -266,8 +284,11 @@ class TransliterationService:
             for n, ch in enumerate(chunks)
         )
 
+        # One image block for every chunk call; cache_control keeps system + image a cached prefix.
+        photo = images.image_block(image_bgr, cache=True) if image_bgr is not None else None
+
         results: list[ChunkTransliteration] = []
-        served_by = settings.haiku_model
+        served_by = settings.translit_model
         for i, chunk in enumerate(chunks):
             c_codes = [c for c, _ in chunk]
             c_confs = [s for _, s in chunk]
@@ -280,13 +301,16 @@ class TransliterationService:
                 previous_context=previous,
                 chunk_info=f'Segment {i + 1} of {len(chunks)}',
                 full_sequence=full_sequence,
+                has_image=photo is not None,
             )
+            content: str | list[dict] = (
+                [photo, {'type': 'text', 'text': prompt}] if photo is not None else prompt)
             try:
                 parsed, usage = llm.complete_parsed(
                     feature    = 'translit',
-                    model      = settings.haiku_model,
+                    model      = settings.translit_model,
                     system     = SYSTEM_PROMPT,
-                    messages   = [{'role': 'user', 'content': prompt}],
+                    messages   = [{'role': 'user', 'content': content}],
                     schema     = _ChunkReading,
                     effort     = settings.translit_effort,
                     max_tokens = MAX_REPLY_TOKENS,

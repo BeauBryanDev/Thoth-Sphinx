@@ -70,6 +70,7 @@ class TransliterateRequest(BaseModel):
     direction       : Literal['rtl', 'ltr'] = 'rtl'
     layout          : Literal['rows', 'columns'] = 'rows'
     context         : TextContext = TextContext()
+    image           : Optional[str] = None   # raw upload as a data URL; the LLM sees it at 640 px
 
 
 class TransliterationOut(BaseModel):
