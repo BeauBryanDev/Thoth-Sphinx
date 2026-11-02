@@ -81,3 +81,8 @@ class TransliterationOut(BaseModel):
     model                : str
     n_chunks             : int
     error                : Optional[str] = None   # set if the LLM stage failed
+    escalated            : bool = False           # a Sonnet second opinion produced this reading
+    escalation_reasons   : list[str] = []         # router reason codes (app/llm/router.py)
+    escalation_note      : Optional[str] = None   # e.g. the second opinion failed; Haiku's reading kept
+    cost_usd             : Optional[float] = None # estimated, all calls of this read
+    image_notes          : list[str] = []         # Claude's notes on the photograph (whole-wall reads only)

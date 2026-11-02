@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app import llm
 from app.core.config import settings
-from app.llm import images
+from app.llm import images, router
 from app.schemas.transliterations import (
     ChunkTransliteration,
     TextContext,
@@ -214,6 +214,7 @@ def build_wall_prompt(
     layout          : str,
     cartouche_names : list[str],
     has_image       : bool = False,
+    ask_second_opinion : bool = False,
 ) -> str:
     """Build the USER message that reads the whole inscription in one call."""
     numbered = '\n'.join(
@@ -228,15 +229,54 @@ def build_wall_prompt(
         f'the signs around it. {_photo_rules()}\n'
         if has_image else ''
     )
+    second_opinion = (
+        '\nSECOND OPINION: a slower expert reviewer is available. Set needs_second_opinion to '
+        'true only when the reading is genuinely hard to settle — two readings you cannot choose '
+        'between, a sign you cannot resolve even on the photograph, a cartouche you cannot read — '
+        'and give the reason in one sentence in second_opinion_reason. Routine uncertainty is not '
+        'a reason; otherwise set it to false and leave the reason empty.\n'
+        if ask_second_opinion else ''
+    )
     return f"""DETECTED SIGN SEQUENCE (the WHOLE inscription, {len(lines)} physical lines in reading order; Gardiner codes with detector confidence):
 {numbered}
 
 {_context_block(ctx, direction, layout, cartouche_names)}
-{photo_block}
-WHOLE-INSCRIPTION READING: read all {len(lines)} lines together as one text — a sentence or a royal titulary may run on from one line into the next. The response has one `lines` entry per numbered line, in order, each with the OUTPUT fields for that line alone, plus `full_translation`: the whole inscription as one connected English translation (the reading a museum label would print), and one `period_note` for the whole text."""
+{photo_block}{second_opinion}
+WHOLE-INSCRIPTION READING: read all {len(lines)} lines together as one text — a sentence or a royal titulary may run on from one line into the next. The response has one `lines` entry per numbered line, in order, each with the OUTPUT fields for that line alone, plus `full_translation`: the whole inscription as one connected English translation (the reading a museum label would print), and one `period_note` for the whole text.
+{_notes_rules(has_image)}"""
+
+
+def _notes_rules(has_image: bool) -> str:
+    """What goes into image_notes: observations for a curious non-specialist."""
+    subject = ('the photograph' if has_image
+               else 'the inscription (no photograph is attached, so describe only what the signs show)')
+    return (f'IMAGE NOTES: also return `image_notes`, 2 to 5 short notes (one or two sentences each) '
+            f'about {subject}, written for a curious visitor with no Egyptology. Good subjects: how the '
+            'signs are cut or painted (sunk or raised relief, surviving colour), the layout and what it '
+            'tells you, a striking or unusual sign and what it depicts, a sign the detector missed or '
+            'misread, and anything the scene reveals about the period or the monument. Say only what '
+            'you can see or what follows from the reading; no notes about the reading method, the '
+            'pipeline or your confidence, which belong in linguistic_notes.')
+
+
+def build_review_block(draft: '_WallReading', reason: str) -> str:
+    """Appended to the wall prompt for the reviewer: the first reading, to check rather than redo."""
+    lines = '\n'.join(
+        f'  [{r.line}] {r.confidence} | {r.transliteration} | {r.english_gloss}'
+        for r in draft.lines
+    )
+    why = f' It asked for a second opinion: {reason}' if reason else ''
+    return f"""
+
+FIRST READING (by a faster model, for your review).{why}
+{lines}
+  Full translation: {draft.full_translation}
+
+YOUR ROLE: second opinion. Keep what the first reading got right and say nothing about it; correct what the photograph or the codes contradict, and explain each correction in that line's linguistic_notes. Do not add titles, epithets or formula words that you cannot see on the photograph or in the codes — a shorter, true reading beats a fuller, invented one. Return the complete reading of every line in the same format, with image_notes written from your own look at the photograph."""
 
 
 MAX_REPLY_TOKENS = 16000   # adaptive thinking counts toward it
+MAX_IMAGE_NOTES  = 5
 
 
 class _ChunkReading(BaseModel):
@@ -262,6 +302,13 @@ class _WallReading(BaseModel):
     lines            : list[_LineReading]
     full_translation : str
     period_note      : str
+    image_notes      : list[str]
+
+
+class _DraftWallReading(_WallReading):
+    """The first reading of the whole inscription, with an optional request for a second opinion."""
+    needs_second_opinion  : bool
+    second_opinion_reason : str
 
 
 WHOLE_LINE = 10**6   # segment_into_chunks cap that keeps every physical line whole
@@ -439,44 +486,104 @@ class TransliterationService:
         ctx             : TextContext,
         photo           : dict | None,
     ) -> TransliterationOut:
-        """Read every physical line in one call; raises LLMError on failure."""
+        """Haiku reads every line in one call; the router may ask Sonnet for a second opinion."""
         lines = segment_into_chunks(codes, confidences, boundary_hints, max_signs=WHOLE_LINE)
-        prompt = build_wall_prompt(lines, ctx, direction, layout, cartouche_names,
-                                   has_image=photo is not None)
-        content: str | list[dict] = (
-            [photo, {'type': 'text', 'text': prompt}] if photo is not None else prompt)
-        parsed, usage = llm.complete_parsed(
+        escalation_on = settings.translit_escalation
+
+        draft, draft_usage = llm.complete_parsed(
             feature    = 'translit_wall',
             model      = settings.translit_model,
             system     = SYSTEM_PROMPT,
-            messages   = [{'role': 'user', 'content': content}],
-            schema     = _WallReading,
+            messages   = [{'role': 'user', 'content': _with_photo(photo, build_wall_prompt(
+                lines, ctx, direction, layout, cartouche_names,
+                has_image=photo is not None, ask_second_opinion=escalation_on))}],
+            schema     = _DraftWallReading,
             effort     = settings.translit_effort,
             max_tokens = MAX_REPLY_TOKENS,
         )
 
-        # Match replies to lines by number; fall back to order if the numbering is off.
-        by_line = {r.line: r for r in parsed.lines}
-        if set(by_line) != set(range(1, len(lines) + 1)):
-            by_line = dict(enumerate(parsed.lines, start=1))
-
-        chunks: list[ChunkTransliteration] = []
-        for i, line in enumerate(lines):
-            r = by_line.get(i + 1)
-            chunks.append(ChunkTransliteration(
-                chunk_index      = i,
-                gardiner_codes   = [c for c, _ in line],
-                transliteration  = r.transliteration if r else '',
-                english_gloss    = r.english_gloss if r else '',
-                linguistic_notes = r.linguistic_notes if r else 'No reading was returned for this line.',
-                confidence       = r.confidence if r else 'LOW',
-                period_note      = parsed.period_note if i == 0 else '',
-            ))
-
-        return TransliterationOut(
-            chunks               = chunks,
-            full_transliteration = ' | '.join(c.transliteration for c in chunks),
-            full_translation     = parsed.full_translation or ' '.join(c.english_gloss for c in chunks),
-            model                = usage.served_by,
-            n_chunks             = len(chunks),
+        signals = router.Signals(
+            n_codes               = len(codes),
+            n_lines               = len(lines),
+            detector_low_share    = router.detector_low_share(codes, confidences),
+            unresolved_cartouches = sum(n.startswith('[UNRESOLVED') for n in cartouche_names),
+            has_image             = photo is not None,
+            line_confidences      = tuple(r.confidence for r in draft.lines),
+            haiku_requested       = draft.needs_second_opinion,
+            haiku_reason          = draft.second_opinion_reason,
         )
+        decision = router.decide(signals, router.Thresholds(
+            max_low_line_share     = settings.router_max_low_line_share,
+            max_detector_low_share = settings.router_max_detector_low_share,
+        ), enabled=escalation_on)
+        logger.info('translit router: %s %s low_lines=%.2f detector_low=%.2f haiku_asked=%s (%s)',
+                    decision.action, ','.join(decision.reasons), signals.low_line_share,
+                    signals.detector_low_share, signals.haiku_requested, signals.haiku_reason)
+
+        reading: _WallReading = draft
+        usages = [draft_usage]
+        note = None
+        if decision.action == 'escalate':
+            review_prompt = build_wall_prompt(
+                lines, ctx, direction, layout, cartouche_names,
+                has_image=photo is not None, ask_second_opinion=False,
+            ) + build_review_block(draft, signals.haiku_reason)
+            try:
+                reading, review_usage = llm.complete_parsed(
+                    feature    = 'translit_review',
+                    model      = settings.review_model,
+                    system     = SYSTEM_PROMPT,
+                    messages   = [{'role': 'user', 'content': _with_photo(photo, review_prompt)}],
+                    schema     = _WallReading,
+                    effort     = settings.review_effort,
+                    max_tokens = MAX_REPLY_TOKENS,
+                )
+                usages.append(review_usage)
+            except llm.LLMError as e:
+                # Spec §12: Sonnet unavailable -> deliver Haiku's reading, with a note, not silently.
+                logger.warning('second opinion failed, keeping the first reading: %s', e)
+                note = f'Second opinion unavailable ({e}); this is the first reading.'
+
+        out = _wall_out(lines, reading, usages[-1].served_by if note is None else draft_usage.served_by)
+        out.escalated          = decision.action == 'escalate' and note is None
+        out.escalation_reasons = list(decision.reasons)
+        out.escalation_note    = note
+        costs = [u.cost_usd for u in usages]
+        out.cost_usd = sum(costs) if all(c is not None for c in costs) else None
+        return out
+
+
+def _with_photo(photo: dict | None, text: str) -> str | list[dict]:
+    """User content: the photo block first (cached prefix), then the text."""
+    return [photo, {'type': 'text', 'text': text}] if photo is not None else text
+
+
+def _wall_out(lines: list[list[tuple[str, float]]], reading: '_WallReading',
+              model: str) -> TransliterationOut:
+    """Map a whole-inscription reading onto the per-line response shape."""
+    # Match replies to lines by number; fall back to order if the numbering is off.
+    by_line = {r.line: r for r in reading.lines}
+    if set(by_line) != set(range(1, len(lines) + 1)):
+        by_line = dict(enumerate(reading.lines, start=1))
+
+    chunks: list[ChunkTransliteration] = []
+    for i, line in enumerate(lines):
+        r = by_line.get(i + 1)
+        chunks.append(ChunkTransliteration(
+            chunk_index      = i,
+            gardiner_codes   = [c for c, _ in line],
+            transliteration  = r.transliteration if r else '',
+            english_gloss    = r.english_gloss if r else '',
+            linguistic_notes = r.linguistic_notes if r else 'No reading was returned for this line.',
+            confidence       = r.confidence if r else 'LOW',
+            period_note      = reading.period_note if i == 0 else '',
+        ))
+
+    return TransliterationOut(
+        chunks               = chunks,
+        full_transliteration = ' | '.join(c.transliteration for c in chunks),
+        full_translation     = reading.full_translation or ' '.join(c.english_gloss for c in chunks),
+        model                = model,
+        n_chunks             = len(chunks),
+        image_notes          = [n.strip() for n in reading.image_notes if n.strip()][:MAX_IMAGE_NOTES],
+    )

@@ -83,6 +83,16 @@ const toDecodingResult = (
     translation: llmOk ? llm.full_translation : correction.flat_translation,
     confidence,
     processedAt: Date.now(),
+    reading: llmOk
+      ? {
+          model: llm.model,
+          escalated: llm.escalated ?? false,
+          reasons: llm.escalation_reasons ?? [],
+          note: llm.escalation_note ?? null,
+          costUsd: llm.cost_usd ?? null,
+        }
+      : null,
+    imageNotes: llmOk ? llm.image_notes ?? [] : [],
   };
 };
 

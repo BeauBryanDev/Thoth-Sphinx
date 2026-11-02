@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from app.core.config import settings
 from app.schemas.transliterations import TextContext
 from app.services import reverse, transliteration_services
 from app.services.reverse import ReverseTranslationService
@@ -12,6 +13,12 @@ from tests.test_llm import StubMessages, _response, stub  # noqa: F401  (stub is
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture()
+def per_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force the per-line path by disabling whole-inscription reading."""
+    monkeypatch.setattr(settings, 'translit_whole_max_signs', 0)
 
 
 def test_chat_uses_haiku_low_and_persona(stub: StubMessages) -> None:
@@ -66,7 +73,7 @@ def _chunk(text: str) -> transliteration_services._ChunkReading:
         confidence='MEDIUM', period_note='')
 
 
-def test_transliteration_per_chunk_calls(stub: StubMessages) -> None:
+def test_transliteration_per_chunk_calls(stub: StubMessages, per_line: None) -> None:
     stub.response = _response(parsed=_chunk('Htp-dj-nsw'))
     out = TransliterationService().transliterate_sequence(
         ['M23', 'X1', 'R4', 'G17', 'N35'], [0.9, 0.8, 0.4, 0.95, 0.6], [3], [],
@@ -82,7 +89,7 @@ def test_transliteration_per_chunk_calls(stub: StubMessages) -> None:
     assert 'PREVIOUS SEGMENTS' in stub.calls[1][1]['messages'][0]['content']
 
 
-def test_transliteration_failure_keeps_partial(stub: StubMessages) -> None:
+def test_transliteration_failure_keeps_partial(stub: StubMessages, per_line: None) -> None:
     calls = {'n': 0}
     good = _response(parsed=_chunk('nb tAwy'))
     bad = _response(stop_reason='max_tokens')
@@ -123,7 +130,7 @@ def test_app_never_imports_openai() -> None:
         assert not any(name.split('.')[0] == 'openai' for name in names), path
 
 
-def test_transliteration_sends_raw_photo_once_cached(stub: StubMessages) -> None:
+def test_transliteration_sends_raw_photo_once_cached(stub: StubMessages, per_line: None) -> None:
     import numpy as np
     stub.response = _response(parsed=_chunk('kA nxt xa m WAst'))
     bgr = np.full((2000, 1000, 3), 200, dtype=np.uint8)
@@ -137,7 +144,7 @@ def test_transliteration_sends_raw_photo_once_cached(stub: StubMessages) -> None
     assert 'THE PHOTOGRAPH' in blocks[0][1]['text'] and 'read ltr' in blocks[0][1]['text']
 
 
-def test_transliteration_without_photo_is_plain_text(stub: StubMessages) -> None:
+def test_transliteration_without_photo_is_plain_text(stub: StubMessages, per_line: None) -> None:
     stub.response = _response(parsed=_chunk('nb'))
     TransliterationService().transliterate_sequence(
         ['V30'], [0.9], [], [], direction='rtl', layout='rows', ctx=TextContext())
@@ -168,3 +175,156 @@ def test_decode_data_url_roundtrip_and_rejects_garbage() -> None:
 def test_transliterate_endpoint_rejects_bad_image(client) -> None:  # noqa: ANN001
     r = client.post('/transliterate/', json={'codes': ['G17'], 'image': 'data:image/png;base64,eA=='})
     assert r.status_code == 422 and 'image' in r.json()['detail']
+
+
+def _wall(*lines: str, full: str = 'Live the Horus, Strong Bull.', confidence: str = 'MEDIUM',
+          ask: bool = False) -> transliteration_services._DraftWallReading:
+    """A canned whole-inscription reading, one entry per transliteration given."""
+    return transliteration_services._DraftWallReading(
+        lines=[transliteration_services._LineReading(
+            line=n, transliteration=t, english_gloss=f'gloss {t}', linguistic_notes='',
+            confidence=confidence) for n, t in enumerate(lines, start=1)],
+        full_translation=full, period_note='Dynasty XVIII.',
+        image_notes=['Sunk relief with traces of red paint.', '  ', 'The cartouches sit on one axis.'],
+        needs_second_opinion=ask, second_opinion_reason='two readings of line 1' if ask else '')
+
+
+def test_whole_wall_is_one_call(stub: StubMessages) -> None:
+    import numpy as np
+    stub.response = _response(parsed=_wall('anx Hr kA-nxt', 'nsw-bjtj mn-xpr-ra'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'E1', 'S34', 'M23', 'L2'], [0.9, 0.9, 0.5, 0.9, 0.8, 0.3], [3],
+        ['mn-xpr-ra — Thutmose III (interior: N5 Y5 L1)'],
+        direction='ltr', layout='rows', ctx=TextContext(), image_bgr=np.zeros((50, 80, 3), np.uint8))
+    assert len(stub.calls) == 1 and out.error is None and out.n_chunks == 2
+    method, kw = stub.calls[0]
+    assert method == 'parse' and kw['output_format'] is transliteration_services._DraftWallReading
+    image, text = kw['messages'][0]['content']
+    assert image['type'] == 'image'
+    assert '[1] S34(HIGH:0.90)' in text['text'] and '[2] S34(HIGH:0.90)' in text['text']
+    assert 'WHOLE-INSCRIPTION READING' in text['text'] and 'match each numbered line to its row' in text['text']
+    assert [c.gardiner_codes for c in out.chunks] == [['S34', 'G5', 'E1'], ['S34', 'M23', 'L2']]
+    assert out.full_translation == 'Live the Horus, Strong Bull.'
+    assert out.chunks[0].period_note == 'Dynasty XVIII.' and out.chunks[1].period_note == ''
+
+
+def test_whole_wall_missing_line_is_marked(stub: StubMessages) -> None:
+    stub.response = _response(parsed=_wall('anx Hr kA-nxt'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert out.chunks[1].transliteration == '' and out.chunks[1].confidence == 'LOW'
+    assert 'No reading' in out.chunks[1].linguistic_notes
+
+
+def test_whole_wall_truncated_falls_back_per_line(stub: StubMessages) -> None:
+    replies = iter([_response(stop_reason='max_tokens'),
+                    _response(parsed=_chunk('a')), _response(parsed=_chunk('b'))])
+    stub.parse = lambda **kwargs: next(replies)  # type: ignore[method-assign]
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert out.error is None and out.full_transliteration == 'a | b'
+
+
+def test_long_wall_goes_per_line(stub: StubMessages, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, 'translit_whole_max_signs', 3)
+    stub.response = _response(parsed=_chunk('x'))
+    TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert len(stub.calls) == 2 and stub.calls[0][1]['output_format'] is transliteration_services._ChunkReading
+
+
+def test_whole_wall_refusal_reports_error(stub: StubMessages) -> None:
+    stub.response = _response(stop_reason='refusal')
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext())
+    assert out.error and 'whole inscription' in out.error and out.chunks == []
+
+
+def test_confident_draft_is_not_escalated(stub: StubMessages) -> None:
+    stub.response = _response(parsed=_wall('anx Hr kA-nxt', 'nsw-bjtj'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert len(stub.calls) == 1 and not out.escalated
+    assert out.escalation_reasons == ['haiku_confident'] and out.cost_usd is not None
+    # Haiku is told it may ask for a second opinion.
+    assert 'SECOND OPINION' in stub.calls[0][1]['messages'][0]['content']
+
+
+def test_haiku_request_escalates_to_sonnet_review(stub: StubMessages) -> None:
+    import numpy as np
+    draft = _response(parsed=_wall('anx Hr kA-nxt', 'nsw-bjtj', ask=True))
+    review = _response(parsed=transliteration_services._WallReading(**{
+        k: v for k, v in _wall('anx Hr kA-nxt xa-m-WAst', 'nsw-bjtj').model_dump().items()
+        if k in ('lines', 'full_translation', 'period_note')}, image_notes=['Sonnet saw the N28.']),
+        model='claude-sonnet-5-5')
+    replies = iter([draft, review])
+    calls: list[dict] = []
+
+    def parse(**kwargs: object) -> object:
+        calls.append(kwargs)
+        return next(replies)
+
+    stub.parse = parse  # type: ignore[method-assign]
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext(), image_bgr=np.zeros((40, 40, 3), np.uint8))
+    assert out.escalated and out.escalation_reasons == ['haiku_requested_second_opinion']
+    assert out.model == 'claude-sonnet-5-5' and out.chunks[0].transliteration == 'anx Hr kA-nxt xa-m-WAst'
+    assert out.image_notes == ['Sonnet saw the N28.']   # the reviewer's notes replace the draft's
+    sonnet = calls[1]
+    assert sonnet['model'] == 'claude-sonnet-5-5' and sonnet['output_format'] is transliteration_services._WallReading
+    image, text = sonnet['messages'][0]['content']
+    assert image['type'] == 'image' and image == calls[0]['messages'][0]['content'][0]
+    assert 'FIRST READING' in text['text'] and 'two readings of line 1' in text['text']
+    assert 'SECOND OPINION' not in text['text'] and '# type' not in text['text']
+
+
+def test_failed_review_keeps_draft_with_note(stub: StubMessages) -> None:
+    replies = iter([_response(parsed=_wall('anx', 'nb', confidence='LOW')),
+                    _response(stop_reason='refusal')])
+    stub.parse = lambda **kwargs: next(replies)  # type: ignore[method-assign]
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert not out.escalated and out.escalation_reasons == ['most_lines_low_confidence']
+    assert out.escalation_note and 'Second opinion unavailable' in out.escalation_note
+    assert out.full_transliteration == 'anx | nb' and out.error is None
+
+
+def test_escalation_can_be_switched_off(stub: StubMessages, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, 'translit_escalation', False)
+    stub.response = _response(parsed=_wall('anx', confidence='LOW'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext())
+    assert len(stub.calls) == 1 and out.escalation_reasons == ['escalation_disabled']
+    assert 'SECOND OPINION' not in stub.calls[0][1]['messages'][0]['content']
+
+
+def test_whole_wall_returns_image_notes(stub: StubMessages) -> None:
+    import numpy as np
+    stub.response = _response(parsed=_wall('anx Hr kA-nxt'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext(),
+        image_bgr=np.zeros((40, 40, 3), np.uint8))
+    # Blank notes dropped, order kept.
+    assert out.image_notes == ['Sunk relief with traces of red paint.', 'The cartouches sit on one axis.']
+    text = stub.calls[0][1]['messages'][0]['content'][1]['text']
+    assert 'IMAGE NOTES' in text and 'about the photograph' in text
+
+
+def test_notes_without_photo_describe_the_inscription(stub: StubMessages) -> None:
+    stub.response = _response(parsed=_wall('anx'))
+    TransliterationService().transliterate_sequence(
+        ['S34'], [0.9], [], [], direction='ltr', layout='rows', ctx=TextContext())
+    assert 'no photograph is attached' in stub.calls[0][1]['messages'][0]['content']
+
+
+def test_per_line_path_has_no_notes(stub: StubMessages, per_line: None) -> None:
+    stub.response = _response(parsed=_chunk('anx'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34'], [0.9], [], [], direction='ltr', layout='rows', ctx=TextContext())
+    assert out.image_notes == []

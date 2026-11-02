@@ -15,6 +15,7 @@ import {
 } from "@/hooks/useGlyphDecoder";
 import { formatConfidence } from "@/utils/formatters";
 import { SignFrequencyChart } from "./SignFrequencyChart";
+import { ReadingProvenanceCard } from "./ReadingProvenanceCard";
 
 // Controlled vocabularies — must match app/schemas/transliterations.py.
 // "unknown" first = default, for the tourist who knows nothing.
@@ -344,6 +345,29 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
                 “{result.translation}”
               </p>
             </div>
+
+            {/* 4a. Claude's notes on the photograph. */}
+            {result.imageNotes.length > 0 && (
+              <div className="mt-3 rounded border border-amber-700/40 bg-stone-950/60 p-3">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-amber-500/80">
+                  𓏞 Notes from Claude
+                </p>
+                <ul className="space-y-2">
+                  {result.imageNotes.map((note, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-2 text-sm leading-relaxed text-amber-100/90"
+                    >
+                      <span aria-hidden className="mt-0.5 text-amber-500/80">𓋹</span>
+                      <span>{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 4b. Who read it: first reader, router decision, second opinion. */}
+            {result.reading && <ReadingProvenanceCard reading={result.reading} />}
 
             {/* 5. YOLO-annotated detection image + download. */}
             {result.annotatedImage && (

@@ -60,6 +60,11 @@ export interface TransliterationOut {
   model: string;
   n_chunks: number;
   error: string | null;
+  escalated?: boolean;              // a Sonnet second opinion produced this reading
+  escalation_reasons?: string[];    // router reason codes (app/llm/router.py)
+  escalation_note?: string | null;  // e.g. second opinion failed; first reading kept
+  cost_usd?: number | null;
+  image_notes?: string[];           // Claude's notes on the photograph
 }
 
 export interface SegmentedWordOut {
@@ -162,6 +167,19 @@ export interface GlyphDecodingResult {
   translation: string;
   confidence: number;
   processedAt: number;
+  /** Who produced the LLM reading and why; null when the local fallback is shown. */
+  reading: ReadingProvenance | null;
+  /** Claude's notes on the photograph; empty when there are none. */
+  imageNotes: string[];
+}
+
+/** Provenance of the LLM reading: first reader, router decision, cost. */
+export interface ReadingProvenance {
+  model: string;
+  escalated: boolean;
+  reasons: string[];
+  note: string | null;
+  costUsd: number | null;
 }
 
 export interface UploadedImage {
