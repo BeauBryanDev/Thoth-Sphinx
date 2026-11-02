@@ -87,12 +87,23 @@ except ImportError:
 MAX_WORD_LEN    = 12    # max Gardiner codes in a single dictionary entry
 BEAM_WIDTH      = 8     # number of partial paths kept during beam search
 FUZZY_MAX_DIST  = 2     # max Levenshtein distance for trie fuzzy lookup
+MIN_FUZZY_LEN   = 4     # shorter segments only match exactly: 2 edits can turn them into anything
+FULL_FUZZY_LEN  = 6     # segments of 4-5 signs get at most 1 edit; from 6 signs, FUZZY_MAX_DIST
 NEG_INF         = float('-inf')
 YOLO_TRUST_THRESHOLD = 0.75
 # Edit penalty table indexed by Levenshtein distance.
 # Used when sub_cost_matrix is unavailable, or when the trie's fuzzy hit
 # changed segment length (insertions/deletions — no per-pair lookup possible).
 EDIT_PENALTY = {0: 0.0, 1: -1.0, 2: -2.5}
+
+
+def fuzzy_distance(span: int, max_dist: int) -> int:
+    """Edits a fuzzy match may use on a segment of `span` signs."""
+    if span < MIN_FUZZY_LEN:
+        return 0
+    if span < FULL_FUZZY_LEN:
+        return min(1, max_dist)
+    return max_dist
 
 
 def _compute_edit_penalty(
@@ -452,12 +463,13 @@ def viterbi_segment(
             #  Exact trie lookup  --
             records = trie.search(original_segment)
 
-            # Fuzzy trie lookup (Levenshtein) 
-            if records is None and fuzzy_max_dist > 0:
-                
+            # Fuzzy trie lookup (Levenshtein), allowed edits grow with segment length
+            allowed_dist = fuzzy_distance(span, fuzzy_max_dist)
+            if records is None and allowed_dist > 0:
+
                 candidates = trie.fuzzy_search(
                     original_segment,
-                    max_distance=fuzzy_max_dist,
+                    max_distance=allowed_dist,
                     max_results=1
                 )
                 if candidates:
@@ -843,9 +855,15 @@ def correct(
         )
 
         if edit_dist > 0 and not should_correct(mean_conf, edit_dist, conf_threshold):
-            # Revert: keep original YOLO codes for this segment
+            # Revert: keep YOLO's codes, and re-read the span with exact matches only,
+            # so real words inside the rejected chunk come back; the rest stays unread.
             orig_codes = best_codes[cursor:cursor + seg_len]
-            gated_path.append((orig_codes, [], 0))
+            exact_path, _ = viterbi_segment(
+                orig_codes, trie, log_prob, unigrams,
+                max_word_len   = max_word_len,
+                fuzzy_max_dist = 0,
+            )
+            gated_path.extend(exact_path)
         else:
             gated_path.append((seg_codes, records, edit_dist))
 
