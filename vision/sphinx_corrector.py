@@ -138,6 +138,7 @@ def _compute_edit_penalty(
 DETERMINATIVE_BONUS = 0.5    # last code of segment is a determinative
 PARTICLE_BONUS      = 1.0    # segment exactly matches a phrase-initial particle
 LAYOUT_BONUS        = 1.5    # segment ends at an image-derived row/col break
+UNREAD_PENALTY      = -0.5   # step over one sign no entry explains (always worse than a real word)
 
 # Lazy-loaded prior artifacts. Populated from determinatives.json and
 # initial_particles.json on first use. Set to None to disable.
@@ -430,9 +431,17 @@ def viterbi_segment(
     for i in range(N):
         if dp[i] == NEG_INF:
             continue
-    # dp[i]   = best total score for the prefix codes[0:i]
-    # back[i] = (effective_segment, records, edit_dist, span)
-    #   effective_segment : codes used for translit/transition (post-fuzzy)
+
+        # Unread step: pass one sign through with no record, so a single sign the
+        # trie can't explain no longer blocks every word after it on the line.
+        # It pays the same bigram transition a word would, so a real word always wins.
+        unread_trans = (transition_log_prob(back[i][0][-1], codes[i], log_prob, unigrams)
+                        if back[i] is not None and back[i][0] else 0.0)
+        unread_score = dp[i] + unread_trans + UNREAD_PENALTY
+        if unread_score > dp[i + 1]:
+            dp[i + 1]   = unread_score
+            back[i + 1] = ([codes[i]], [], 0, 1)
+
         for j in range(i + 1, min(i + max_word_len + 1, N + 1)):
             
             original_segment   = codes[i:j]
@@ -537,7 +546,8 @@ def viterbi_segment(
             path.append(([c], [], 0))
 
     path.reverse()
-    return path, False
+    # Unread steps always reach the end now, so "fallback" means no word was read at all.
+    return path, not any(recs for _, recs, _ in path)
 
 
 
