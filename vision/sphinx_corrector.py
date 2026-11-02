@@ -742,21 +742,19 @@ def resolve_unknowns(
                 reason = (f"corpus proposal '{best_code}' confirmed by a "
                           f"YOLO top-3 candidate at this slot")
             else:
-                # No overlap: prefer a decent YOLO alternative, else corpus.
+                # No overlap: use a decent YOLO alternative, else stay Unknown.
+                # A corpus-only guess is not evidence: YOLO knows 148 classes, and Unknown says so.
                 decent_yolo_alt = next(
                     (c for c, conf in slot_candidates
                      if c != UNKNOWN_TOKEN and conf >= 0.2),
                     None,
                 )
-                if decent_yolo_alt is not None:
-                    best_code = decent_yolo_alt
-                    best_freq = 0
-                    reason = (f"no corpus/YOLO overlap; falling back to "
-                              f"YOLO's own alternative '{decent_yolo_alt}'")
-                else:
-                    best_code, best_freq = orig_counter.most_common(1)[0]
-                    reason = (f"no usable YOLO alternative; corpus frequency "
-                              f"proposal '{best_code}' (freq={best_freq})")
+                if decent_yolo_alt is None:
+                    continue
+                best_code = decent_yolo_alt
+                best_freq = 0
+                reason = (f"no corpus/YOLO overlap; falling back to "
+                          f"YOLO's own alternative '{decent_yolo_alt}'")
 
             resolved.append(ResolvedUnknown(
                 slot=global_idx, proposed=best_code,

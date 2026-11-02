@@ -55,6 +55,7 @@ def rated(hits: list[dict[str, Any]],
     """Return each hit's label, or None when there is no transliteration to compare."""
     if not translit:
         return [None] * len(hits)
+    
     query_words = confidence.tokens(translit)
     query_signs = confidence.sign_tokens(signs or '')
     hits = confidence.enrich(hits)

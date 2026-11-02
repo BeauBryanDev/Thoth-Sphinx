@@ -81,3 +81,23 @@ def test_rejected_fuzzy_chunk_is_reread_for_real_words() -> None:
     result = correct([[(code, 0.95)] for code in codes], trie, {}, UNIGRAMS)
     assert result.flat_corrected_seq == codes
     assert [w.translit for w in result.segmented_words] == ['r', 'm', 'n', 'Q9']
+
+
+def test_unknown_stays_unknown_without_yolo_support() -> None:
+    # The trie knows what this Unknown stood for, but YOLO offers no alternative for it.
+    trie = SphinxTrie()
+    trie.insert(['D21', 'Unknown'], SourceRecord(source='test', translit='rx', translation='',
+                                                 gardiner_orig='D21 S42'))
+    unigrams = Counter({'D21': 5, 'Unknown': 5})
+    result = correct([[('D21', 0.95)], [('Unknown', 0.9)]], trie, {}, unigrams)
+    assert result.flat_corrected_seq == ['D21', 'Unknown']
+    assert result.unknowns_resolved == []
+
+
+def test_unknown_resolved_when_yolo_agrees() -> None:
+    trie = SphinxTrie()
+    trie.insert(['D21', 'Unknown'], SourceRecord(source='test', translit='rx', translation='',
+                                                 gardiner_orig='D21 S42'))
+    unigrams = Counter({'D21': 5, 'Unknown': 5, 'S42': 1})
+    result = correct([[('D21', 0.95)], [('Unknown', 0.6), ('S42', 0.3)]], trie, {}, unigrams)
+    assert result.flat_corrected_seq == ['D21', 'S42']
