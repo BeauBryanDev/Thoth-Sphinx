@@ -108,31 +108,23 @@ OUTPUT — JSON only, no preamble, exactly these keys:
 Answer in ENGLISH only."""
 
 
-def build_egyptologist_prompt(
-    codes            : list[str],
-    confidences      : list[float],
-    ctx              : TextContext,
-    direction        : str,
-    layout           : str,
-    cartouche_names  : list[str],
-    previous_context : str | None,
-    chunk_info       : str,
-    full_sequence    : str = '',
-    has_image        : bool = False,
-) -> str:
-    """Build the per-chunk USER message (the system message is static)."""
-    signs = ' — '.join(
+def _signs(codes: list[str], confidences: list[float]) -> str:
+    """Codes with their confidence band, e.g. G17(HIGH:0.92) — N35(MED:0.61)."""
+    return ' — '.join(
         f'{c}({"HIGH" if s >= 0.80 else "MED" if s >= 0.50 else "LOW"}:{s:.2f})'
         for c, s in zip(codes, confidences)
     )
 
-    def h(v: str) -> str:  # human-readable context value
-        # blank/whitespace (client sent '' after the user erased a field)
-        # must read as 'unknown', not an empty line the LLM could misread
-        return (v or '').strip().replace('_', ' ') or 'unknown'
 
-    # Matched names are authoritative; UNRESOLVED entries (match refused)
-    # carry raw interior signs only — never present those as verified.
+def _h(v: str) -> str:  # human-readable context value
+    # blank/whitespace (client sent '' after the user erased a field)
+    # must read as 'unknown', not an empty line the LLM could misread
+    return (v or '').strip().replace('_', ' ') or 'unknown'
+
+
+def _cartouche_block(cartouche_names: list[str]) -> str:
+    """Matched names are authoritative; UNRESOLVED entries carry raw interior signs only."""
+    # Keep the '[UNRESOLVED' prefix in sync with glyphApi.ts, which builds these entries.
     matched    = [n for n in cartouche_names if not n.startswith('[UNRESOLVED')]
     unresolved = [n for n in cartouche_names if n.startswith('[UNRESOLVED')]
     parts = []
@@ -147,7 +139,47 @@ def build_egyptologist_prompt(
             'read their raw interior signs yourself (a royal name or epithet '
             'is likely; do not invent a specific king):\n  '
             + '\n  '.join(unresolved))
-    cartouche_block = '\n- '.join(parts) if parts else 'Contains cartouche: no'
+    return '\n- '.join(parts) if parts else 'Contains cartouche: no'
+
+
+def _context_block(ctx: TextContext, direction: str, layout: str, cartouche_names: list[str]) -> str:
+    """The ARCHAEOLOGICAL CONTEXT section shared by both prompt builders."""
+    return f"""ARCHAEOLOGICAL CONTEXT (fields marked 'unknown' were not supplied by the user — do not invent them, but exploit every field that IS given):
+- Period: {_h(ctx.period)}
+- Dynasty: {_h(ctx.dynasty)}
+- King's reign: {_h(ctx.kings_reign)}
+- Text type: {_h(ctx.text_type)}
+- Physical support: {_h(ctx.support)}
+- Location type: {_h(ctx.location_type)}
+- Site: {_h(ctx.site)}
+- Reading direction: {direction}
+- Layout: {layout}
+- {_cartouche_block(cartouche_names)}"""
+
+
+def _photo_rules() -> str:
+    """How to weigh the attached photograph against the detector."""
+    return ('Check every detected sign against the stone. The detector knows only 148 Gardiner '
+            'signs and misreads the others as a look-alike (e.g. N28 xa comes out as X1): where '
+            'the photograph clearly shows a different or a missed sign, read the photograph and '
+            'say so in linguistic_notes. The photograph outranks the detector; if it contradicts '
+            'a cartouche match, say that too.')
+
+
+def build_egyptologist_prompt(
+    codes            : list[str],
+    confidences      : list[float],
+    ctx              : TextContext,
+    direction        : str,
+    layout           : str,
+    cartouche_names  : list[str],
+    previous_context : str | None,
+    chunk_info       : str,
+    full_sequence    : str = '',
+    has_image        : bool = False,
+) -> str:
+    """Build the per-chunk USER message (the system message is static)."""
+    signs = _signs(codes, confidences)
     # The whole inscription, so a segment is never read blind. Without this the
     # LLM sees ~20 codes with no idea what surrounds them and hedges.
     whole_block = (
@@ -163,30 +195,45 @@ def build_egyptologist_prompt(
     # The raw photograph rides along as an image block; this tells the model how to use it.
     photo_block = (
         '\nTHE PHOTOGRAPH (attached, unprocessed, downscaled): find this segment on it — segments '
-        f'follow the physical {layout} in reading order, read {direction}. Check every detected '
-        'sign against the stone. The detector knows only 148 Gardiner signs and misreads the '
-        'others as a look-alike (e.g. N28 xa comes out as X1): where the photograph clearly shows '
-        'a different or a missed sign, read the photograph and say so in linguistic_notes. The '
-        'photograph outranks the detector; if it contradicts a cartouche match, say that too.\n'
+        f'follow the physical {layout} in reading order, read {direction}. {_photo_rules()}\n'
         if has_image else ''
     )
 
     return f"""DETECTED SIGN SEQUENCE ({chunk_info}; each segment is one physical line of text; Gardiner codes with detector confidence):
 {signs}
 
-ARCHAEOLOGICAL CONTEXT (fields marked 'unknown' were not supplied by the user — do not invent them, but exploit every field that IS given):
-- Period: {h(ctx.period)}
-- Dynasty: {h(ctx.dynasty)}
-- King's reign: {h(ctx.kings_reign)}
-- Text type: {h(ctx.text_type)}
-- Physical support: {h(ctx.support)}
-- Location type: {h(ctx.location_type)}
-- Site: {h(ctx.site)}
-- Reading direction: {direction}
-- Layout: {layout}
-- {cartouche_block}
+{_context_block(ctx, direction, layout, cartouche_names)}
 {whole_block}{previous_block}{photo_block}
 Transliterate and gloss this segment. JSON only."""
+
+
+def build_wall_prompt(
+    lines           : list[list[tuple[str, float]]],
+    ctx             : TextContext,
+    direction       : str,
+    layout          : str,
+    cartouche_names : list[str],
+    has_image       : bool = False,
+) -> str:
+    """Build the USER message that reads the whole inscription in one call."""
+    numbered = '\n'.join(
+        f'  [{n + 1}] ' + _signs([c for c, _ in line], [s for _, s in line])
+        for n, line in enumerate(lines)
+    )
+    photo_block = (
+        '\nTHE PHOTOGRAPH (attached, unprocessed, downscaled): the lines above follow the '
+        f'physical {layout} of the photograph in reading order, read {direction}; match each '
+        f'numbered line to its {layout[:-1]} on the stone. Cartouche interiors are listed under '
+        'the context, not inside the lines, so each cartouche shows on the photograph between '
+        f'the signs around it. {_photo_rules()}\n'
+        if has_image else ''
+    )
+    return f"""DETECTED SIGN SEQUENCE (the WHOLE inscription, {len(lines)} physical lines in reading order; Gardiner codes with detector confidence):
+{numbered}
+
+{_context_block(ctx, direction, layout, cartouche_names)}
+{photo_block}
+WHOLE-INSCRIPTION READING: read all {len(lines)} lines together as one text — a sentence or a royal titulary may run on from one line into the next. The response has one `lines` entry per numbered line, in order, each with the OUTPUT fields for that line alone, plus `full_translation`: the whole inscription as one connected English translation (the reading a museum label would print), and one `period_note` for the whole text."""
 
 
 MAX_REPLY_TOKENS = 16000   # adaptive thinking counts toward it
@@ -199,6 +246,25 @@ class _ChunkReading(BaseModel):
     linguistic_notes : str
     confidence       : Literal['HIGH', 'MEDIUM', 'LOW']
     period_note      : str
+
+
+class _LineReading(BaseModel):
+    """The reading of one numbered line of the inscription."""
+    line             : int
+    transliteration  : str
+    english_gloss    : str
+    linguistic_notes : str
+    confidence       : Literal['HIGH', 'MEDIUM', 'LOW']
+
+
+class _WallReading(BaseModel):
+    """The reading of the whole inscription: one entry per line, then the connected translation."""
+    lines            : list[_LineReading]
+    full_translation : str
+    period_note      : str
+
+
+WHOLE_LINE = 10**6   # segment_into_chunks cap that keeps every physical line whole
 
 
 # Service (port of segement_into_chunck.transliterate_wall)
@@ -272,6 +338,24 @@ class TransliterationService:
                 error='ANTHROPIC_API_KEY not configured — transliteration disabled.',
             )
 
+        # One image block for every call; cache_control keeps system + image a cached prefix.
+        photo = images.image_block(image_bgr, cache=True) if image_bgr is not None else None
+
+        # Short inscriptions are read in one call; long ones, or a truncated reply, go per line.
+        if len(codes) <= settings.translit_whole_max_signs:
+            try:
+                return self._read_wall(codes, confidences, boundary_hints, cartouche_names,
+                                       direction=direction, layout=layout, ctx=ctx, photo=photo)
+            except llm.LLMTruncated:
+                logger.warning('whole-inscription reply hit max_tokens; reading per line instead')
+            except Exception as e:
+                logger.exception('LLM whole-inscription reading failed')
+                return TransliterationOut(
+                    chunks=[], full_transliteration='', full_translation='',
+                    model=settings.translit_model, n_chunks=0,
+                    error=f'LLM call failed on the whole inscription: {e}',
+                )
+
         chunks = segment_into_chunks(
             codes, confidences, boundary_hints,
             max_signs=settings.translit_max_signs,
@@ -283,9 +367,6 @@ class TransliterationService:
             f'  [{n + 1}] ' + ' '.join(c for c, _ in ch)
             for n, ch in enumerate(chunks)
         )
-
-        # One image block for every chunk call; cache_control keeps system + image a cached prefix.
-        photo = images.image_block(image_bgr, cache=True) if image_bgr is not None else None
 
         results: list[ChunkTransliteration] = []
         served_by = settings.translit_model
@@ -344,4 +425,58 @@ class TransliterationService:
             full_translation     = ' '.join(r.english_gloss for r in results),
             model                = served_by,
             n_chunks             = len(results),
+        )
+
+    def _read_wall(
+        self,
+        codes           : list[str],
+        confidences     : list[float],
+        boundary_hints  : list[int],
+        cartouche_names : list[str],
+        *,
+        direction       : str,
+        layout          : str,
+        ctx             : TextContext,
+        photo           : dict | None,
+    ) -> TransliterationOut:
+        """Read every physical line in one call; raises LLMError on failure."""
+        lines = segment_into_chunks(codes, confidences, boundary_hints, max_signs=WHOLE_LINE)
+        prompt = build_wall_prompt(lines, ctx, direction, layout, cartouche_names,
+                                   has_image=photo is not None)
+        content: str | list[dict] = (
+            [photo, {'type': 'text', 'text': prompt}] if photo is not None else prompt)
+        parsed, usage = llm.complete_parsed(
+            feature    = 'translit_wall',
+            model      = settings.translit_model,
+            system     = SYSTEM_PROMPT,
+            messages   = [{'role': 'user', 'content': content}],
+            schema     = _WallReading,
+            effort     = settings.translit_effort,
+            max_tokens = MAX_REPLY_TOKENS,
+        )
+
+        # Match replies to lines by number; fall back to order if the numbering is off.
+        by_line = {r.line: r for r in parsed.lines}
+        if set(by_line) != set(range(1, len(lines) + 1)):
+            by_line = dict(enumerate(parsed.lines, start=1))
+
+        chunks: list[ChunkTransliteration] = []
+        for i, line in enumerate(lines):
+            r = by_line.get(i + 1)
+            chunks.append(ChunkTransliteration(
+                chunk_index      = i,
+                gardiner_codes   = [c for c, _ in line],
+                transliteration  = r.transliteration if r else '',
+                english_gloss    = r.english_gloss if r else '',
+                linguistic_notes = r.linguistic_notes if r else 'No reading was returned for this line.',
+                confidence       = r.confidence if r else 'LOW',
+                period_note      = parsed.period_note if i == 0 else '',
+            ))
+
+        return TransliterationOut(
+            chunks               = chunks,
+            full_transliteration = ' | '.join(c.transliteration for c in chunks),
+            full_translation     = parsed.full_translation or ' '.join(c.english_gloss for c in chunks),
+            model                = usage.served_by,
+            n_chunks             = len(chunks),
         )

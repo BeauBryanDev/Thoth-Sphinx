@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     cors_origins     : list[str] = ['*']
  
     # LLM transliteration (Phase 6)
+    translit_whole_max_signs : int = 120 # up to this many codes: one call reads the whole wall
     translit_max_signs  : int   = 40     # max Gardiner codes per LLM chunk
                                          #   (raised from 20 2026-09-08: longer
                                          #    segments = more grammar per call)
@@ -52,7 +53,14 @@ class Settings(BaseSettings):
     anthropic_api_key   : str   = ''
     haiku_model         : str   = 'claude-haiku-5-5'
     sonnet_model        : str   = 'claude-sonnet-5-5'
-    translit_model      : str   = 'claude-haiku-5-5'   # per-chunk reader; Sonnet is the A/B option
+    translit_model      : str   = 'claude-haiku-5-5'   # first reader (default since 2026-11-02)
+    # Escalation to a Sonnet second opinion (app/llm/router.py). Thresholds are
+    # provisional hand-set defaults until Phase 3 calibration replaces them.
+    translit_escalation : bool  = True
+    review_model        : str   = 'claude-sonnet-5-5'
+    review_effort       : str   = 'medium'
+    router_max_low_line_share     : float = 0.5
+    router_max_detector_low_share : float = 0.35
     chat_effort         : str   = 'low'
     translit_effort     : str   = 'medium'
     reverse_effort      : str   = 'medium'
