@@ -1,0 +1,83 @@
+{
+  "method": "Natural mix of eligible sentences with simulated noise. Cutoffs were chosen on dev; test was not used to choose them.",
+  "dev": {
+    "sentences": 500,
+    "hits_by_label": {
+      "strong": {
+        "hits": 319,
+        "true": 264,
+        "precision": 0.828
+      },
+      "possible": {
+        "hits": 538,
+        "true": 176,
+        "precision": 0.327
+      },
+      "weak": {
+        "hits": 4143,
+        "true": 115,
+        "precision": 0.028
+      }
+    },
+    "verdict_by_truth": {
+      "strict": {
+        "queries": 171,
+        "none": 45,
+        "strong": 76,
+        "possible": 50
+      },
+      "loose": {
+        "queries": 28,
+        "none": 10,
+        "strong": 7,
+        "possible": 11
+      },
+      "none": {
+        "queries": 301,
+        "none": 232,
+        "possible": 59,
+        "strong": 10
+      }
+    }
+  },
+  "test": {
+    "sentences": 500,
+    "hits_by_label": {
+      "strong": {
+        "hits": 254,
+        "true": 207,
+        "precision": 0.815
+      },
+      "possible": {
+        "hits": 557,
+        "true": 152,
+        "precision": 0.273
+      },
+      "weak": {
+        "hits": 4189,
+        "true": 123,
+        "precision": 0.029
+      }
+    },
+    "verdict_by_truth": {
+      "strict": {
+        "queries": 146,
+        "none": 38,
+        "possible": 42,
+        "strong": 66
+      },
+      "loose": {
+        "queries": 22,
+        "strong": 7,
+        "possible": 8,
+        "none": 7
+      },
+      "none": {
+        "queries": 332,
+        "possible": 66,
+        "none": 257,
+        "strong": 9
+      }
+    }
+  }
+}

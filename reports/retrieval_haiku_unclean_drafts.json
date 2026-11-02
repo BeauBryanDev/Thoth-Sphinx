@@ -1,0 +1,222 @@
+{
+  "coverage": {
+    "eligible": 19416,
+    "examined": 959,
+    "with_parallels": 300,
+    "coverage": 0.31282586027111575
+  },
+  "modes": {
+    "embedding_noisy": {
+      "queries": 300,
+      "hit@1": 0.193,
+      "hit@5": 0.353,
+      "hit@10": 0.433,
+      "recall@10": 0.28,
+      "mrr@10": 0.265,
+      "median_ms": 14
+    },
+    "hybrid_noisy": {
+      "queries": 300,
+      "hit@1": 0.61,
+      "hit@5": 0.787,
+      "hit@10": 0.813,
+      "recall@10": 0.665,
+      "mrr@10": 0.683,
+      "median_ms": 505
+    },
+    "hybrid_embedding_noisy": {
+      "queries": 300,
+      "hit@1": 0.603,
+      "hit@5": 0.777,
+      "hit@10": 0.843,
+      "recall@10": 0.681,
+      "mrr@10": 0.677,
+      "median_ms": 523
+    },
+    "embedding_de": {
+      "queries": 300,
+      "hit@1": 0.13,
+      "hit@5": 0.23,
+      "hit@10": 0.28,
+      "recall@10": 0.162,
+      "mrr@10": 0.174,
+      "median_ms": 13
+    },
+    "hybrid_de": {
+      "queries": 300,
+      "hit@1": 0.593,
+      "hit@5": 0.777,
+      "hit@10": 0.83,
+      "recall@10": 0.672,
+      "mrr@10": 0.672,
+      "median_ms": 507
+    },
+    "embedding_en": {
+      "queries": 300,
+      "hit@1": 0.133,
+      "hit@5": 0.207,
+      "hit@10": 0.237,
+      "recall@10": 0.148,
+      "mrr@10": 0.164,
+      "median_ms": 10
+    },
+    "hybrid_en": {
+      "queries": 300,
+      "hit@1": 0.577,
+      "hit@5": 0.767,
+      "hit@10": 0.833,
+      "recall@10": 0.672,
+      "mrr@10": 0.66,
+      "median_ms": 506
+    },
+    "embedding_de_context": {
+      "queries": 300,
+      "hit@1": 0.16,
+      "hit@5": 0.247,
+      "hit@10": 0.27,
+      "recall@10": 0.182,
+      "mrr@10": 0.195,
+      "median_ms": 11
+    },
+    "hybrid_de_context": {
+      "queries": 300,
+      "hit@1": 0.577,
+      "hit@5": 0.757,
+      "hit@10": 0.827,
+      "recall@10": 0.662,
+      "mrr@10": 0.656,
+      "median_ms": 508
+    }
+  },
+  "loose_coverage": {
+    "examined": 3597,
+    "with_loose_parallels": 200,
+    "coverage": 0.055601890464275786
+  },
+  "loose_modes": {
+    "embedding_noisy": {
+      "queries": 200,
+      "hit@1": 0.195,
+      "hit@5": 0.365,
+      "hit@10": 0.4,
+      "recall@10": 0.334,
+      "mrr@10": 0.264,
+      "median_ms": 11
+    },
+    "hybrid_noisy": {
+      "queries": 200,
+      "hit@1": 0.54,
+      "hit@5": 0.755,
+      "hit@10": 0.8,
+      "recall@10": 0.722,
+      "mrr@10": 0.633,
+      "median_ms": 494
+    },
+    "hybrid_embedding_noisy": {
+      "queries": 200,
+      "hit@1": 0.61,
+      "hit@5": 0.76,
+      "hit@10": 0.84,
+      "recall@10": 0.759,
+      "mrr@10": 0.683,
+      "median_ms": 505
+    },
+    "embedding_de": {
+      "queries": 200,
+      "hit@1": 0.07,
+      "hit@5": 0.185,
+      "hit@10": 0.23,
+      "recall@10": 0.16,
+      "mrr@10": 0.119,
+      "median_ms": 10
+    },
+    "hybrid_de": {
+      "queries": 200,
+      "hit@1": 0.52,
+      "hit@5": 0.75,
+      "hit@10": 0.815,
+      "recall@10": 0.732,
+      "mrr@10": 0.613,
+      "median_ms": 492
+    },
+    "embedding_en": {
+      "queries": 200,
+      "hit@1": 0.06,
+      "hit@5": 0.125,
+      "hit@10": 0.16,
+      "recall@10": 0.106,
+      "mrr@10": 0.086,
+      "median_ms": 8
+    },
+    "hybrid_en": {
+      "queries": 200,
+      "hit@1": 0.525,
+      "hit@5": 0.735,
+      "hit@10": 0.78,
+      "recall@10": 0.693,
+      "mrr@10": 0.615,
+      "median_ms": 497
+    },
+    "embedding_de_context": {
+      "queries": 200,
+      "hit@1": 0.115,
+      "hit@5": 0.2,
+      "hit@10": 0.215,
+      "recall@10": 0.159,
+      "mrr@10": 0.146,
+      "median_ms": 8
+    },
+    "hybrid_de_context": {
+      "queries": 200,
+      "hit@1": 0.57,
+      "hit@5": 0.72,
+      "hit@10": 0.785,
+      "recall@10": 0.705,
+      "mrr@10": 0.637,
+      "median_ms": 499
+    }
+  },
+  "haiku_usage": {
+    "calls": 1500,
+    "blank": 0,
+    "input_tokens": 278122,
+    "output_tokens": 293837
+  },
+  "draft_samples": [
+    {
+      "clean": "di\u032f =f n =k \u0161n,w nb n jtn",
+      "noisy": "d\ua725\u032f ff =k \u0161n,w n\u1e2b n jtn",
+      "de": "Transliteration: d\ua725.f? Let's parse: \"d\ua725\u032f ff =k \u0161n,w n\u1e2b n jtn\" \u2014 likely \"d\ua725.f\" (he said/ he gave) ... Common phrase: \"dj.f ff =k\" ... Here \"d\ua725\u032f\" could be \"dw3\" (morning). A plausible reading: \"D\ua725\u032f ff =k \u0161nw n\u1e2b n jtn\" \u2192 \"Ein Kreis (\u0161nw) des Nech(t?)...\" Hmm.\n\nBest guess: \"Du sollst (es) essen; dein Kreis (\u0161nw) ist ein Schutz des Aton.\" Given uncertainty, a likely meaning: \"Wenn du dich zur\u00fcckziehst (d\ua725), dann nimm deinen Eid/Kreis (\u0161nw) als Schutz (n\u1e2b) durch den Aton.\"\n\nTranslation:\n\nDu wirst essen, und dein Gefolge (\u0161nw) ist eine St\u00e4rke (n\u1e2b) durch den Aton.",
+      "en": "Let me parse: \"d\ua725\u032f ff =k \u0161n,w n\u1e2b n jtn\" \u2014 \"d\ua725\" likely \"dj\" or \"d\ua723\"... Common phrase: \"jw dd ff =k\" ... Here \"\u0161nw\" means \"circuit/encircle\" and \"n\u1e2b\" means \"protection/strength\"; \"n jtn\" = \"of the Aten\" or \"for the sun disk\".\n\nPossible rendering: \"Give your ... (the) encircling protection of the Aten.\"\n\nTranslation: Give your hand, may the encircling strength of the Aten be yours.",
+      "de_context": "Transliteration: d\ua725 ff =k \u0161n,w n\u1e2b n jtn \u2014 \"d\ua725\" likely \"dj\" (give) with \"ff\" ... Common phrase: \"dj.f\" ... Here \"d\ua725\u032f ff =k\" could be \"d(j) ... \" Likely meaning: \"M\u00f6gest du die Kraft des Sonnenlichts/Aten ... \" Better: \"\u0161n.w n\u1e2b n jtn\" = \"die Umlaufbahn/Kreis des Sonnengottes\" ... \"\u0161n.w\" means \"Kreis, Umkreisung\", \"n\u1e2b\" is \"St\u00e4rke/Kraft\", \"n jtn\" \"der Sonnenscheibe\". So: \"Der Kreis der Kraft der Sonnenscheibe...\" with ff = \"Fleisch/K\u00f6rper\" d\ua725\u032f \"to speak/ say\".\n\nTranslation: Sprich deine Worte, der Kreis der Kraft der Sonnenscheibe (Aton) ...\n\nHmm, the instruction asks for one short plain sentence in German, only the translation.\n\nSprich, dein K\u00f6rper ist der Kreis des N\u1e2b-St\u00e4rke der Sonnenscheibe."
+    },
+    {
+      "clean": "j\ua725i\u032f-\u1e25r pw t\u0161\u3008\ua723\u3009 wp,t.pl n \ua725\u1e25\ua725.n =tw m-h\ua723w =f",
+      "noisy": "j\ua725i\u032f \u1e25r pw t\u0161\u3008\ua723\u3009 wp,thpl n s\u1e25\ua725.n =tw bf",
+      "de": "Transliteration: j\ua725i\u032f \u1e25r pw t\u0161\u3008\ua723\u3009 wp... \"j\ua725i\u032f\" (ja, \"Oh\"/\"Wehe\"), \"\u1e25r pw\" (das ist, \"Es ist\"), \"t\u0161\u3008\ua723\u3009\" (Land/Gebiet), \"wp\" (Entscheidung/Urteil or \"wp\" meaning to separate), \"n s\u1e25\ua725.n =tw bf\" (which was caused/raised for him to see: \"that one has made... I have been driven away / he was frightened\").\n\nA plausible German rendering:\n\nWehe, das ist das Land, dessen Grenzen getrennt wurden, denn man hat ihn aus Furcht vertrieben.",
+      "en": "This appears to be a Late Egyptian/Middle Egyptian-style sentence: \"j\ua725i \u1e25r pw\" (\"Rejoice, this is the...\"?) Let me parse loosely: \"j\ua725i\" = \"rejoice/praise\"? Actually \"j\ua725i\" could be \"j\ua725i\" as an interjection; \"\u1e25r pw\" = \"this is on it\"; \"t\u0161 wp\" = \"the boundary/distinction is decided\"; \"n s\u1e25\ua725.n=tw\" = \"which one has caused to be raised\"; \"bf\" = \"to fear / one fears\".\n\nBest rendering: \"Rejoice, for this is the land whose boundary was decided, which one has made known; one fears it.\"",
+      "de_context": "Der Kranke ... wird als Ausgleich f\u00fcr das, was getan wurde, auf dem Land ausgesch\u00fcttet... (Note: the sentence is fragmentary.)\n\nWait, I must reply with only the translation, one short plain sentence.\n\nEin Fleck ist auf dem Gebiet, das man ausgebreitet hat, der Abscheu."
+    },
+    {
+      "clean": "wnm jn z r hrw 4",
+      "noisy": "jn z r hrw",
+      "de": "Ein Mann kommt t\u00e4glich.",
+      "en": "\"jn z r hrw\" \u2014 \"jn\" (by/through, agent marker introducing the agent of a passive or \"by the hand of\"), \"z\" (man/person), \"r\" (to/against/concerning), \"hrw\" (day/daily).\n\nLikely rendering: \"By a man, daily\" or perhaps \"A man came to (or was said) concerning the day.\"\n\nTranslation: A man, by day, was brought in regard to the day.",
+      "de_context": "\"jn z r hrw\" is a common Middle Egyptian phrase: \"jn z r hrw\" = \"by a man, until day\" / \"Von einem Mann bis zum Tag...\" Actually the typical construction is \"jn z r \u1e25rw\" meaning \"Von einem Mann (wird gesagt) bis zum Tag...\" or \"Durch einen Mann bis heute.\" Best rendering in context of a list of phrases (likely a formula about a person's name/ancestry or a Wisdom context): \"Von einem Mann bis heute.\"\n\nVon einem Mann bis zum heutigen Tag."
+    },
+    {
+      "clean": "jw mk,t wnjs m-\u1e25\ua723,t s\ua725\u1e25.w nb.w jm,j.w \ua723\u1e2b,t",
+      "noisy": "mk,t wnjs m \u1e25\ua723,t s\ua725\u1e25.w nb.w jm,j.w \ua723\u1e2b,t",
+      "de": "Transliteration: mk,t wnjs m \u1e25\ua723,t s\ua725\u1e25.w nb.w jm,j.w \ua723\u1e2b,t\n\nLikely reading: \"mkt Wnjs m \u1e25\ua723t s\ua725\u1e25w nbw jmjw \ua723\u1e2bt\" \u2013 \"Die Schutzbefohlene Unis, (sie ist) vor den Edlen, allen Herren des Horizonts (?)...\" This resembles a formula: \"Schutz f\u00fcr Unis vor allen Gro\u00dfen, die im Horizont (\ua723\u1e2bt) sind.\"\n\nTranslation:\n\nIch bin der Schutz f\u00fcr Unis vor allen Adligen und Herren, die im Horizont sind.",
+      "en": "Transliteration: mk.t wnj.s m \u1e25\ua723.t s\ua725\u1e25.w nb.w jm.j.w \ua723\u1e2b.t\n\nLikely reading: \"mkt\" (mk.t) = \"protection/ protect\" (mkt, \"protection\"), wnjs = \"wnj.s\" perhaps \"wnj\" (to open/ to be) with suffix; \"m \u1e25\ua723t\" = \"in front of\"; s\ua725\u1e25.w = \"noble/ akhu\"; nb.w = \"lords/all\"; jm.j.w \ua723\u1e2b.t = \"those in the horizon/ akhet\".\n\nTranslation: Protection is given before all the noble spirits who are in the horizon.",
+      "de_context": "Die St\u00e4tte Wenis steht an der Spitze aller Horizonte, die im Lichtland sind."
+    },
+    {
+      "clean": "r\ua725w-\u1e25r,w-\ua723\u1e2b,tj-\u1e25\ua725i\u032f-m-\ua723\u1e2b,t m-rn\u2261f-m-\u0161w-n,tj-m-jtn \u1e0fi\u032f \ua725n\u1e2b \u1e0f,t n\u1e25\u1e25 jtn \ua725n\u1e2b wr jm,j-\u1e25\ua723b-sd nb-\u0161nn,t-nb-jtn nb-p,t nb-t\ua723 m pr-jtn m \ua723\u1e2b,t-jtn",
+      "noisy": "r\ua725w \u1e25r,w \ua723\u1e2b,tj \u1e25\ua725i\u032f m \ua723\u1e2b,t m rn\u2261f m \u0161w n,tj m jtn \u1e0fi\u1e96 \ua725n\u1e2b \u1e0f,t n\u1e25\u1e25 jtn \ua725n\u1e2b wr jm,j-\u1e25\ua723b-sd nb \u0161nn,t nb jtn nb p,t n\u1e2b-t\ua723 m pr-jtn m \ua723\u1e2b,t-jtn",
+      "de": "Re-Harachte, der jubelt am Horizont, im Lichtland, in seinem Namen \"Schu, der im Sonnenscheibe ist\", der Leben spendet ewiglich und unendlich: die Sonne, die lebt, gro\u00df an Jubil\u00e4umsfesten, Herr der Ring-Kreise, Herr der Sonnenscheibe, Herr des Himmels, der Land atmen l\u00e4sst, im Sonnentempel, im Lichthorizont.",
+      "en": "Re-Horakhty, who rises on the horizon, rejoicing in the horizon in his name of \"Shu, who is in the Aten,\" the living disk, living forever and ever, the Aten, great of life, lord of the jubilee, lord of the sun disk, lord of heaven, and sovereign of the land in the House of the Aten in Akhetaten.",
+      "de_context": "Re-Harachte, der im Horizont jubelt, im Lichtland (Achet) in seinem Namen \"Sonnenlicht, das aus dem Aton hervorgeht\", lebendiger Aton, ewig und immerw\u00e4hrend, gro\u00dfer Aton, Herr des Festes, Herr des Sonnenkreises, Herr des Aton-Himmels, Nechtaa in dem Tempel des Aton in Achet-Aton."
+    }
+  ]
+}
