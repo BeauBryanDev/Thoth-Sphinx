@@ -1,0 +1,835 @@
+[
+  {
+    "Name": "Karnak Temple Complex",
+    "Aliases": [
+      "Karnak",
+      "Ipet-Isut"
+    ],
+    "Location": "Luxor (Ancient Thebes), Luxor Governorate, Egypt",
+    "Build_year": "c. 1971 BCE – 30 BCE (Developed over 1,500+ years)",
+    "Start_year": -1971,
+    "End_year": -30,
+    "Build_by": "Senusret I, Hatshepsut, Thutmose III, Amenhotep III, Seti I, Ramesses II, and Ptolemaic rulers",
+    "Builders": [
+      "senusret-i-d12",
+      "hatshepsut-d18",
+      "thutmose-iii-d18",
+      "amenhotep-iii-d18",
+      "seti-i-d19",
+      "ramesses-ii-d19",
+      "dynasty-33"
+    ],
+    "Other_builders": [],
+    "Description": "The largest religious sanctuary in ancient Egypt, primarily dedicated to the Theban Triad of Amun-Ra, Mut, and Khonsu. It is renowned for the Great Hypostyle Hall containing 134 colossal sandstone papyrus columns, sacred lakes, massive pylons, and towering obelisks.",
+    "age": "Approximately 4,000 years old (Middle Kingdom through Roman Period)",
+    "Gods": [
+      "Amun",
+      "Mut",
+      "Khonsu"
+    ],
+    "Offerings": [
+      "Slaughtered oxen and prime cattle",
+      "Geese, ducks, and migratory waterfowl",
+      "Conical loaves of emmer wheat bread",
+      "Jars of date wine and barley beer",
+      "Kyphi incense and frankincense",
+      "Fine linen textiles and gold tableware"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Karnak",
+      "Chonstempel, südöstlich des Karnaktempels"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [],
+    "Sources": []
+  },
+  {
+    "Name": "Luxor Temple",
+    "Aliases": [
+      "Luxor"
+    ],
+    "Location": "East Bank of the Nile, Luxor, Egypt",
+    "Build_year": "c. 1400 BCE – 1213 BCE",
+    "Start_year": -1400,
+    "End_year": -1213,
+    "Build_by": "Amenhotep III and Ramesses II (with additions by Tutankhamun, Horemheb, and Alexander the Great)",
+    "Builders": [
+      "amenhotep-iii-d18",
+      "ramesses-ii-d19",
+      "tutankhamun-d18",
+      "horemheb-d18",
+      "alexander-the-great-d32"
+    ],
+    "Other_builders": [],
+    "Description": "A grand riverside temple dedicated to the rejuvenation of kingship rather than a specific deity cult, serving as the central setting for the annual Opet Festival. It was linked directly to Karnak via the 2.7-kilometer Avenue of Sphinxes.",
+    "age": "Approximately 3,420 years old (New Kingdom, 18th to 19th Dynasties)",
+    "Gods": [
+      "Amun",
+      "Mut",
+      "Khonsu"
+    ],
+    "Offerings": [
+      "Roasted gazelle and beef cuts",
+      "White bread cones and honey cakes",
+      "Pomegranate and sweet fig baskets",
+      "Amphorae of vintage delta wine",
+      "Blue lotus flowers",
+      "Myrrh and cedar scented ointments"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Luxor"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "The kingship reading is a scholarly interpretation. Gods added because the temple also served Amun, Mut and Khonsu."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Great Temple of Abu Simbel",
+    "Aliases": [
+      "Abu Simbel"
+    ],
+    "Location": "Abu Simbel, Aswan Governorate (Nubia), Egypt",
+    "Build_year": "c. 1264 BCE – 1244 BCE",
+    "Start_year": -1264,
+    "End_year": -1244,
+    "Build_by": "Ramesses II",
+    "Builders": [
+      "ramesses-ii-d19"
+    ],
+    "Other_builders": [],
+    "Description": "A massive rock-cut cliff temple fronted by four colossal 20-meter seated statues of Ramesses II. Dedicated to Ra-Horakhty, Ptah, Amun, and the deified Ramesses himself, it was engineered so the rising sun lights three of the four sanctuary statues twice a year, while Ptah stays in shadow.",
+    "age": "Approximately 3,280 years old (New Kingdom, 19th Dynasty)",
+    "Gods": [
+      "Ra",
+      "Ptah",
+      "Amun"
+    ],
+    "Offerings": [
+      "Plump fatted bulls",
+      "Libations of purified Nile water",
+      "Spelt flour and barley cakes",
+      "Fermented honey beer",
+      "Incense grains on bronze braziers",
+      "Precious Nubian gold tribute"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Abu Simbel"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Corrected: the sun lights three of the four sanctuary statues, and Ptah stays dark.",
+      "Ra-Horakhty is linked to Ra. The fourth dedication is the deified Ramesses II."
+    ],
+    "Sources": [
+      "https://www.egyptindependent.com/sun-aligns-on-face-of-king-ramses-iis-statue-at-abu-simbel-temple-for-22-mins/"
+    ]
+  },
+  {
+    "Name": "Mortuary Temple of Hatshepsut (Djeser-Djeseru)",
+    "Aliases": [
+      "Djeser-Djeseru",
+      "Deir el-Bahari temple"
+    ],
+    "Location": "Deir el-Bahari, West Bank of Luxor, Egypt",
+    "Build_year": "c. 1479 BCE – 1458 BCE",
+    "Start_year": -1479,
+    "End_year": -1458,
+    "Build_by": "Pharaoh Hatshepsut (designed by royal architect Senenmut)",
+    "Builders": [
+      "hatshepsut-d18"
+    ],
+    "Other_builders": [
+      "Senenmut (architect)"
+    ],
+    "Description": "A masterpiece of ancient classical architecture rising in three stepped colonnaded terraces set against the towering cliffs of Deir el-Bahari. Built to honor Amun and perpetuate Hatshepsut's royal cult, it features painted reliefs of the historic expedition to the Land of Punt.",
+    "age": "Approximately 3,480 years old (New Kingdom, 18th Dynasty)",
+    "Gods": [
+      "Amun"
+    ],
+    "Offerings": [
+      "Living myrrh and frankincense trees from Punt",
+      "Ebony wood and elephant ivory tusks",
+      "Sweet grape wine and clear spring water",
+      "Barley loaves baked in conical pots",
+      "Sweetened honey combs",
+      "Perfumed unguents in alabaster flasks"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Deir el-Bahari"
+    ],
+    "Find_spot_covers_whole_site": true,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Build dates are her reign; the temple itself took a shorter part of it."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Temple of Edfu (Temple of Horus)",
+    "Aliases": [
+      "Edfu",
+      "Temple of Horus"
+    ],
+    "Location": "Edfu, Aswan Governorate, Egypt",
+    "Build_year": "237 BCE – 57 BCE",
+    "Start_year": -237,
+    "End_year": -57,
+    "Build_by": "Ptolemy III Euergetes through Ptolemy XII Auletes",
+    "Builders": [
+      "ptolemy-iii-euergetes-d33",
+      "ptolemy-xii-auletes-d33",
+      "dynasty-33"
+    ],
+    "Other_builders": [],
+    "Description": "The most intact and best-preserved temple in Egypt, dedicated to the falcon god Horus of Behdet. It preserves complete roofed halls, intricate mythological inscriptions recounting the cosmic battle between Horus and Set, and an intact granite naos shrine.",
+    "age": "Approximately 2,260 years old (Ptolemaic Period)",
+    "Gods": [
+      "Horus"
+    ],
+    "Offerings": [
+      "Fatted geese and quail",
+      "Wine jars sealed with mud caps",
+      "Kyphi incense pellets",
+      "Green and black eye kohl pigments",
+      "Sweet beer brewed with dates",
+      "Bundles of fresh papyrus and lotus stems"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Tell Edfu"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [],
+    "Sources": []
+  },
+  {
+    "Name": "Temple of Philae (Temple of Isis)",
+    "Aliases": [
+      "Philae",
+      "Temple of Isis at Philae"
+    ],
+    "Location": "Agilkia Island (originally Philae Island), Aswan, Egypt",
+    "Build_year": "c. 380 BCE – 100 CE",
+    "Start_year": -380,
+    "End_year": 100,
+    "Build_by": "Nectanebo I, Ptolemy II Philadelphus, and Roman Emperors Augustus and Trajan",
+    "Builders": [
+      "nectanebo-i-d30",
+      "ptolemy-ii-philadelphus-d33"
+    ],
+    "Other_builders": [
+      "Augustus",
+      "Trajan"
+    ],
+    "Description": "An island sanctuary dedicated to the mother goddess Isis, renowned as one of the last operating pagan temples in the Mediterranean basin. It preserves the final recorded Egyptian hieroglyphic inscription, carved on August 24, 394 CE.",
+    "age": "Approximately 2,400 years old (30th Dynasty through Roman Period)",
+    "Gods": [
+      "Isis"
+    ],
+    "Offerings": [
+      "Daily libations at the 365 offering tables of the Abaton on Bigeh",
+      "Freshly picked lotus buds and water lilies",
+      "Fine white linen robes for the cult statue",
+      "Pomegranates, figs, and sycamore fruit",
+      "Spiced vintage wine",
+      "Pure frankincense and burning resins"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Corrected offering: the 365 offering tables belong to the Abaton on Bigeh, the island beside Philae, and the number comes from one secondary source."
+    ],
+    "Sources": [
+      "https://www.clio.fr/BIBLIOTHEQUE/pdf/pdf_philae_perle_de_l_egypte.pdf"
+    ]
+  },
+  {
+    "Name": "Temple of Kom Ombo",
+    "Aliases": [
+      "Kom Ombo"
+    ],
+    "Location": "Kom Ombo, Aswan Governorate, Egypt",
+    "Build_year": "180 BCE – 47 BCE",
+    "Start_year": -180,
+    "End_year": -47,
+    "Build_by": "Ptolemy VI Philometor with additions by later Ptolemies and Romans",
+    "Builders": [
+      "ptolemy-vi-philometor-d33",
+      "dynasty-33"
+    ],
+    "Other_builders": [
+      "Roman emperors"
+    ],
+    "Description": "A unique double temple featuring identical symmetrical courts, hypostyle halls, and twin sanctuaries along a central axis. The northern half honored the falcon god Haroeris (Horus the Elder) while the southern half honored Sobek, the crocodile deity of fertility.",
+    "age": "Approximately 2,200 years old (Ptolemaic to Roman Period)",
+    "Gods": [
+      "Horus",
+      "Sobek"
+    ],
+    "Offerings": [
+      "Mummified sacred Nile crocodiles",
+      "Fresh river fish and marsh birds",
+      "Jars of thick dark date beer",
+      "Spelt loaves and sesame seed cakes",
+      "Fragrant herb bundles",
+      "Aromatic oil libations"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Haroeris is linked to Horus, since he is the elder form."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Dendera Temple Complex (Temple of Hathor)",
+    "Aliases": [
+      "Dendera",
+      "Temple of Hathor"
+    ],
+    "Location": "Dendera, Qena Governorate, Egypt",
+    "Build_year": "c. 54 BCE – 60 CE",
+    "Start_year": -54,
+    "End_year": 60,
+    "Build_by": "Ptolemy XII Auletes, Cleopatra VII Philopator, Augustus, and Tiberius",
+    "Builders": [
+      "ptolemy-xii-auletes-d33",
+      "cleopatra-d33"
+    ],
+    "Other_builders": [
+      "Augustus",
+      "Tiberius"
+    ],
+    "Description": "One of Egypt's most intact sacred complexes, dedicated to Hathor, goddess of love, joy, and music. Famous for its vibrant celestial ceiling reliefs, massive Hathoric column capitals, subterranean crypts, and the original chamber of the Dendera Zodiac.",
+    "age": "Approximately 2,080 years old (Late Ptolemaic to Early Roman Period)",
+    "Gods": [
+      "Hathor"
+    ],
+    "Offerings": [
+      "Sistrum performances and sacred music",
+      "Sweet unfermented grape must and date wine",
+      "Beaded menat necklaces",
+      "Lotus blossoms and fragrant garlands",
+      "Honey pastries and sweet breads",
+      "Myrrh and floral essence balms"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Dendara"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [],
+    "Sources": []
+  },
+  {
+    "Name": "Temple of Seti I at Abydos",
+    "Aliases": [
+      "Temple of Seti I",
+      "Abydos temple"
+    ],
+    "Location": "Abydos, Sohag Governorate, Egypt",
+    "Build_year": "c. 1290 BCE – 1279 BCE",
+    "Start_year": -1290,
+    "End_year": -1279,
+    "Build_by": "Pharaoh Seti I (completed by his son Ramesses II)",
+    "Builders": [
+      "seti-i-d19",
+      "ramesses-ii-d19"
+    ],
+    "Other_builders": [],
+    "Description": "An L-shaped limestone mortuary temple built upon the sacred cult center of Osiris, recognized for having the finest, most delicate raised reliefs of the New Kingdom. It houses seven distinct vaulted chapels and the famous Abydos King List containing 76 royal cartouches.",
+    "age": "Approximately 3,310 years old (New Kingdom, 19th Dynasty)",
+    "Gods": [
+      "Osiris",
+      "Isis",
+      "Horus",
+      "Amun",
+      "Ra",
+      "Ptah"
+    ],
+    "Offerings": [
+      "White emmer loaves and sesame rolls",
+      "Sacrificial bull meat and gazelle haunches",
+      "Clear well water from the Osireion",
+      "Jars of red oasis wine",
+      "Incense grains burned in bronze arms",
+      "Linen strips for the Osirian mysteries"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Abydos"
+    ],
+    "Find_spot_covers_whole_site": true,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Often called a memorial temple rather than a mortuary temple. Not checked against a source.",
+      "Gods added from its seven chapels, not from the source file. Not checked against a source."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "The Ramesseum",
+    "Aliases": [
+      "Ramesseum"
+    ],
+    "Location": "West Bank of Luxor (Theban Necropolis), Egypt",
+    "Build_year": "c. 1279 BCE – 1213 BCE",
+    "Start_year": -1279,
+    "End_year": -1213,
+    "Build_by": "Ramesses II",
+    "Builders": [
+      "ramesses-ii-d19"
+    ],
+    "Other_builders": [],
+    "Description": "The sprawling mortuary temple of Ramesses II, designed to perpetuate his divine cult and celebrate the glory of his reign. It contains vast mudbrick granaries, reliefs of the Battle of Kadesh, and the fragments of an enormous 1,000-ton fallen granite colossus.",
+    "age": "Approximately 3,250 years old (New Kingdom, 19th Dynasty)",
+    "Gods": [
+      "Amun"
+    ],
+    "Offerings": [
+      "Roasted whole bulls and young calves",
+      "Cranes, geese, and teal ducks",
+      "Vats of honey-sweetened beer",
+      "Casks of vintage sycamore wine",
+      "Fine woven royal linen",
+      "Aromatic oils in carved calcite vessels"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Ramesseum"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Build dates are his whole reign. Amun is added from general knowledge, not checked against a source."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Medinet Habu (Mortuary Temple of Ramesses III)",
+    "Aliases": [
+      "Medinet Habu"
+    ],
+    "Location": "West Bank of Luxor (Theban Necropolis), Egypt",
+    "Build_year": "c. 1184 BCE – 1153 BCE",
+    "Start_year": -1184,
+    "End_year": -1153,
+    "Build_by": "Ramesses III",
+    "Builders": [
+      "ramesses-iii-d20"
+    ],
+    "Other_builders": [],
+    "Description": "A fortress-like mortuary temple enclosed within massive fortified mudbrick walls and a Syrian-style migdol gateway. Its deeply carved pylon walls preserve crucial historical records depicting the defense of Egypt against the Sea Peoples and Libyan coalitions.",
+    "age": "Approximately 3,170 years old (New Kingdom, 20th Dynasty)",
+    "Gods": [
+      "Amun"
+    ],
+    "Offerings": [
+      "Heaps of threshed barley and emmer wheat",
+      "Fatted oxen and desert antelopes",
+      "Amphorae of sparkling oasis wine",
+      "Linen garments dyed with indigo and red",
+      "Censer bowls of burning aromatic gums",
+      "Sweet dried raisins and pressed dates"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Medinet Habu"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Amun is added from general knowledge, not checked against a source."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Valley Temple of Khafre",
+    "Aliases": [
+      "Khafre Valley Temple"
+    ],
+    "Location": "Giza Plateau, Giza Governorate, Egypt",
+    "Build_year": "c. 2570 BCE – 2520 BCE",
+    "Start_year": -2570,
+    "End_year": -2520,
+    "Build_by": "Pharaoh Khafre",
+    "Builders": [
+      "khafre-d4"
+    ],
+    "Other_builders": [],
+    "Description": "An Old Kingdom architectural marvel built from massive cyclopean limestone blocks cased in polished red Aswan granite, floored with translucent white calcite alabaster. It stood next to the Great Sphinx and may have been a setting for royal funerary rites; whether these included the Opening of the Mouth or mummification is debated.",
+    "age": "Approximately 4,550 years old (Old Kingdom, 4th Dynasty)",
+    "Gods": [],
+    "Offerings": [
+      "Purification libations of sweet well water",
+      "The seven sacred canonical funerary oils",
+      "Pure natron mineral salts",
+      "Triangular funerary bread loaves",
+      "Roast cuts of prime steer",
+      "Beer poured into red clay conical cups"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Gisa"
+    ],
+    "Find_spot_covers_whole_site": true,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Corrected: its role in mummification and Opening of the Mouth rites is debated, not settled.",
+      "No god link: this is a royal funerary temple."
+    ],
+    "Sources": [
+      "https://homepages.bluffton.edu/~sullivanm/egypt/giza/pyramids/valtemp.html"
+    ]
+  },
+  {
+    "Name": "Temple of Esna (Temple of Khnum)",
+    "Aliases": [
+      "Esna"
+    ],
+    "Location": "Esna, Luxor Governorate, Egypt",
+    "Build_year": "c. 180 BCE – 250 CE",
+    "Start_year": -180,
+    "End_year": 250,
+    "Build_by": "Ptolemy VI Philometor, completed by Roman Emperors Claudius, Vespasian, and Decius",
+    "Builders": [
+      "ptolemy-vi-philometor-d33"
+    ],
+    "Other_builders": [
+      "Claudius",
+      "Vespasian",
+      "Decius"
+    ],
+    "Description": "Excavated from beneath nine meters of modern city deposits, this preserved hypostyle hall rests on 24 sandstone columns, each crowned with unique floral and palm capitals. Dedicated to the ram-headed potter god Khnum, it features intricate astronomical ceiling murals.",
+    "age": "Approximately 2,100 years old (Ptolemaic through Roman Period)",
+    "Gods": [
+      "Khnum",
+      "Neith"
+    ],
+    "Offerings": [
+      "Sacred Nile lates fish (Lates niloticus)",
+      "Male rams and yearling calves",
+      "Jars of fresh cool Nile water",
+      "Barley mash and leavened bread loaves",
+      "Aromatic frankincense and resin chunks",
+      "Woven garments honoring the goddess Neith"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Esna"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Neith is added because the offerings field names her."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Temple of Kalabsha",
+    "Aliases": [
+      "Kalabsha"
+    ],
+    "Location": "New Kalabsha Island, Aswan Governorate, Egypt",
+    "Build_year": "c. 30 BCE – 14 CE",
+    "Start_year": -30,
+    "End_year": 14,
+    "Build_by": "Roman Emperor Augustus (over an earlier 18th Dynasty foundation by Amenhotep II)",
+    "Builders": [
+      "amenhotep-ii-d18"
+    ],
+    "Other_builders": [
+      "Augustus"
+    ],
+    "Description": "The largest free-standing sandstone temple in Lower Nubia, dedicated to Mandulis, the Nubian solar deity, along with Isis and Osiris. Rescued during the UNESCO Nubia Campaign, the entire temple was dismantled and relocated to save it from the waters of Lake Nasser.",
+    "age": "Approximately 2,010 years old (Early Roman Period)",
+    "Gods": [
+      "Mandulis",
+      "Isis",
+      "Osiris"
+    ],
+    "Offerings": [
+      "Nubian alluvial gold dust and nuggets",
+      "Ostrich plumes and decorated eggs",
+      "Slain desert game and fattened cattle",
+      "Sweet milk poured into stone basins",
+      "Imported Roman amphorae of red wine",
+      "Burning pine resins and myrrh"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [
+      "Kalabscha"
+    ],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Amenhotep II built an earlier foundation, not this temple."
+    ],
+    "Sources": []
+  },
+  {
+    "Name": "Mortuary Temple of Amenhotep III (Kom el-Hettan)",
+    "Aliases": [
+      "Kom el-Hettan"
+    ],
+    "Location": "West Bank of Luxor (Theban Necropolis), Egypt",
+    "Build_year": "c. 1386 BCE – 1349 BCE",
+    "Start_year": -1386,
+    "End_year": -1349,
+    "Build_by": "Pharaoh Amenhotep III",
+    "Builders": [
+      "amenhotep-iii-d18"
+    ],
+    "Other_builders": [],
+    "Description": "Once the largest and most opulent mortuary temple ever built in Egypt, spanning over 35 hectares and larger than Karnak was at that time, before being dismantled by an ancient earthquake and subsequent quarrying. Its eastern portal is still flanked by the world-famous 18-meter twin Colossi of Memnon.",
+    "age": "Approximately 3,370 years old (New Kingdom, 18th Dynasty)",
+    "Gods": [
+      "Amun"
+    ],
+    "Offerings": [
+      "Vessels of hammered gold, silver, and electrum",
+      "Raw lapis lazuli and turquoise lumps",
+      "Hundreds of fatted bulls presented at royal jubilees",
+      "Fowl fattened on grain mash",
+      "Pure cedar oils and rare ointments",
+      "Baskets of fine white bread and pomegranates"
+    ],
+    "Offerings_status": "Unverified. No sources; several items look illustrative rather than recorded.",
+    "Corpus_find_spots": [],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": false,
+    "Audit_notes": [
+      "Corrected: sources agree on about 35 hectares, but only say it exceeded Karnak as Karnak was at that time.",
+      "Amun is added from general knowledge, not checked against a source."
+    ],
+    "Sources": [
+      "https://en.wikipedia.org/wiki/Mortuary_Temple_of_Amenhotep_III"
+    ]
+  },
+  {
+    "Name": "Great Temple of Ptah (Hikuptah)",
+    "Aliases": [
+      "Temple of Ptah at Memphis",
+      "Memphis temple"
+    ],
+    "Location": "Mit Rahina (Ancient Memphis), Giza Governorate, Egypt",
+    "Build_year": "c. 1290 BCE – 1213 BCE (western complex; the cult is older)",
+    "Start_year": -1290,
+    "End_year": -1213,
+    "Build_by": "Probably begun by Seti I and developed by Ramesses II",
+    "Builders": [
+      "seti-i-d19",
+      "ramesses-ii-d19"
+    ],
+    "Other_builders": [],
+    "Description": "The main sanctuary of Ptah at Memphis, Egypt's ancient capital, and one of the largest temple complexes of its time. Little survives above ground, and the great pylon and hypostyle hall are known mainly from excavation. A colossal statue of Ramesses II stood before the entrance.",
+    "age": "Approximately 3,300 years old for the surviving western complex (New Kingdom, 19th Dynasty)",
+    "Gods": [
+      "Ptah"
+    ],
+    "Offerings": [],
+    "Offerings_status": "None recorded.",
+    "Corpus_find_spots": [
+      "Memphis"
+    ],
+    "Find_spot_covers_whole_site": true,
+    "Added_by_audit": true,
+    "Audit_notes": [
+      "Added: it fills the gap for Memphis, the old capital, and for Ptah."
+    ],
+    "Sources": [
+      "https://britannica.com/place/Memphis-ancient-city-Egypt/Archaeology",
+      "https://egymonuments.gov.eg/en/news/excavations-unveil-a-portion-of-the-temple-of-ptah/"
+    ]
+  },
+  {
+    "Name": "Temple of Ra at Heliopolis (Iunu)",
+    "Aliases": [
+      "Heliopolis",
+      "Temple of Ra-Atum"
+    ],
+    "Location": "Al-Matariyyah, Cairo, Egypt",
+    "Build_year": "c. 1950 BCE (the surviving obelisk; the site is older)",
+    "Start_year": -1950,
+    "End_year": -1950,
+    "Build_by": "Senusret I (surviving obelisk), with later work by other kings",
+    "Builders": [
+      "senusret-i-d12"
+    ],
+    "Other_builders": [],
+    "Description": "The great sanctuary of the sun god at Heliopolis, the centre of Ra and Atum worship. Its buildings were largely quarried away for medieval Cairo. The 21-metre obelisk of Senusret I still stands in place and is generally considered the oldest surviving obelisk.",
+    "age": "Approximately 3,975 years old for the obelisk (Middle Kingdom, 12th Dynasty)",
+    "Gods": [
+      "Ra",
+      "Atum"
+    ],
+    "Offerings": [],
+    "Offerings_status": "None recorded.",
+    "Corpus_find_spots": [
+      "Heliopolis"
+    ],
+    "Find_spot_covers_whole_site": true,
+    "Added_by_audit": true,
+    "Audit_notes": [
+      "Added: it fills the gap for Heliopolis, the main solar cult centre."
+    ],
+    "Sources": [
+      "https://en.wikipedia.org/wiki/Heliopolis_(ancient_Egypt)"
+    ]
+  },
+  {
+    "Name": "Great Aten Temple (Per-Aten)",
+    "Aliases": [
+      "Great Temple of the Aten",
+      "Per-Aten",
+      "Amarna temple"
+    ],
+    "Location": "Tell el-Amarna (Ancient Akhetaten), Minya Governorate, Egypt",
+    "Build_year": "c. 1346 BCE",
+    "Start_year": -1346,
+    "End_year": -1346,
+    "Build_by": "Akhenaten",
+    "Builders": [
+      "akhenaten-d18"
+    ],
+    "Other_builders": [],
+    "Description": "The main temple of Akhenaten's new capital, dedicated to the Aten, the sun disk. Its enclosure measured about 229 by 730 metres, and its courts were open to the sun. It marks the short-lived religious revolution of the Amarna period.",
+    "age": "Approximately 3,370 years old (New Kingdom, 18th Dynasty)",
+    "Gods": [
+      "Aten"
+    ],
+    "Offerings": [],
+    "Offerings_status": "None recorded.",
+    "Corpus_find_spots": [
+      "Tell el-Amarna"
+    ],
+    "Find_spot_covers_whole_site": true,
+    "Added_by_audit": true,
+    "Audit_notes": [
+      "Added: it fills the gap for Amarna, and the corpus has 540 documents from the site."
+    ],
+    "Sources": [
+      "https://en.wikipedia.org/wiki/Great_Temple_of_the_Aten",
+      "https://www.Britannica.Com/place/Tell-el-Amarna"
+    ]
+  },
+  {
+    "Name": "Sun Temple of Nyuserre (Shesepibre)",
+    "Aliases": [
+      "Abu Gorab sun temple",
+      "Sun Temple of Niuserre"
+    ],
+    "Location": "Abu Gorab, Giza Governorate, Egypt",
+    "Build_year": "Fifth Dynasty, probably late in the reign of Nyuserre; exact date uncertain",
+    "Start_year": null,
+    "End_year": null,
+    "Build_by": "Nyuserre Ini",
+    "Builders": [
+      "nyuserre-ini-d5"
+    ],
+    "Other_builders": [],
+    "Description": "A Fifth Dynasty temple built to honour Ra, with a large open courtyard and a great stone obelisk at its western end. It is the best-known example of the Old Kingdom royal sun temples.",
+    "age": "Approximately 4,400 years old (Old Kingdom, 5th Dynasty)",
+    "Gods": [
+      "Ra"
+    ],
+    "Offerings": [],
+    "Offerings_status": "None recorded.",
+    "Corpus_find_spots": [],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": true,
+    "Audit_notes": [
+      "Added: it is the main surviving sun temple, and the only Old Kingdom god temple here. The age is approximate, from the Fifth Dynasty date."
+    ],
+    "Sources": [
+      "https://en.wikipedia.org/wiki/Abu_Gorab",
+      "https://ancientegyptonline.co.uk/niuserre-sun-temple/"
+    ]
+  },
+  {
+    "Name": "Temple of Bastet at Bubastis",
+    "Aliases": [
+      "Bubastis",
+      "Per-Bastet",
+      "Temple of Bastet"
+    ],
+    "Location": "Tell Basta, Sharqia Governorate, Egypt",
+    "Build_year": "c. 874 BCE – 343 BCE (the main surviving phases)",
+    "Start_year": -874,
+    "End_year": -343,
+    "Build_by": "Osorkon II and Nectanebo II, among others",
+    "Builders": [
+      "osorkon-ii-d22",
+      "nectanebo-ii-d30"
+    ],
+    "Other_builders": [],
+    "Description": "The main temple of the cat goddess Bastet in the Nile Delta. Herodotus judged it the most beautiful temple he saw in the 5th century BCE. Osorkon II added a festival hall and a granite portal, and Nectanebo II rebuilt the western end.",
+    "age": "Approximately 2,900 years old for the main surviving phases (Third Intermediate through Late Period)",
+    "Gods": [
+      "Bastet"
+    ],
+    "Offerings": [],
+    "Offerings_status": "None recorded.",
+    "Corpus_find_spots": [],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": true,
+    "Audit_notes": [
+      "Added: it fills the gap for the Nile Delta and gives Bastet a temple."
+    ],
+    "Sources": [
+      "https://egymonuments.gov.eg/monuments/the-temple-of-bastet/",
+      "https://www.nationalgeographic.com/history/history-magazine/article/bubastis-egyptian-sacred-city-of-cats"
+    ]
+  },
+  {
+    "Name": "Temple of Hibis",
+    "Aliases": [
+      "Hibis"
+    ],
+    "Location": "Kharga Oasis, New Valley Governorate, Egypt",
+    "Build_year": "c. 522 BCE – 246 BCE (main building under Darius I, with later additions)",
+    "Start_year": -522,
+    "End_year": -246,
+    "Build_by": "Darius I, with additions by Hakor, Nectanebo I, Nectanebo II and Ptolemy II; possibly begun under Psamtik II",
+    "Builders": [
+      "darius-the-great-d27",
+      "hakor-d29",
+      "nectanebo-i-d30",
+      "nectanebo-ii-d30",
+      "ptolemy-ii-philadelphus-d33"
+    ],
+    "Other_builders": [],
+    "Description": "A temple to a local form of Amun in Kharga Oasis, and a rare large monument of Persian rule in Egypt. Darius I's cartouches appear in the sanctuary, and later kings extended it.",
+    "age": "Approximately 2,500 years old (Late Period, 27th Dynasty)",
+    "Gods": [
+      "Amun"
+    ],
+    "Offerings": [],
+    "Offerings_status": "None recorded.",
+    "Corpus_find_spots": [],
+    "Find_spot_covers_whole_site": false,
+    "Added_by_audit": true,
+    "Audit_notes": [
+      "Added: it fills the gap for the Western Desert oases and the Persian period. Whether building began under Psamtik II is disputed, so he is not linked."
+    ],
+    "Sources": [
+      "https://en.wikipedia.org/wiki/Temple_of_Hibis",
+      "https://www.iranicaonline.org/?p=11631"
+    ]
+  }
+]

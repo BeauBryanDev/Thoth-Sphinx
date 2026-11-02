@@ -1,0 +1,162 @@
+[
+  {
+    "Name": "Step Pyramid of Djoser",
+    "Year": "c. 2670 BCE – 2650 BCE",
+    "Pharaoh": "Djoser",
+    "Location": "Saqqara, Giza Governorate, Egypt",
+    "Description": "Designed by the royal vizier and architect Imhotep, this six-tiered monument is Egypt's earliest colossal stone building and the world's oldest surviving cut-stone pyramid. Evolving from a traditional flat-roofed mastaba tomb, it stands at the center of an expansive walled limestone funerary courtyard complex.",
+    "Dynasty": "3rd Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Meidum Pyramid",
+    "Year": "c. 2610 BCE – 2590 BCE",
+    "Pharaoh": "Huni (attributed) and Sneferu",
+    "Location": "Meidum, Beni Suef Governorate, Egypt",
+    "Description": "Originally built as a seven-stepped pyramid and expanded to eight steps before being encased in smooth limestone to form a true pyramid. Partial outer casing collapses in antiquity left its distinctive tower-like three-tiered core standing high above a massive collar of limestone rubble.",
+    "Dynasty": "3rd to 4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Bent Pyramid",
+    "Year": "c. 2600 BCE",
+    "Pharaoh": "Sneferu",
+    "Location": "Dahshur, Giza Governorate, Egypt",
+    "Description": "A pivotal transitional monument in pyramid engineering whose lower walls rise at a steep 54-degree angle before shifting halfway up to a shallower 43-degree slope to prevent structural instability. It retains a greater proportion of its original polished outer Tura limestone casing than almost any other Egyptian pyramid.",
+    "Dynasty": "4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Red Pyramid (North Pyramid)",
+    "Year": "c. 2590 BCE – 2580 BCE",
+    "Pharaoh": "Sneferu",
+    "Location": "Dahshur, Giza Governorate, Egypt",
+    "Description": "The world's first successful true smooth-sided pyramid and the third-largest Egyptian pyramid after those of Khufu and Khafre at Giza. Named for the rusty reddish hue of its exposed iron-rich local limestone core blocks, its interior houses three towering corbel-vaulted chambers.",
+    "Dynasty": "4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Great Pyramid of Giza (Pyramid of Khufu)",
+    "Year": "c. 2580 BCE – 2560 BCE",
+    "Pharaoh": "Khufu",
+    "Location": "Giza Plateau, Giza Governorate, Egypt",
+    "Description": "The largest and tallest pyramid ever constructed in Egypt, originally rising to 146.6 meters and assembled from roughly 2.3 million limestone and granite blocks. As the oldest and sole surviving monument of the Seven Wonders of the Ancient World, it is celebrated for its precision engineering, Grand Gallery, and granite King's Chamber.",
+    "Dynasty": "4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Djedefre",
+    "Year": "c. 2566 BCE – 2558 BCE",
+    "Pharaoh": "Djedefre (Radjedef)",
+    "Location": "Abu Rawash, Giza Governorate, Egypt",
+    "Description": "Erected atop a commanding natural promontory eight kilometers north of Giza, giving its foundation the highest elevation of any Old Kingdom pyramid. Extensively quarried for stone from the Roman period onward, its ruins still feature a dramatic open descending trench leading into a large subterranean burial pit.",
+    "Dynasty": "4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Khafre",
+    "Year": "c. 2558 BCE – 2532 BCE",
+    "Pharaoh": "Khafre",
+    "Location": "Giza Plateau, Giza Governorate, Egypt",
+    "Description": "The second-largest pyramid at Giza, visually appearing taller than Khufu's neighboring monument because it sits on higher bedrock and rises at a slightly steeper angle. It retains a prominent cap of original smooth Tura limestone casing near its apex and connects via a monumental stone causeway to the Valley Temple and the Great Sphinx.",
+    "Dynasty": "4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Menkaure",
+    "Year": "c. 2532 BCE – 2503 BCE",
+    "Pharaoh": "Menkaure",
+    "Location": "Giza Plateau, Giza Governorate, Egypt",
+    "Description": "The smallest of the three primary Giza pyramids, originally standing around 65 meters high and distinguished by having its lowest sixteen courses encased in costly red Aswan granite rather than white limestone. Three smaller subsidiary queens' pyramids stand aligned beside its southern flank.",
+    "Dynasty": "4th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Userkaf",
+    "Year": "c. 2494 BCE – 2487 BCE",
+    "Pharaoh": "Userkaf",
+    "Location": "Saqqara, Giza Governorate, Egypt",
+    "Description": "Built immediately northeast of Djoser's Step Pyramid enclosure, this monument heralded a shift toward smaller rubble-core pyramids paired with richly decorated temple complexes. Breaking with established canon, its main mortuary temple was placed along the southern side of the pyramid rather than the eastern face.",
+    "Dynasty": "5th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Sahure",
+    "Year": "c. 2487 BCE – 2475 BCE",
+    "Pharaoh": "Sahure",
+    "Location": "Abusir, Giza Governorate, Egypt",
+    "Description": "The founding monument of the Abusir royal necropolis, establishing the standard architectural layout for Fifth and Sixth Dynasty funerary complexes. Though its stepped limestone core is heavily eroded, its mortuary temple and causeway are renowned for intricate wall reliefs, monolithic palmiform granite columns, and a copper-lined drainage system.",
+    "Dynasty": "5th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Neferirkare Kakai",
+    "Year": "c. 2475 BCE – 2455 BCE",
+    "Pharaoh": "Neferirkare Kakai",
+    "Location": "Abusir, Giza Governorate, Egypt",
+    "Description": "The tallest and largest pyramid erected at Abusir, originally begun as a six-tiered step pyramid before being enlarged and converted into a true smooth-sided monument. Excavations in its mudbrick-completed mortuary temple uncovered the famous Abusir Papyri, providing detailed administrative records of Old Kingdom royal cults.",
+    "Dynasty": "5th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Nyuserre Ini",
+    "Year": "c. 2445 BCE – 2421 BCE",
+    "Pharaoh": "Nyuserre Ini",
+    "Location": "Abusir, Giza Governorate, Egypt",
+    "Description": "Positioned tightly between the complexes of Sahure and Neferirkare, Nyuserre's monument diverted and repurposed his father Neferirkare's unfinished causeway and valley temple. It features a distinctive L-shaped mortuary temple and stands south of Nyuserre's well-preserved sun temple at Abu Ghurab.",
+    "Dynasty": "5th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Unas",
+    "Year": "c. 2375 BCE – 2345 BCE",
+    "Pharaoh": "Unas",
+    "Location": "Saqqara, Giza Governorate, Egypt",
+    "Description": "Modest in outward scale and eroded to a rounded mound, its underground chambers hold extraordinary historical importance as the first royal tomb inscribed with the Pyramid Texts. Hundreds of blue-pigmented hieroglyphic spells cover its white limestone walls beneath a star-carved gabled ceiling to safeguard the king's rebirth.",
+    "Dynasty": "5th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Teti",
+    "Year": "c. 2345 BCE – 2323 BCE",
+    "Pharaoh": "Teti",
+    "Location": "Saqqara, Giza Governorate, Egypt",
+    "Description": "Located in North Saqqara, this pyramid's subterranean rooms continue the tradition of finely carved Pyramid Texts and house Egypt's earliest royal sarcophagus inscribed with funerary spells. Surrounding the monument is one of Saqqara's richest cemeteries of decorated mastabas belonging to Sixth Dynasty viziers and nobles.",
+    "Dynasty": "6th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Pepi II",
+    "Year": "c. 2278 BCE – 2184 BCE",
+    "Pharaoh": "Pepi II Neferkare",
+    "Location": "South Saqqara, Giza Governorate, Egypt",
+    "Description": "The last major royal pyramid complex completed during the Old Kingdom, distinguished by an added masonry girdle wall reinforcing its base. Its underground chambers contain extensive Pyramid Texts, while three self-contained miniature pyramid complexes for his queens—Neith, Iput II, and Udjebten—flank the main monument.",
+    "Dynasty": "6th Dynasty (Old Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Senusret I",
+    "Year": "c. 1971 BCE – 1926 BCE",
+    "Pharaoh": "Senusret I",
+    "Location": "El-Lisht, Giza Governorate, Egypt",
+    "Description": "One of the grandest pyramids of the Middle Kingdom, engineered around an internal framework of radiating limestone retaining walls filled with stone slabs and rubble beneath a smooth Tura limestone casing. Enclosed by two perimeter walls and nine smaller subsidiary pyramids, its temple yielded finely carved limestone statues of the pharaoh.",
+    "Dynasty": "12th Dynasty (Middle Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Senusret II",
+    "Year": "c. 1897 BCE – 1878 BCE",
+    "Pharaoh": "Senusret II",
+    "Location": "El-Lahun, Faiyum Governorate, Egypt",
+    "Description": "Constructed around a natural limestone knoll reinforced by stone cross-walls and millions of mudbricks, originally sheathed in polished white limestone. Breaking with centuries of tradition to deter tomb robbers, its entrance was hidden beneath a princess's tomb shaft on the southern side leading into a winding subterranean corridor.",
+    "Dynasty": "12th Dynasty (Middle Kingdom)"
+  },
+  {
+    "Name": "Black Pyramid (Pyramid of Amenemhat III)",
+    "Year": "c. 1860 BCE – 1845 BCE",
+    "Pharaoh": "Amenemhat III",
+    "Location": "Dahshur, Giza Governorate, Egypt",
+    "Description": "Named for its dark, weathered mudbrick core standing starkly against the desert landscape after its outer limestone casing was stripped away. Built on unstable clay ground too close to the Nile floodplain, its complex subterranean passages began cracking under its weight, prompting the king to construct a second pyramid at Hawara; its carved grey granite capstone survives in Cairo.",
+    "Dynasty": "12th Dynasty (Middle Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Hawara",
+    "Year": "c. 1845 BCE – 1814 BCE",
+    "Pharaoh": "Amenemhat III",
+    "Location": "Hawara, Faiyum Governorate, Egypt",
+    "Description": "Erected of mudbrick originally clad in white limestone as Amenemhat III's final burial monument, incorporating elaborate security measures such as blind passages, hidden ceiling trapdoors, and a monolithic quartzite burial chamber. Its vast adjoining mortuary temple was celebrated across the classical world by Herodotus and Strabo as the legendary 'Labyrinth.'",
+    "Dynasty": "12th Dynasty (Middle Kingdom)"
+  },
+  {
+    "Name": "Pyramid of Ahmose I",
+    "Year": "c. 1550 BCE – 1525 BCE",
+    "Pharaoh": "Ahmose I",
+    "Location": "Abydos, Sohag Governorate, Egypt",
+    "Description": "Built as a royal cenotaph rather than a physical burial place, this monument represents the final royal pyramid constructed by a native pharaoh in Egypt before New Kingdom rulers shifted to rock-cut tombs in the Valley of the Kings. Formed from a sand-and-rubble core cased in fine limestone, it anchored a sprawling ceremonial complex honoring Ahmose and his grandmother Queen Tetisheri.",
+    "Dynasty": "18th Dynasty (New Kingdom)"
+  }
+]
