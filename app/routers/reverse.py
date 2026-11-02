@@ -13,8 +13,8 @@ router = APIRouter(prefix='/reverse', tags=['reverse'])
 
 # POST /reverse/ — retro-translation: modern English -> Middle Egyptian.
 
-# Pure LLM feature (GPT-4o composes the Egyptian; the CV pipeline is not
-# involved). Stateless like the rest of the API.
+# Pure LLM feature (Claude Sonnet composes the Egyptian; the CV pipeline is
+# not involved). Stateless like the rest of the API.
 
 @router.post('/', response_model=ReverseTranslationOut)
 async def reverse_translate(body: ReverseTranslateRequest) -> ReverseTranslationOut:
@@ -24,7 +24,7 @@ async def reverse_translate(body: ReverseTranslateRequest) -> ReverseTranslation
     if not service.enabled:
         raise HTTPException(
             status_code=503,
-            detail='Reverse translation unavailable: OPENAI_API_KEY not configured.',
+            detail='Reverse translation unavailable: ANTHROPIC_API_KEY not configured.',
         )
 
     result = service.translate(body.text, body.register)

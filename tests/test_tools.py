@@ -1,7 +1,8 @@
 import psycopg
 import pytest
 
-from evidence_store import confidence, retrieve, tools
+from app.llm import tools
+from evidence_store import confidence, retrieve
 
 LONG_QUERY = 'ḥtp-ḏi̯ nswt wsjr nb ḏdw'
 

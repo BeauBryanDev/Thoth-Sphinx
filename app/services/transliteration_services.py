@@ -1,11 +1,12 @@
 
 from __future__ import annotations
 
-import json
 import logging
+from typing import Literal
 
-from openai import OpenAI
+from pydantic import BaseModel
 
+from app import llm
 from app.core.config import settings
 from app.schemas.transliterations import (
     ChunkTransliteration,
@@ -55,7 +56,8 @@ def segment_into_chunks(
 
 
 # The role/methodology half of the prompt. Static -> sent as the system
-# message (also lets OpenAI cache it across the per-chunk calls).
+# prompt, which app/llm/ marks for prompt caching across the per-chunk calls.
+# Kept byte-identical to space/src/llm.py (the Space stays on gpt-4o).
 SYSTEM_PROMPT = """You are a working Egyptologist producing a publishable reading of a Middle \
 Egyptian inscription from Gardiner sign codes. Deliver the best philological reading the evidence \
 supports — do not catalogue everything that might be wrong with the input.
@@ -172,17 +174,25 @@ ARCHAEOLOGICAL CONTEXT (fields marked 'unknown' were not supplied by the user �
 Transliterate and gloss this segment. JSON only."""
 
 
+MAX_REPLY_TOKENS = 16000   # adaptive thinking counts toward it
+
+
+class _ChunkReading(BaseModel):
+    """The reading of one segment."""  # sent as the schema description; fields mirror SYSTEM_PROMPT's OUTPUT
+    transliteration  : str
+    english_gloss    : str
+    linguistic_notes : str
+    confidence       : Literal['HIGH', 'MEDIUM', 'LOW']
+    period_note      : str
+
+
 # Service (port of segement_into_chunck.transliterate_wall)
 class TransliterationService:
     """Chunk the corrected sequence, call the LLM per chunk, assemble."""
 
-    def __init__(self) -> None:
-        self._client = (OpenAI(api_key=settings.openai_api_key)
-                        if settings.openai_api_key else None)
-
     @property
     def enabled(self) -> bool:
-        return self._client is not None
+        return llm.enabled()
 
     def transliterate(
         self,
@@ -240,8 +250,8 @@ class TransliterationService:
             return TransliterationOut(
                 
                 chunks=[], full_transliteration='', full_translation='',
-                model=settings.openai_model, n_chunks=0,
-                error='OPENAI_API_KEY not configured — transliteration disabled.',
+                model=settings.haiku_model, n_chunks=0,
+                error='ANTHROPIC_API_KEY not configured — transliteration disabled.',
             )
 
         chunks = segment_into_chunks(
@@ -257,6 +267,7 @@ class TransliterationService:
         )
 
         results: list[ChunkTransliteration] = []
+        served_by = settings.haiku_model
         for i, chunk in enumerate(chunks):
             c_codes = [c for c, _ in chunk]
             c_confs = [s for _, s in chunk]
@@ -271,44 +282,42 @@ class TransliterationService:
                 full_sequence=full_sequence,
             )
             try:
-                response = self._client.chat.completions.create(
-                    model           = settings.openai_model,
-                    messages        = [
-                        {'role': 'system', 'content': SYSTEM_PROMPT},
-                        {'role': 'user',   'content': prompt},
-                    ],
-                    temperature     = settings.translit_temperature,
-                    response_format = {'type': 'json_object'},
+                parsed, usage = llm.complete_parsed(
+                    feature    = 'translit',
+                    model      = settings.haiku_model,
+                    system     = SYSTEM_PROMPT,
+                    messages   = [{'role': 'user', 'content': prompt}],
+                    schema     = _ChunkReading,
+                    effort     = settings.translit_effort,
+                    max_tokens = MAX_REPLY_TOKENS,
                 )
-                parsed = json.loads(response.choices[0].message.content)
-                
+                served_by = usage.served_by
+
             except Exception as e:
                 logger.exception(f'LLM transliteration failed on chunk {i}')
-                
+
                 return TransliterationOut(
                     chunks=results,
                     full_transliteration=' | '.join(r.transliteration for r in results),
                     full_translation=' '.join(r.english_gloss for r in results),
-                    model=settings.openai_model, n_chunks=len(chunks),
+                    model=served_by, n_chunks=len(chunks),
                     error=f'LLM call failed on segment {i + 1}/{len(chunks)}: {e}',
                 )
 
             results.append(ChunkTransliteration(
                 chunk_index      = i,
                 gardiner_codes   = c_codes,
-                transliteration  = str(parsed.get('transliteration', '')),
-                english_gloss    = str(parsed.get('english_gloss', '')),
-                linguistic_notes = str(parsed.get('linguistic_notes', '')),
-                confidence       = parsed.get('confidence', 'LOW')
-                                   if parsed.get('confidence') in ('HIGH', 'MEDIUM', 'LOW')
-                                   else 'LOW',
-                period_note      = str(parsed.get('period_note', '')),
+                transliteration  = parsed.transliteration,
+                english_gloss    = parsed.english_gloss,
+                linguistic_notes = parsed.linguistic_notes,
+                confidence       = parsed.confidence,
+                period_note      = parsed.period_note,
             ))
 
         return TransliterationOut(
             chunks               = results,
             full_transliteration = ' | '.join(r.transliteration for r in results),
             full_translation     = ' '.join(r.english_gloss for r in results),
-            model                = settings.openai_model,
+            model                = served_by,
             n_chunks             = len(results),
         )

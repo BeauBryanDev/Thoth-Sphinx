@@ -37,7 +37,7 @@ async def chat(body: ChatRequest) -> ChatResponse:
     if not service.enabled:
 
         raise HTTPException(status_code=503,
-                            detail="Chat is unavailable: OPENAI_API_KEY not configured.")
+                            detail="Chat is unavailable: ANTHROPIC_API_KEY not configured.")
 
     try:
         reply, message_id = service.chat(

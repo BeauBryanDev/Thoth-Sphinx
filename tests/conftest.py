@@ -142,7 +142,7 @@ def client(stub_pipeline):
 @pytest.fixture()
 def no_api_key(monkeypatch):
     from app.core.config import settings
-    monkeypatch.setattr(settings, 'openai_api_key', '')
+    monkeypatch.setattr(settings, 'anthropic_api_key', '')
 
 
 # ---------------------------------------------------------------------------

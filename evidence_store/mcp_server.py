@@ -7,7 +7,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
-from evidence_store import tools
+from app.llm import tools
 
 INSTRUCTIONS = (
     'Evidence tools for reading Ancient Egyptian texts. Corpus sentences are evidence; entity '

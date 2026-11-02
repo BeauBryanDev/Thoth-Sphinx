@@ -42,18 +42,13 @@ class Settings(BaseSettings):
  
     cors_origins     : list[str] = ['*']
  
-    # OpenAI transliteration (Phase 6)
-    # openai_api_key reads OPENAI_API_KEY from .env; empty = feature disabled
-    openai_api_key      : str   = ''
-    openai_model        : str   = 'gpt-4o'
+    # LLM transliteration (Phase 6)
     translit_max_signs  : int   = 40     # max Gardiner codes per LLM chunk
                                          #   (raised from 20 2026-09-08: longer
                                          #    segments = more grammar per call)
-    translit_temperature: float = 0.25   # low, but not flat — 0.1 froze the prose
-                                         # OpenAI settings above go in step 2,
-                                         #   once the services move to app/llm/
 
-    # Anthropic (app/llm/). anthropic_api_key reads ANTHROPIC_API_KEY; empty = disabled
+    # Anthropic (app/llm/). anthropic_api_key reads ANTHROPIC_API_KEY; empty = disabled.
+    # No temperature: current Claude models reject non-default sampling values.
     anthropic_api_key   : str   = ''
     haiku_model         : str   = 'claude-haiku-5-5'
     sonnet_model        : str   = 'claude-sonnet-5-5'

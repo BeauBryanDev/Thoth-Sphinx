@@ -72,7 +72,7 @@ def test_transliterate_no_key_degrades(client, no_api_key):
         'confidences': [0.9],           # misaligned -> neutral 0.5
     })
     assert r.status_code == 200
-    assert 'OPENAI_API_KEY' in r.json()['error']
+    assert 'ANTHROPIC_API_KEY' in r.json()['error']
 
 
 def test_chat_503_without_key(client, no_api_key):

@@ -1,12 +1,13 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import re
+from typing import Literal
 
-from openai import OpenAI
+from pydantic import BaseModel
 
+from app import llm
 from app.core.config import settings
 from app.schemas.reverse_translation import (
     ReverseTranslationOut,
@@ -24,7 +25,7 @@ from app.schemas.reverse_translation import (
 #      complements + determinatives, as a scribe would spell it.
 
 # Degrades gracefully like the other LLM services: no API key or any
-# OpenAI failure returns a ReverseTranslationOut with `error` set.
+# LLM failure returns a ReverseTranslationOut with `error` set.
 
 logger = logging.getLogger('sphinxeyes.reverse')
 
@@ -86,6 +87,28 @@ OUTPUT — JSON only, no preamble, exactly these keys:
 Answer in ENGLISH only."""
 
 
+MAX_REPLY_TOKENS = 16000   # adaptive thinking counts toward it
+
+
+class _WordReply(BaseModel):
+    """One word of the composition."""
+    english         : str
+    transliteration : str
+    gardiner_codes  : list[str]
+    literal         : str
+    note            : str
+
+
+class _ReverseReply(BaseModel):
+    """The Middle Egyptian composition."""  # sent as the schema description; fields mirror SYSTEM_PROMPT's OUTPUT
+    normalized_english : str
+    transliteration    : str
+    gardiner_codes     : list[str]
+    words              : list[_WordReply]
+    grammar_notes      : str
+    confidence         : Literal['HIGH', 'MEDIUM', 'LOW']
+
+
 def _build_user_prompt(text: str, register: str) -> str:
     reg = ('a neutral monumental register'
            if register == 'unknown' else f'the {register} register')
@@ -113,80 +136,67 @@ def _clean_codes(codes: object) -> list[str]:
 
 
 class ReverseTranslationService:
-    """One-shot English -> Middle Egyptian composition via GPT-4o."""
-
-    def __init__(self) -> None:
-        self._client = (OpenAI(api_key=settings.openai_api_key)
-                        if settings.openai_api_key else None)
+    """One-shot English -> Middle Egyptian composition via Claude Sonnet."""
 
     @property
     def enabled(self) -> bool:
-        return self._client is not None
+        return llm.enabled()
 
-    def translate(self, text: str, 
+    def translate(self, text: str,
                   register: str = 'unknown'
                   ) -> ReverseTranslationOut:
-        
+
         if not self.enabled:
-            
+
             return ReverseTranslationOut(
                 source_text=text, normalized_english='', transliteration='',
-                gardiner_codes=[], model=settings.openai_model,
-                error='OPENAI_API_KEY not configured — reverse translation disabled.',
+                gardiner_codes=[], model=settings.sonnet_model,
+                error='ANTHROPIC_API_KEY not configured — reverse translation disabled.',
             )
 
         try:
-            response = self._client.chat.completions.create(
-                model           = settings.openai_model,
-                messages        = [
-                    {'role': 'system', 'content': SYSTEM_PROMPT},
-                    {'role': 'user',   'content': _build_user_prompt(text, register)},
-                ],
-                temperature     = settings.translit_temperature,
-                response_format = {'type': 'json_object'},
+            parsed, usage = llm.complete_parsed(
+                feature    = 'reverse',
+                model      = settings.sonnet_model,
+                system     = SYSTEM_PROMPT,
+                messages   = [{'role': 'user', 'content': _build_user_prompt(text, register)}],
+                schema     = _ReverseReply,
+                effort     = settings.reverse_effort,
+                max_tokens = MAX_REPLY_TOKENS,
             )
-            
-            parsed = json.loads(response.choices[0].message.content)
-            
+
         except Exception as e:
             logger.exception('reverse translation LLM call failed')
-            
+
             return ReverseTranslationOut(
                 source_text=text, normalized_english='', transliteration='',
-                gardiner_codes=[], model=settings.openai_model,
+                gardiner_codes=[], model=settings.sonnet_model,
                 error=f'LLM call failed: {e}',
             )
 
-        words = []
-        
-        for w in parsed.get('words', []) or []:
-            if not isinstance(w, dict):
-                continue
-            
-            words.append(ReverseWord(
-                english         = str(w.get('english', '')),
-                transliteration = str(w.get('transliteration', '')),
-                gardiner_codes  = _clean_codes(w.get('gardiner_codes')),
-                literal         = str(w.get('literal', '')),
-                note            = str(w.get('note', '')),
-            ))
+        words = [
+            ReverseWord(
+                english         = w.english,
+                transliteration = w.transliteration,
+                gardiner_codes  = _clean_codes(w.gardiner_codes),
+                literal         = w.literal,
+                note            = w.note,
+            )
+            for w in parsed.words
+        ]
 
-        flat = _clean_codes(parsed.get('gardiner_codes'))
-        
+        flat = _clean_codes(parsed.gardiner_codes)
+
         if not flat and words:                      # fall back to per-word codes
             flat = [c for w in words for c in w.gardiner_codes]
 
-        confidence = parsed.get('confidence')
-        if confidence not in ('HIGH', 'MEDIUM', 'LOW'):
-            confidence = 'LOW'
-
         return ReverseTranslationOut(
             source_text        = text,
-            normalized_english = str(parsed.get('normalized_english', '')),
-            transliteration    = str(parsed.get('transliteration', '')),
+            normalized_english = parsed.normalized_english,
+            transliteration    = parsed.transliteration,
             gardiner_codes     = flat,
             words              = words,
-            grammar_notes      = str(parsed.get('grammar_notes', '')),
-            confidence         = confidence,
-            model              = settings.openai_model,
+            grammar_notes      = parsed.grammar_notes,
+            confidence         = parsed.confidence,
+            model              = usage.served_by,
         )

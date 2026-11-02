@@ -16,7 +16,7 @@ from tests.conftest import StubPipeline, make_raw_result
 
 
 # ---------------------------------------------------------------------------
-# Graceful degradation without OPENAI_API_KEY
+# Graceful degradation without ANTHROPIC_API_KEY
 # ---------------------------------------------------------------------------
 
 def test_transliteration_disabled_returns_error(no_api_key):
@@ -26,7 +26,7 @@ def test_transliteration_disabled_returns_error(no_api_key):
         ['G17'], [0.9], [], [],
         direction='rtl', layout='columns', ctx=TextContext(),
     )
-    assert out.error and 'OPENAI_API_KEY' in out.error
+    assert out.error and 'ANTHROPIC_API_KEY' in out.error
     assert out.chunks == [] and out.n_chunks == 0
 
 
