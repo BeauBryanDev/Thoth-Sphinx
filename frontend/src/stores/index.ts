@@ -6,3 +6,10 @@ export {
   MAX_REVERSE_CHARS,
   type ReverseStore,
 } from "./useReverseStore";
+export {
+  useReadingChatStore,
+  correctionKey,
+  REREAD_COOLDOWN_MS,
+  type ReadingChatStore,
+  type CorrectionStatus,
+} from "./useReadingChatStore";
