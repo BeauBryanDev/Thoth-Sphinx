@@ -17,6 +17,7 @@ const REASON_LABELS: Record<string, string> = {
   haiku_confident: "The first reading was clear, so no second opinion was needed.",
   haiku_requested_second_opinion: "The first reader asked for a second opinion.",
   most_lines_low_confidence: "Most lines were uncertain on the first reading.",
+  no_corpus_support: "The corpus found no parallel for any line of the first reading.",
   unresolved_cartouche: "A royal cartouche could not be matched to a known king.",
   detector_low_confidence: "Many signs were detected with low confidence.",
   escalation_disabled: "Second opinions are switched off on this server.",

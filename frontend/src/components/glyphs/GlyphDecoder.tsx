@@ -16,6 +16,10 @@ import {
 import { formatConfidence } from "@/utils/formatters";
 import { SignFrequencyChart } from "./SignFrequencyChart";
 import { ReadingProvenanceCard } from "./ReadingProvenanceCard";
+import { CorpusEvidenceCard } from "./CorpusEvidenceCard";
+import { AgentTrace } from "./AgentTrace";
+import { ReadingChatDrawer } from "@/components/chat/ReadingChatDrawer";
+import { useReadingChatStore } from "@/stores";
 
 // Controlled vocabularies — must match app/schemas/transliterations.py.
 // "unknown" first = default, for the tourist who knows nothing.
@@ -65,6 +69,7 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
     reset,
     decode,
   } = controller ?? internal;
+  const openReadingChat = useReadingChatStore((s) => s.openFor);
   const inputRef = useRef<HTMLInputElement>(null);
   const dragActiveRef = useRef(false);
 
@@ -369,6 +374,12 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
             {/* 4b. Who read it: first reader, router decision, second opinion. */}
             {result.reading && <ReadingProvenanceCard reading={result.reading} />}
 
+            {/* 4c. What the corpus said, line by line (TLA). */}
+            {result.evidence.length > 0 && <CorpusEvidenceCard evidence={result.evidence} />}
+
+            {/* 4d. The agent's full trace: turns, tool calls, router, escalation. */}
+            {result.trace.length > 0 && <AgentTrace trace={result.trace} />}
+
             {/* 5. YOLO-annotated detection image + download. */}
             {result.annotatedImage && (
               <div className="mt-3 rounded border border-amber-700/40 bg-stone-950/60 p-3">
@@ -392,6 +403,18 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
 
             {/* 6. Sign-frequency bar chart — basic detection stats. */}
             <SignFrequencyChart result={result} />
+
+            {/* 6b. Talk about this reading: opens the chat drawer with the reading as context. */}
+            <Button
+              type="button"
+              size="lg"
+              onClick={() => openReadingChat(result)}
+              leftIcon={<span aria-hidden>𓂀</span>}
+              className="mt-4 w-full rounded-xl border-2 text-sm font-bold uppercase tracking-[0.2em]"
+            >
+              Ask Thot-Sphinx about this reading
+            </Button>
+            <ReadingChatDrawer />
 
             {/* 7. Cross-check invitation. Lives here rather than under the
                 sign-confidence table, which grows unbounded on dense walls and

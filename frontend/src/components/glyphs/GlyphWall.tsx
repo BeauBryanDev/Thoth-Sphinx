@@ -29,17 +29,23 @@ interface GlyphCellProps {
 
 const GlyphCell = ({ code }: GlyphCellProps) => {
   const glyph = toHieroglyph(code);
+  // A real sign outside the detector's 148 classes (e.g. N28 confirmed by the user): show its code.
+  const unmapped = !glyph && code !== "Unknown" && code !== "unknown";
   return (
     <span
-      title={glyph ? code : "Undetected sign (lacuna)"}
+      title={glyph ? code : unmapped ? `${code} (no glyph in this font map)` : "Undetected sign (lacuna)"}
       className={`flex h-14 w-14 items-center justify-center rounded border ${
         glyph
           ? "border-amber-600/40 bg-stone-950/70 hover:border-amber-400/70"
-          : "border-stone-600/50 bg-stone-800/50"
+          : unmapped
+            ? "border-amber-500/60 bg-amber-950/50"
+            : "border-stone-600/50 bg-stone-800/50"
       } transition-colors`}
     >
       {glyph ? (
         <span className="font-hieroglyph glyph-gold text-[34px]">{glyph}</span>
+      ) : unmapped ? (
+        <span className="font-mono text-xs font-semibold text-amber-300">{code}</span>
       ) : (
         <span className="text-sm text-stone-500">▯</span>
       )}

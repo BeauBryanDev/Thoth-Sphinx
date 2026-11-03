@@ -2,7 +2,7 @@
 // <ChatPanel /> — the SphinxChat conversation UI
 // ============================================================
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import { Card, Button, Input } from "@/components/common";
 import { CHAT_SUGGESTIONS } from "@/constants";
@@ -10,6 +10,7 @@ import { useChat, type UseChatReturn } from "@/hooks/useChat";
 import { formatTime } from "@/utils/formatters";
 import { cn } from "@/utils/cn";
 import chatEyeIcon from "@/assets/chat_eye_icon.svg";
+import type { ChatMessage } from "@/types";
 
 const SphinxAvatar = () => (
   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-amber-700 p-1.5">
@@ -20,9 +21,27 @@ const SphinxAvatar = () => (
 interface ChatPanelProps {
   /** Share chat state with sibling panels (e.g. the Topics card). */
   controller?: UseChatReturn;
+  /** Overrides for other chat contexts (the reading chat drawer); defaults keep the Chat page as is. */
+  title?: string;
+  subtitle?: string;
+  icon?: ReactNode;
+  suggestions?: readonly string[];
+  placeholder?: string;
+  className?: string;
+  /** Extra content under an assistant message (tool calls, proposed corrections). */
+  renderExtras?: (message: ChatMessage) => ReactNode;
 }
 
-export const ChatPanel = ({ controller }: ChatPanelProps = {}) => {
+export const ChatPanel = ({
+  controller,
+  title = "SphinxChat",
+  subtitle = "Your AI expert on Ancient Egypt",
+  icon = "𓁹",
+  suggestions = CHAT_SUGGESTIONS.slice(0, 2),
+  placeholder = "Ask Sphinx…",
+  className,
+  renderExtras,
+}: ChatPanelProps = {}) => {
   // Hooks must run unconditionally; the internal instance is simply
   // unused when the page supplies a shared controller.
   const internal = useChat();
@@ -46,10 +65,10 @@ export const ChatPanel = ({ controller }: ChatPanelProps = {}) => {
 
   return (
     <Card
-      title="SphinxChat"
-      subtitle="Your AI expert on Ancient Egypt"
-      icon="𓁹"
-      className="flex h-full flex-col"
+      title={title}
+      subtitle={subtitle}
+      icon={icon}
+      className={cn("flex h-full flex-col", className)}
       bodyClassName="flex min-h-0 flex-1 flex-col"
     >
       <div
@@ -85,12 +104,13 @@ export const ChatPanel = ({ controller }: ChatPanelProps = {}) => {
                 {isUser ? (
                   <p className="whitespace-pre-wrap">{m.content}</p>
                 ) : (
-                  /* GPT-4o often answers in markdown (**bold**, lists,
+                  /* Claude often answers in markdown (**bold**, lists,
                      headings) — render it instead of showing raw marks. */
                   <div className="chat-markdown">
                     <ReactMarkdown>{m.content}</ReactMarkdown>
                   </div>
                 )}
+                {!isUser && renderExtras?.(m)}
                 <p className="mt-2 text-right text-[10px] text-amber-500/70">
                   {formatTime(m.timestamp)}
                 </p>
@@ -121,7 +141,7 @@ export const ChatPanel = ({ controller }: ChatPanelProps = {}) => {
 
       {/* Suggestion chips */}
       <div className="mb-3 flex flex-wrap gap-2">
-        {CHAT_SUGGESTIONS.slice(0, 2).map((s) => (
+        {suggestions.map((s) => (
           <button
             key={s}
             onClick={() => send(s)}
@@ -137,7 +157,7 @@ export const ChatPanel = ({ controller }: ChatPanelProps = {}) => {
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Ask Sphinx…"
+          placeholder={placeholder}
           disabled={isLoading}
           className="flex-1"
         />
