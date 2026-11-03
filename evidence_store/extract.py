@@ -12,7 +12,8 @@ from evidence_store.paths import BUILD_DIR, DATA_DIR
 # Same pattern as Sphinx's clean_gardiner_seq, so sign sequences stay comparable.
 SIGN_RE = re.compile(r'[A-Za-z]{1,3}[0-9]{1,3}[a-z]?')
 SUPERFLUOUS_RE = re.compile(r'\{[^}]*\}')
-EDITORIAL_RE = re.compile(r'[\[\]()⸢⸣〈〉?⸮!]')
+# Angle brackets in both forms: the raw text uses U+2329/U+232A, which NFC turns into U+3008/U+3009.
+EDITORIAL_RE = re.compile('[\\[\\]()⸢⸣〈〉〈〉?⸮!]')
 LACUNA_MARKERS = {'destruction_marker', 'DestroyedVersMarker'}
 
 # Passport paths whose values are thesaurus ids.

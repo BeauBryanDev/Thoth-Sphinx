@@ -27,6 +27,13 @@ def test_normalize_keeps_suffix_pronouns_and_restorations():
     assert ex.normalize_translit('〈r〉') == 'r'
 
 
+def test_normalize_drops_raw_angle_brackets():
+    # The raw export uses U+2329/U+232A, which NFC maps to U+3008/U+3009 after the regex runs.
+    assert ex.normalize_translit('p〈ꜣ〉') == 'pꜣ'
+    assert ex.normalize_translit('p〈ꜣ〉') == 'pꜣ'
+    assert '〈' not in ex.normalize_translit('〈nb〉 ḏ,t')
+
+
 def test_normalize_drops_surplus_and_doubt_marks():
     assert ex.normalize_translit('nfr{w}') == 'nfr'
     assert ex.normalize_translit('nfr?') == 'nfr'
