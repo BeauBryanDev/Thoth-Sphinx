@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from app.llm import mdc
 from evidence_store import confidence, rerank, retrieve
 
 CANDIDATES = 10
@@ -110,8 +111,11 @@ def search_parallels(signs: str | None = None,
                      use_rerank: bool = False
                      ) -> dict[str, Any]:
     
-    if not (signs and signs.strip()) and not (translit and translit.strip()):
+    # Claude writes MdC ASCII (kA-nxt); the corpus is Unicode Leiden (kꜣ-nḫt). Either is accepted.
+    translit = mdc.translit_query(translit) or None
+    if not (signs and signs.strip()) and not translit:
         raise ValueError('Give signs, a transliteration, or both.')
+    
     limit = clamp(limit, 1, MAX_LIMIT)
     
     filters: dict[str, Any] = {'date': date, 
@@ -136,8 +140,9 @@ def search_parallels(signs: str | None = None,
     details = sentence_details([hit['sentence_id'] for hit, _ in ranked])
     verdict = search_verdict(translit, ratings)
     
-    return {'verdict': verdict, 
-            'guide': VERDICT_GUIDE[verdict], 
+    return {'verdict': verdict,
+            'guide': VERDICT_GUIDE[verdict],
+            'query_translit': translit,
             'rerank': status,
             'hits': [{
                 'sentence_id': hit['sentence_id'], 
@@ -284,6 +289,7 @@ def lookup_entity(name: str,
                   limit: int = 3,
                   examples: int = 3
                   ) -> dict[str, Any]:
+                  
     name = required(name, 'A name')
     matches = retrieve.query(
         'SELECT id FROM find_entities(%(name)s, %(type)s, %(limit)s)', 

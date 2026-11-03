@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 import time
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -89,21 +90,37 @@ def enabled() -> bool:
     return bool(settings.anthropic_api_key)
 
 
-def complete_text(*, feature: str, model: str, system: str, messages: list[dict[str, Any]],
-                  effort: str, max_tokens: int = 4096) -> tuple[str, Usage]:
+def complete_text(*, feature: str, 
+model: str, 
+system: str,
+messages: list[dict[str, Any]],
+effort: str, 
+max_tokens: int = 4096
+) -> tuple[str, Usage]:
     """One call returning the reply's text."""
-    response, usage = _call(feature=feature, model=model, system=system, messages=messages,
-                            effort=effort, max_tokens=max_tokens, schema=None)
+    response, usage = _call(feature=feature, model=model,
+     system=system, messages=messages, tools=None,
+     effort=effort, max_tokens=max_tokens, schema=None)
+
     text = ''.join(b.text for b in response.content if b.type == 'text')
     _dump(feature, model, system, messages, text, usage)
+
     return text, usage
 
 
-def complete_parsed(*, feature: str, model: str, system: str, messages: list[dict[str, Any]],
-                    schema: type[T], effort: str, max_tokens: int = 8192) -> tuple[T, Usage]:
+def complete_parsed(*, feature: str, 
+model: str, 
+system: str,
+messages: list[dict[str, Any]],
+schema: type[T], 
+effort: str, 
+max_tokens: int = 8192
+) -> tuple[T, Usage]:
     """One call whose reply is validated against a pydantic schema."""
-    response, usage = _call(feature=feature, model=model, system=system, messages=messages,
-                            effort=effort, max_tokens=max_tokens, schema=schema)
+    response, usage = _call(feature=feature, model=model, 
+    system=system, messages=messages,
+                            effort=effort, 
+                            max_tokens=max_tokens, schema=schema, tools=None)
     parsed = response.parsed_output
     _dump(feature, model, system, messages,
           parsed.model_dump() if parsed is not None else None, usage)
@@ -113,7 +130,8 @@ def complete_parsed(*, feature: str, model: str, system: str, messages: list[dic
 
 
 def _call(*, feature: str, model: str, system: str, messages: list[dict[str, Any]],
-          effort: str, max_tokens: int, schema: type[BaseModel] | None) -> tuple[Any, Usage]:
+          effort: str, max_tokens: int, schema: type[BaseModel] | None,
+          tools: list[dict[str, Any]] | None = None) -> tuple[Any, Usage]:
     """Send one request and map stop reasons and SDK errors to LLMError."""
     client = get_client()
     if client is None:
@@ -127,6 +145,8 @@ def _call(*, feature: str, model: str, system: str, messages: list[dict[str, Any
         'messages'      : messages,
         'output_config' : {'effort': effort},
     }
+    if tools:
+        kwargs['tools'] = tools
     if model in FALLBACK_MODELS:
         kwargs['betas']     = [FALLBACK_BETA]
         kwargs['fallbacks'] = 'default'
@@ -162,6 +182,110 @@ def _call(*, feature: str, model: str, system: str, messages: list[dict[str, Any
         _dump(feature, model, system, messages, None, usage)
         raise LLMTruncated(f'{feature}: reply hit max_tokens={max_tokens}')
     return response, usage
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    """One tool call a model made, as recorded for the response and the trace."""
+    model      : str
+    tool       : str
+    input      : dict[str, Any]
+    summary    : str
+    ok         : bool
+    latency_ms : int
+    result     : dict[str, Any] | None   # compact result; None when the call failed
+
+
+BUDGET_SPENT = 'Tool budget spent for this reading. Answer now with what you have.'
+
+
+def _assistant_content(response: Any) -> list[dict[str, Any]]:
+    """The assistant turn to send back: every block unchanged, minus the SDK's parse cache."""
+    blocks = []
+    for block in response.content:
+        data = block.to_dict() if hasattr(block, 'to_dict') else dict(vars(block))
+        data.pop('parsed_output', None)
+        blocks.append(data)
+    return blocks
+
+
+def complete_parsed_with_tools(*, feature: str, model: str, system: str,
+                               messages: list[dict[str, Any]], schema: type[T], effort: str,
+                               tools: Sequence[Any], max_tool_calls: int, trace: Any = None,
+                               max_tokens: int = 16000
+                               ) -> tuple[T, list[Usage], list[ToolCall]]:
+    """Hand-written tool loop (spec §13): the model may call tools, then answers in the schema."""
+    by_name = {t.name: t for t in tools}
+    definitions = [t.definition() for t in tools]
+    history = list(messages)
+    usages: list[Usage] = []
+    calls: list[ToolCall] = []
+
+    for turn in range(max_tool_calls + 2):
+        response, usage = _call(feature=feature, model=model, system=system, messages=history,
+                                effort=effort, max_tokens=max_tokens, schema=schema,
+                                tools=definitions)
+        usages.append(usage)
+        uses = [b for b in response.content if getattr(b, 'type', None) == 'tool_use']
+        if trace is not None:
+            trace.add_usage(usage, f'turn {turn + 1}: ' + (
+                f'calls {", ".join(u.name for u in uses)}' if uses else 'final answer'))
+
+        if response.stop_reason != 'tool_use' or not uses:
+            parsed = response.parsed_output
+            _dump(feature, model, system, history,
+                  parsed.model_dump() if parsed is not None else None, usage)
+            if parsed is None:
+                raise LLMError(f'{feature}: reply did not match {schema.__name__}')
+            return parsed, usages, calls
+
+        results = []
+        for use in uses:
+            results.append(_run_tool(model, use, by_name, calls, max_tool_calls, trace))
+        history = history + [{'role': 'assistant', 'content': _assistant_content(response)},
+                             {'role': 'user', 'content': results}]
+
+    raise LLMError(f'{feature}: no final answer after {max_tool_calls + 2} turns')
+
+
+def _run_tool(model: str, use: Any, by_name: dict[str, Any], calls: list[ToolCall],
+              max_tool_calls: int, trace: Any) -> dict[str, Any]:
+    """Run one tool_use block; every outcome becomes a tool_result, errors included."""
+    tool_input = dict(use.input or {})
+    if len(calls) >= max_tool_calls:
+        content, ok, result = BUDGET_SPENT, False, None
+        summary = 'refused: tool budget spent'
+        latency = 0
+    elif use.name not in by_name:
+        content, ok, result = f'Unknown tool {use.name}.', False, None
+        summary, latency = 'unknown tool', 0
+    else:
+        started = time.monotonic()
+        try:
+            result = by_name[use.name].run(**tool_input)
+            content, ok = json.dumps(result, ensure_ascii=False, default=str), True
+            summary = _summarize(use.name, result)
+        except Exception as e:  # tool errors go back to the model, never swallowed (spec §12)
+            log.warning('tool %s failed: %s', use.name, e)
+            content, ok, result = f'Tool error: {e}', False, None
+            summary = f'error: {e}'
+        latency = int((time.monotonic() - started) * 1000)
+
+    calls.append(ToolCall(model=model, tool=use.name, input=tool_input, summary=summary,
+                          ok=ok, latency_ms=latency, result=result))
+    if trace is not None:
+        trace.add('tool_call', use.name, summary, latency_ms=latency,
+                  detail={'called_by': model, 'input': tool_input, 'ok': ok})
+    block: dict[str, Any] = {'type': 'tool_result', 'tool_use_id': use.id, 'content': content}
+    if not ok:
+        block['is_error'] = True
+    return block
+
+
+def _summarize(name: str, result: dict[str, Any]) -> str:
+    """Trace line for a tool result; agent_tools knows the shapes."""
+    from app.llm.agent_tools import summarize  # local import: agent_tools imports the DB layer
+    return summarize(name, result)
 
 
 def _usage(feature: str, model: str, response: Any, latency_ms: int) -> Usage:

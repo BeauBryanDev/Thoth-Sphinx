@@ -53,15 +53,25 @@ class Settings(BaseSettings):
     anthropic_api_key   : str   = ''
     haiku_model         : str   = 'claude-haiku-5-5'
     sonnet_model        : str   = 'claude-sonnet-5-5'
-    translit_model      : str   = 'claude-haiku-5-5'   # first reader (default since 2026-11-02)
-    # Escalation to a Sonnet second opinion (app/llm/router.py). Thresholds are
+    translit_model      : str   = 'claude-haiku-5-5'   # first reader it was best LLM for this task
+    # Escalation to a Sonnet second opinion by deterministically calling the router. Thresholds are
     # provisional hand-set defaults until Phase 3 calibration replaces them.
     translit_escalation : bool  = True
     review_model        : str   = 'claude-sonnet-5-5'
     review_effort       : str   = 'medium'
     router_max_low_line_share     : float = 0.5
     router_max_detector_low_share : float = 0.35
+    # Corpus tools for the whole-wall read (app/llm/agent_tools.py); off = no tool loop
+    translit_tools      : bool  = True
+    haiku_tool_budget   : int   = 5
+    sonnet_tool_budget  : int   = 3
     chat_effort         : str   = 'low'
+    reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
+    reading_chat_tool_budget : int = 3
+    reading_chat_history     : int = 12    # messages of the conversation sent each turn
+    # Apply & re-read (a /transliterate/ call with human_corrections): once per client IP per
+    # window. 0 disables the limit (local testing). In-memory, per process.
+    reread_cooldown_s        : int = 3600
     translit_effort     : str   = 'medium'
     reverse_effort      : str   = 'medium'
     llm_timeout         : float = 120.0  # seconds per request, SDK retries on top
