@@ -5,6 +5,7 @@ import logging
 import uuid
 
 from app import llm
+from app.core import guards
 from app.core.config import settings
 
 logger = logging.getLogger('sphinxeyes.chat')
@@ -70,20 +71,25 @@ class ChatService:
             raise RuntimeError('ANTHROPIC_API_KEY not configured — chat disabled.')
 
         trimmed = [
-            {'role': m['role'], 'content': str(m['content'])[:MAX_PROMPT_CHARS]}
+            guards.chat_turn(
+                m['role'],
+                str(m['content'])[:MAX_PROMPT_CHARS],
+            )
             for m in history[-MAX_HISTORY_MESSAGES:]
             if m.get('role') in ('user', 'assistant') and m.get('content')
         ]
         # Claude needs the conversation to open with a user turn (the UI greeting is an assistant turn).
         while trimmed and trimmed[0]['role'] != 'user':
             trimmed.pop(0)
-        messages = trimmed + [{'role': 'user', 'content': prompt[:MAX_PROMPT_CHARS]}]
+        messages = trimmed + [
+            guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS]),
+        ]
 
         # No temperature on current Claude models: the persona carries the tone.
         reply, _ = llm.complete_text(
             feature    = 'chat',
             model      = settings.haiku_model,
-            system     = SPHINX_PERSONA,
+            system     = SPHINX_PERSONA + guards.USER_TEXT_RULE,
             messages   = messages,
             effort     = settings.chat_effort,
             max_tokens = MAX_REPLY_TOKENS,

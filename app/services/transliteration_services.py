@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app import llm
 from app.core.config import settings
+from app.core.guards import public_message
 from app.llm import agent_tools, images, router
 from app.llm.trace import Trace
 from app.schemas.transliterations import (
@@ -448,7 +449,7 @@ class TransliterationService:
                 return TransliterationOut(
                     chunks=[], full_transliteration='', full_translation='',
                     model=settings.translit_model, n_chunks=0,
-                    error=f'LLM call failed on the whole inscription: {e}',
+                    error=f'Reading the whole inscription failed: {public_message(e)}',
                 )
 
         chunks = segment_into_chunks(
@@ -502,7 +503,7 @@ class TransliterationService:
                     full_transliteration=' | '.join(r.transliteration for r in results),
                     full_translation=' '.join(r.english_gloss for r in results),
                     model=served_by, n_chunks=len(chunks),
-                    error=f'LLM call failed on segment {i + 1}/{len(chunks)}: {e}',
+                    error=f'Reading segment {i + 1}/{len(chunks)} failed: {public_message(e)}',
                 )
 
             results.append(ChunkTransliteration(
@@ -677,6 +678,7 @@ def _line_evidence(result: dict, searched_by: str) -> LineEvidence:
             transliteration=h.get('transliteration') or '', translation=h.get('translation') or '',
             translation_lang=h.get('translation_lang') or 'de', date=h.get('date'),
             text_name=h.get('text_name'), matched_by=list(h.get('matched_by') or []))
+            
     return LineEvidence(line=int(result['line']), verdict=result.get('verdict') or 'unrated',
                         query_translit=result.get('query_translit'), best=best,
                         searched_by=searched_by)

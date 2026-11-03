@@ -17,7 +17,9 @@ class AgentTool:
 
     def definition(self) -> dict[str, Any]:
         """The Messages API tool definition."""
-        return {'name': self.name, 'description': self.description, 'input_schema': self.schema}
+        return {'name': self.name, 
+                'description': self.description,
+                'input_schema': self.schema}
 
 
 def _clip(text: Any) -> str:
@@ -42,10 +44,15 @@ def compact_hit(hit: dict[str, Any]) -> dict[str, Any]:
 
 def run_search_parallels(line: int, translit: str = '', signs: str = '') -> dict[str, Any]:
     """search_parallels for one numbered line, trimmed for the model."""
-    result = tools.search_parallels(signs=signs or None, translit=translit or None, limit=3)
-    return {'line': line, 'verdict': result['verdict'], 'guide': result['guide'],
+    result = tools.search_parallels(signs=signs or None,
+                                    translit=translit or None, limit=3)
+
+    return {'line': line,
+            'verdict': result['verdict'], 
+            'guide': result['guide'],
             'query_translit': result.get('query_translit'),
-            'hits': [compact_hit(h) for h in result['hits']]}
+            'hits': [compact_hit(h) for h in result['hits']]
+            }
 
 
 def run_lookup_lemma(word: str) -> dict[str, Any]:
@@ -74,7 +81,7 @@ SEARCH_PARALLELS = AgentTool(
                  'their dates. "none" is normal: most sentences have no parallel. A parallel proves '
                  'the phrase is real Egyptian, not that it is carved here.'),
     schema={'type': 'object', 'properties': {
-        'line'    : {'type': 'integer', 'description': 'the numbered line this search is for'},
+    'line'    : {'type': 'integer', 'description': 'the numbered line this search is for'},
         'translit': {'type': 'string', 'description': 'your transliteration of that line'},
         'signs'   : {'type': 'string', 'description': "the line's Gardiner codes, space-separated"},
     }, 'required': ['line', 'translit']},
@@ -119,4 +126,5 @@ def summarize(name: str, result: dict[str, Any]) -> str:
         ents = result.get('entities') or []
         return f"{result.get('found', 0)} entities" + (
             f" — {ents[0].get('name')} ({ents[0].get('type')})" if ents else '')
+
     return 'done'

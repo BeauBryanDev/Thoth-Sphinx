@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     # Apply & re-read (a /transliterate/ call with human_corrections): once per client IP per
     # window. 0 disables the limit (local testing). In-memory, per process.
     reread_cooldown_s        : int = 3600
+    # Guardrails (app/core/guards.py), in memory and per process like the re-read limit.
+    # 0 disables each one (local testing).
+    llm_requests_per_window  : int   = 20     # any LLM route, per client IP...
+    llm_window_s             : int   = 600    # ...per 10 minutes
+    translit_runs_per_day    : int   = 5      # transliterations (re-reads included) per client IP per UTC day
+    daily_budget_usd         : float = 3.0    # whole agent, all clients; checked before every LLM call
     translit_effort     : str   = 'medium'
     reverse_effort      : str   = 'medium'
     llm_timeout         : float = 120.0  # seconds per request, SDK retries on top

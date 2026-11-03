@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.core import guards
+from app.core.guards import MAX_HISTORY_TURNS, TurnText
 from app.services.sphinx_chat import ChatService
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -16,12 +18,12 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 # history each turn  — the LLM is stateless and remembers nothing.
 class ChatTurn(BaseModel):
     role    : Literal['user', 'assistant']
-    content : str
+    content : TurnText
 
 
 class ChatRequest(BaseModel):
     prompt  : str = Field(..., min_length=1, max_length=4000)
-    history : list[ChatTurn] = []
+    history : list[ChatTurn] = Field(default_factory=list, max_length=MAX_HISTORY_TURNS)
 
 
 class ChatResponse(BaseModel):
@@ -30,7 +32,7 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/", response_model=ChatResponse)
-async def chat(body: ChatRequest) -> ChatResponse:
+async def chat(body: ChatRequest, _: str = Depends(guards.check_llm)) -> ChatResponse:
 
     service = ChatService()
 
@@ -46,6 +48,6 @@ async def chat(body: ChatRequest) -> ChatResponse:
         )
     except Exception as e:
 
-        raise HTTPException(status_code=502, detail=f"Chat backend error: {e}")
+        raise guards.upstream_error('chat', e) from e
 
     return ChatResponse(reply=reply, message_id=message_id)

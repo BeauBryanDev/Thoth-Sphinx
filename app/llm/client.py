@@ -12,6 +12,7 @@ from typing import Any, TypeVar
 import anthropic
 from pydantic import BaseModel
 
+from app.core import ratelimit
 from app.core.config import settings
 from app.llm.pricing import estimate_cost
 
@@ -50,6 +51,10 @@ class LLMTruncated(LLMError):
 
 class LLMUnavailable(LLMError):
     """Retryable failure: rate limit, overload, server error or network."""
+
+
+class LLMBudgetSpent(LLMUnavailable):
+    """Today's global LLM budget (settings.daily_budget_usd) is spent."""
 
 
 class LLMRequestError(LLMError):
@@ -98,9 +103,14 @@ effort: str,
 max_tokens: int = 4096
 ) -> tuple[str, Usage]:
     """One call returning the reply's text."""
-    response, usage = _call(feature=feature, model=model,
-     system=system, messages=messages, tools=None,
-     effort=effort, max_tokens=max_tokens, schema=None)
+    response, usage = _call(feature=feature,
+                            model=model,
+                            system=system,
+                            messages=messages, 
+                            tools=None,
+                            effort=effort,
+                            max_tokens=max_tokens,
+                            schema=None)
 
     text = ''.join(b.text for b in response.content if b.type == 'text')
     _dump(feature, model, system, messages, text, usage)
@@ -117,36 +127,57 @@ effort: str,
 max_tokens: int = 8192
 ) -> tuple[T, Usage]:
     """One call whose reply is validated against a pydantic schema."""
-    response, usage = _call(feature=feature, model=model, 
-    system=system, messages=messages,
+    response, usage = _call(feature=feature,
+                            model=model, 
+                            system=system,
+                            messages=messages,        
                             effort=effort, 
-                            max_tokens=max_tokens, schema=schema, tools=None)
+                            max_tokens=max_tokens,
+                            schema=schema, 
+                            tools=None)
+
     parsed = response.parsed_output
-    _dump(feature, model, system, messages,
-          parsed.model_dump() if parsed is not None else None, usage)
+
+    _dump(feature, model, 
+        system, messages,
+        parsed.model_dump() if parsed is not None else None, usage ) 
+
     if parsed is None:
         raise LLMError(f'{feature}: reply did not match {schema.__name__}')
+
     return parsed, usage
 
-
-def _call(*, feature: str, model: str, system: str, messages: list[dict[str, Any]],
-          effort: str, max_tokens: int, schema: type[BaseModel] | None,
-          tools: list[dict[str, Any]] | None = None) -> tuple[Any, Usage]:
+# Helper  _CaLL
+def _call(*, feature: str, 
+            model: str, system: str, 
+            messages: list[dict[str, Any]],
+            effort: str, 
+            max_tokens: int, 
+            schema: type[BaseModel] | None,
+            tools: list[dict[str, Any]] | None = None
+            ) -> tuple[Any, Usage]:
     """Send one request and map stop reasons and SDK errors to LLMError."""
     client = get_client()
     if client is None:
         raise LLMDisabled('ANTHROPIC_API_KEY is not set')
+    # Checked per call, so a tool loop or a review stops as soon as the day's budget is gone.
+    if ratelimit.SPEND.exhausted(settings.daily_budget_usd):
+        raise LLMBudgetSpent(f'{feature}: daily LLM budget of ${settings.daily_budget_usd:.2f} spent')
 
     # Static system prompt first and cached: it is identical across calls of a feature.
     kwargs: dict[str, Any] = {
         'model'         : model,
         'max_tokens'    : max_tokens,
-        'system'        : [{'type': 'text', 'text': system, 'cache_control': {'type': 'ephemeral'}}],
+        'system'        : [{'type': 'text', 
+                            'text': system, 
+                            'cache_control': {'type': 'ephemeral'}
+        }],
         'messages'      : messages,
         'output_config' : {'effort': effort},
     }
     if tools:
         kwargs['tools'] = tools
+
     if model in FALLBACK_MODELS:
         kwargs['betas']     = [FALLBACK_BETA]
         kwargs['fallbacks'] = 'default'
@@ -157,30 +188,43 @@ def _call(*, feature: str, model: str, system: str, messages: list[dict[str, Any
             response = client.beta.messages.create(**kwargs)
         else:
             response = client.beta.messages.parse(output_format=schema, **kwargs)
+
     except (anthropic.BadRequestError, anthropic.AuthenticationError,
             anthropic.PermissionDeniedError, anthropic.NotFoundError) as e:
         raise LLMRequestError(f'{feature}: {e.status_code} {e.message}') from e
+
     except anthropic.RateLimitError as e:
         raise LLMUnavailable(f'{feature}: rate limited') from e
+
     except anthropic.APIStatusError as e:
         if e.status_code >= 500:
             raise LLMUnavailable(f'{feature}: server error {e.status_code}') from e
+
         raise LLMRequestError(f'{feature}: {e.status_code} {e.message}') from e
+
     except anthropic.APIConnectionError as e:
         raise LLMUnavailable(f'{feature}: connection failed') from e
 
     usage = _usage(feature, model, response, int((time.monotonic() - started) * 1000))
+    if usage.cost_usd is None:
+        log.warning('no price for %s: this call is not counted against the daily budget', usage.served_by)
+    ratelimit.SPEND.add(usage.cost_usd or 0.0)
     log.info('llm %s model=%s served_by=%s in=%d out=%d cache_read=%d cost=%s ms=%d',
-             feature, model, usage.served_by, usage.input_tokens, usage.output_tokens,
-             usage.cache_read, usage.cost_usd, usage.latency_ms)
+                feature, model, usage.served_by, usage.input_tokens,
+                usage.output_tokens,
+                usage.cache_read, 
+                usage.cost_usd, 
+                usage.latency_ms)
 
     if response.stop_reason == 'refusal':
         details = response.stop_details
         _dump(feature, model, system, messages, None, usage)
         raise LLMRefusal(getattr(details, 'category', None), getattr(details, 'explanation', None))
+
     if response.stop_reason == 'max_tokens':
         _dump(feature, model, system, messages, None, usage)
         raise LLMTruncated(f'{feature}: reply hit max_tokens={max_tokens}')
+
     return response, usage
 
 
@@ -209,12 +253,16 @@ def _assistant_content(response: Any) -> list[dict[str, Any]]:
     return blocks
 
 
-def complete_parsed_with_tools(*, feature: str, model: str, system: str,
-                               messages: list[dict[str, Any]], schema: type[T], effort: str,
-                               tools: Sequence[Any], max_tool_calls: int, trace: Any = None,
-                               max_tokens: int = 16000
-                               ) -> tuple[T, list[Usage], list[ToolCall]]:
-    """Hand-written tool loop (spec §13): the model may call tools, then answers in the schema."""
+def complete_parsed_with_tools(*, feature: str, 
+                            model: str, system: str,
+                            messages: list[dict[str, Any]],
+                            schema: type[T], effort: str,
+                            tools: Sequence[Any],
+                            max_tool_calls: int,
+                            trace: Any = None,
+                            max_tokens: int = 16000
+                            ) -> tuple[T, list[Usage], list[ToolCall]]:
+    """Hand-written tool loop : the model may call tools, then answers in the schema."""
     by_name = {t.name: t for t in tools}
     definitions = [t.definition() for t in tools]
     history = list(messages)
@@ -222,9 +270,15 @@ def complete_parsed_with_tools(*, feature: str, model: str, system: str,
     calls: list[ToolCall] = []
 
     for turn in range(max_tool_calls + 2):
-        response, usage = _call(feature=feature, model=model, system=system, messages=history,
-                                effort=effort, max_tokens=max_tokens, schema=schema,
+        response, usage = _call(feature=feature, 
+                                model=model, 
+                                system=system, 
+                                messages=history,
+                                effort=effort, 
+                                max_tokens=max_tokens,
+                                schema=schema,
                                 tools=definitions)
+
         usages.append(usage)
         uses = [b for b in response.content if getattr(b, 'type', None) == 'tool_use']
         if trace is not None:
@@ -235,21 +289,31 @@ def complete_parsed_with_tools(*, feature: str, model: str, system: str,
             parsed = response.parsed_output
             _dump(feature, model, system, history,
                   parsed.model_dump() if parsed is not None else None, usage)
+
             if parsed is None:
                 raise LLMError(f'{feature}: reply did not match {schema.__name__}')
+
             return parsed, usages, calls
 
         results = []
         for use in uses:
             results.append(_run_tool(model, use, by_name, calls, max_tool_calls, trace))
-        history = history + [{'role': 'assistant', 'content': _assistant_content(response)},
-                             {'role': 'user', 'content': results}]
+
+        history = history + [{'role': 'assistant', 
+                            'content': _assistant_content(response)},
+                             {'role': 'user', 
+                             'content': results}
+                             ]
 
     raise LLMError(f'{feature}: no final answer after {max_tool_calls + 2} turns')
 
 
-def _run_tool(model: str, use: Any, by_name: dict[str, Any], calls: list[ToolCall],
-              max_tool_calls: int, trace: Any) -> dict[str, Any]:
+def _run_tool(model: str, 
+            use: Any, 
+            by_name: dict[str, Any], 
+            calls: list[ToolCall],
+            max_tool_calls: int, 
+            trace: Any) -> dict[str, Any]:
     """Run one tool_use block; every outcome becomes a tool_result, errors included."""
     tool_input = dict(use.input or {})
     if len(calls) >= max_tool_calls:
@@ -271,14 +335,24 @@ def _run_tool(model: str, use: Any, by_name: dict[str, Any], calls: list[ToolCal
             summary = f'error: {e}'
         latency = int((time.monotonic() - started) * 1000)
 
-    calls.append(ToolCall(model=model, tool=use.name, input=tool_input, summary=summary,
-                          ok=ok, latency_ms=latency, result=result))
+    calls.append(ToolCall(model=model, tool=use.name, 
+                          input=tool_input, summary=summary,
+                          ok=ok, latency_ms=latency, 
+                          result=result))
+                          
     if trace is not None:
         trace.add('tool_call', use.name, summary, latency_ms=latency,
-                  detail={'called_by': model, 'input': tool_input, 'ok': ok})
-    block: dict[str, Any] = {'type': 'tool_result', 'tool_use_id': use.id, 'content': content}
+                  detail={'called_by': model, 'input': tool_input, 'ok': ok}
+                  )
+    block: dict[str, Any] = {
+                            'type': 'tool_result', 
+                            'tool_use_id': use.id, 
+                            'content': content
+                            }
+                            
     if not ok:
         block['is_error'] = True
+
     return block
 
 
@@ -288,7 +362,11 @@ def _summarize(name: str, result: dict[str, Any]) -> str:
     return summarize(name, result)
 
 
-def _usage(feature: str, model: str, response: Any, latency_ms: int) -> Usage:
+def _usage(feature: str, 
+model: str, 
+response: Any, 
+latency_ms: int
+) -> Usage:
     """Build a Usage record from a response."""
     u = response.usage
     iterations = getattr(u, 'iterations', None) or []
@@ -299,7 +377,10 @@ def _usage(feature: str, model: str, response: Any, latency_ms: int) -> Usage:
     cache_read    = u.cache_read_input_tokens or 0
     cache_write   = u.cache_creation_input_tokens or 0
     # Priced at the serving model's rate; after a fallback this is an estimate across hops.
-    cost = estimate_cost(served_by, input_tokens, output_tokens, cache_read, cache_write)
+    cost = estimate_cost(served_by, input_tokens,
+                        output_tokens, cache_read, 
+                        cache_write)
+
     return Usage(feature=feature, model=model, served_by=served_by,
                  input_tokens=input_tokens, output_tokens=output_tokens,
                  cache_read=cache_read, cache_write=cache_write, cost_usd=cost,
@@ -314,15 +395,21 @@ def _redact_images(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         content = msg.get('content')
         if not isinstance(content, list):
             continue
+
         for block in content:
             source = block.get('source') if isinstance(block, dict) else None
             if isinstance(source, dict) and source.get('type') == 'base64':
                 source['data'] = f'<{len(source.get("data", ""))} base64 chars>'
+
     return out
 
 
-def _dump(feature: str, model: str, system: str, messages: list[dict[str, Any]],
-          reply: Any, usage: Usage) -> None:
+def _dump(feature: str, 
+model: str, 
+system: str, 
+messages: list[dict[str, Any]],
+reply: Any, usage: Usage
+) -> None:
     """Write the exchange to debug_prompts/ when SPHINX_DEBUG_PROMPTS is on."""
     if not settings.debug_prompts:
         return
@@ -330,8 +417,17 @@ def _dump(feature: str, model: str, system: str, messages: list[dict[str, Any]],
         DEBUG_DIR.mkdir(exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
         path = DEBUG_DIR / f'{stamp}_{feature}.json'
-        payload = {'feature': feature, 'model': model, 'system': system,
-                   'messages': _redact_images(messages), 'reply': reply, 'usage': asdict(usage)}
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
+
+        payload = {
+            'feature': feature, 
+            'model': model, 
+            'system': system,
+            'messages': _redact_images(messages),
+            'reply': reply, 
+            'usage': asdict(usage)
+             }
+        path.write_text(json.dumps(payload, ensure_ascii=False, 
+                                    indent=2, default=str))
+
     except OSError as e:
         log.warning('debug_prompts dump failed: %s', e)

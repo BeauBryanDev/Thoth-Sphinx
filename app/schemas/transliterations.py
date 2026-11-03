@@ -5,6 +5,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.core.guards import MAX_CARTOUCHES, MAX_CODES, CartoucheName, ContextText, GardinerCode
+
 
 # Controlled vocabularies. 'unknown' is always first = default.
 Period = Literal[
@@ -39,9 +41,9 @@ class TextContext(BaseModel):
     text_type       : TextType     = 'unknown'
     support         : Support      = 'unknown'
     location_type   : LocationType = 'unknown'
-    site            : str          = 'unknown'   # free text: "Karnak", "Saqqara"...
-    dynasty         : str          = 'unknown'   # free text: "IV", "XVIII"...
-    kings_reign     : str          = 'unknown'   # free text: "Thutmose III"...
+    site            : ContextText  = 'unknown'   # free text: "Karnak", "Saqqara"...
+    dynasty         : ContextText  = 'unknown'   # free text: "IV", "XVIII"...
+    kings_reign     : ContextText  = 'unknown'   # free text: "Thutmose III"...
 
 
 class ChunkTransliteration(BaseModel):
@@ -60,8 +62,8 @@ class HumanCorrection(BaseModel):
     """A sign the user checked against the stone and corrected (human in the loop)."""
     line      : int = Field(..., ge=1)        # 1-based line of the previous reading
     position  : int = Field(..., ge=1)        # 1-based sign position within that line
-    from_code : str                           # what the detector had
-    to_code   : str                           # what the user confirmed
+    from_code : GardinerCode                  # what the detector had
+    to_code   : GardinerCode                  # what the user confirmed
 
 
 class TransliterateRequest(BaseModel):
@@ -71,10 +73,11 @@ class TransliterateRequest(BaseModel):
     corrected codes, per-slot top-1 confidences, line boundaries and any
     matched cartouches, plus the user-filled archaeological context.
     """
-    codes           : list[str]
-    confidences     : list[float] = []       # empty -> assume 0.5 everywhere
-    boundary_hints  : list[int]   = []
-    cartouche_names : list[str]   = []       # e.g. "mn-xpr-ra — Thutmose III (...)"
+    # Capped and pattern-checked: every item reaches the prompt, and the count sets the cost.
+    codes           : list[GardinerCode] = Field(..., max_length=MAX_CODES)
+    confidences     : list[float] = Field(default_factory=list, max_length=MAX_CODES)  # empty -> 0.5 everywhere
+    boundary_hints  : list[int]   = Field(default_factory=list, max_length=MAX_CODES)
+    cartouche_names : list[CartoucheName] = Field(default_factory=list, max_length=MAX_CARTOUCHES)  # "mn-xpr-ra — Thutmose III (...)"
     direction       : Literal['rtl', 'ltr'] = 'rtl'
     layout          : Literal['rows', 'columns'] = 'rows'
     context         : TextContext = TextContext()

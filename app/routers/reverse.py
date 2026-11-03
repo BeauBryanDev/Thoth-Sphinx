@@ -1,8 +1,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core import guards
 from app.schemas.reverse_translation import (
     ReverseTranslateRequest,
     ReverseTranslationOut,
@@ -17,7 +18,8 @@ router = APIRouter(prefix='/reverse', tags=['reverse'])
 # not involved). Stateless like the rest of the API.
 
 @router.post('/', response_model=ReverseTranslationOut)
-async def reverse_translate(body: ReverseTranslateRequest) -> ReverseTranslationOut:
+async def reverse_translate(body: ReverseTranslateRequest,
+                            _: str = Depends(guards.check_llm)) -> ReverseTranslationOut:
 
     service = ReverseTranslationService()
 
@@ -31,6 +33,6 @@ async def reverse_translate(body: ReverseTranslateRequest) -> ReverseTranslation
 
     if result.error:
         raise HTTPException(status_code=502,
-                            detail=f'Reverse translation failed: {result.error}')
+                            detail=f'Reverse translation failed: {result.error}')   # already public_message()
 
     return result

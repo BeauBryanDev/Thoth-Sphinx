@@ -19,13 +19,16 @@ def create_app() -> FastAPI:
         lifespan    = lifespan,
     )
  
-    # CORS: open during development, tighten for production via env vars
+    # CORS: open during development; on the VPS set CORS_ORIGINS='["https://<your-domain>"]'.
+    # No cookies are used (the bearer token is a header), so credentials stay off.
+    # The guard headers are exposed so the browser can show "try again at HH:MM".
     app.add_middleware(
         CORSMiddleware,
         allow_origins     = settings.cors_origins,
-        allow_credentials = True,
+        allow_credentials = False,
         allow_methods     = ['*'],
         allow_headers     = ['*'],
+        expose_headers    = ['Retry-After', 'X-Guard'],
     )
  
     register_exception_handlers(app)

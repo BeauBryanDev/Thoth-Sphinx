@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Literal
 
 from pydantic import BaseModel
 
 from app import llm
 from app.core.config import settings
+from app.core.guards import (
+    CODE_RE,
+    USER_TEXT_RULE,
+    fence_user_text,
+    public_message,
+)
 from app.schemas.reverse_translation import (
     ReverseTranslationOut,
     ReverseWord,
@@ -31,7 +36,7 @@ logger = logging.getLogger('sphinxeyes.reverse')
 
 # Canonical Gardiner code shape: category letter(s) + number + optional
 # variant letter, e.g. M17, Aa1, N35, W25a. Used to sanitize LLM output.
-_CODE_RE = re.compile(r'^(?:[A-Z]|Aa|NL|NU)\d{1,3}[a-z]?$')
+_CODE_RE = CODE_RE
 
 SYSTEM_PROMPT = """You are an expert Egyptologist and philologist specializing in Middle Egyptian \
 (the classical language of Dynasties XI-XVIII). Your task is REVERSE translation — composition: \
@@ -114,7 +119,7 @@ def _build_user_prompt(text: str, register: str) -> str:
            if register == 'unknown' else f'the {register} register')
     return (
         f'Render the following English into Middle Egyptian, using {reg}.\n'
-        f'ENGLISH TEXT:\n{text}\n\n'
+        f'ENGLISH TEXT:\n{fence_user_text(text)}\n\n'
         f'Apply the three stages and answer with the JSON object only.'
     )
 
@@ -158,8 +163,13 @@ class ReverseTranslationService:
             parsed, usage = llm.complete_parsed(
                 feature    = 'reverse',
                 model      = settings.sonnet_model,
-                system     = SYSTEM_PROMPT,
-                messages   = [{'role': 'user', 'content': _build_user_prompt(text, register)}],
+                system     = SYSTEM_PROMPT + USER_TEXT_RULE,
+                messages   = [
+                    {
+                        'role': 'user',
+                        'content': _build_user_prompt(text, register),
+                    },
+                ],
                 schema     = _ReverseReply,
                 effort     = settings.reverse_effort,
                 max_tokens = MAX_REPLY_TOKENS,
@@ -171,7 +181,7 @@ class ReverseTranslationService:
             return ReverseTranslationOut(
                 source_text=text, normalized_english='', transliteration='',
                 gardiner_codes=[], model=settings.sonnet_model,
-                error=f'LLM call failed: {e}',
+                error=public_message(e),
             )
 
         words = [

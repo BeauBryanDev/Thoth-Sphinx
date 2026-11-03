@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app import llm
+from app.core import guards
 from app.llm import images
 from app.schemas.reading_chat import ReadingChatRequest, ReadingChatResponse
 from app.services.reading_chat import ReadingChatService
@@ -13,7 +14,7 @@ router = APIRouter(prefix='/chat/reading', tags=['chat'])
 
 
 @router.post('/', response_model=ReadingChatResponse)
-def reading_chat(body: ReadingChatRequest) -> ReadingChatResponse:
+def reading_chat(body: ReadingChatRequest, _: str = Depends(guards.check_llm)) -> ReadingChatResponse:
     service = ReadingChatService()
     if not service.enabled:
         raise HTTPException(status_code=503, detail='Chat is unavailable: ANTHROPIC_API_KEY not configured.')
@@ -31,4 +32,4 @@ def reading_chat(body: ReadingChatRequest) -> ReadingChatResponse:
         return service.reply(body.prompt, body.history, body.reading, image_bgr)
         
     except llm.LLMError as e:
-        raise HTTPException(status_code=502, detail=f'Chat backend error: {e}') from e
+        raise guards.upstream_error('reading_chat', e) from e

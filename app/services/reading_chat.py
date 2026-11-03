@@ -1,12 +1,13 @@
 import logging
-import re
 import uuid
 
 import numpy as np
 from pydantic import BaseModel
 
 from app import llm
+from app.core import guards
 from app.core.config import settings
+from app.core.guards import CODE_RE
 from app.llm import agent_tools, images
 from app.schemas.reading_chat import (
     ReadingChatResponse,
@@ -20,7 +21,6 @@ from app.services.sphinx_chat import MAX_PROMPT_CHARS, SPHINX_PERSONA
 logger = logging.getLogger('sphinxeyes.reading_chat')
 
 MAX_REPLY_TOKENS = 16000
-CODE_RE = re.compile(r'^(?:[A-Z]|Aa|NL|NU)\d{1,3}[a-z]?$')
 
 # The persona stays word for word; this only says what the conversation is about.
 READING_RULES = """
@@ -57,9 +57,10 @@ def snapshot_text(reading: ReadingSnapshot) -> str:
             row.append(f'  gloss: {ln.gloss}')
         ev = evidence.get(ln.line)
         if ev:
-            best = (f' — closest: {ev.best.transliteration[:100]} ({ev.best.date or "undated"}, '
-                    f'{ev.best.sentence_id})' if ev.best else '')
-            row.append(f'  corpus: {ev.verdict}{best}')
+            # Clipped here, not in the schema: LineEvidence is also our own output model.
+            best = (f' — closest: {ev.best.transliteration[:100]} ({(ev.best.date or "undated")[:40]}, '
+                    f'{ev.best.sentence_id[:40]})' if ev.best else '')
+            row.append(f'  corpus: {ev.verdict[:20]}{best}')
         lines.append('\n'.join(row))
     second = (f'yes ({", ".join(reading.escalation_reasons)})' if reading.escalated
               else f'no ({", ".join(reading.escalation_reasons) or "not recorded"})')
@@ -85,8 +86,14 @@ Notes on the photograph:
 
 def _history(history: list[ReadingChatTurn]) -> list[dict]:
     """The last turns of this conversation, trimmed and capped."""
-    return [{'role': t.role, 'content': t.content[:MAX_PROMPT_CHARS]}
-            for t in history[-settings.reading_chat_history:] if t.content.strip()]
+    return [
+        guards.chat_turn(
+            t.role,
+            t.content[:MAX_PROMPT_CHARS],
+        )
+        for t in history[-settings.reading_chat_history:]
+        if t.content.strip()
+    ]
 
 
 def _normalize_code(code: str) -> str:
@@ -123,8 +130,10 @@ class ReadingChatService:
     def enabled(self) -> bool:
         return llm.enabled()
 
-    def reply(self, prompt: str, history: list[ReadingChatTurn], reading: ReadingSnapshot,
-              image_bgr: np.ndarray | None = None) -> ReadingChatResponse:
+    def reply(self, prompt: str, 
+    history: list[ReadingChatTurn], 
+    reading: ReadingSnapshot,
+    image_bgr: np.ndarray | None = None) -> ReadingChatResponse:
         """Raises RuntimeError when disabled, LLMError on failure."""
         if not self.enabled:
             raise RuntimeError('ANTHROPIC_API_KEY not configured — chat disabled.')
@@ -134,13 +143,16 @@ class ReadingChatService:
         if image_bgr is not None:
             first.append(images.image_block(image_bgr))
         first.append({'type': 'text', 'text': snapshot_text(reading), 'cache_control': {'type': 'ephemeral'}})
-        messages = ([{'role': 'user', 'content': first}] + _history(history)
-                    + [{'role': 'user', 'content': prompt[:MAX_PROMPT_CHARS]}])
+        messages = (
+            [{'role': 'user', 'content': first}]
+            + _history(history)
+            + [guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS])]
+        )
 
         parsed, usages, calls = llm.complete_parsed_with_tools(
             feature        = 'reading_chat',
             model          = settings.haiku_model,
-            system         = SPHINX_PERSONA + READING_RULES,
+            system         = SPHINX_PERSONA + READING_RULES + guards.USER_TEXT_RULE,
             messages       = messages,
             schema         = _ChatReply,
             effort         = settings.reading_chat_effort,
@@ -153,8 +165,9 @@ class ReadingChatService:
             reply       = parsed.reply,
             message_id  = uuid.uuid4().hex,
             corrections = valid_corrections(parsed.corrections, reading),
-            tool_calls  = [ToolCallOut(model=c.model, tool=c.tool, input=c.input, summary=c.summary,
-                                       ok=c.ok, latency_ms=c.latency_ms) for c in calls],
+            tool_calls  = [ToolCallOut(model=c.model, tool=c.tool, input=c.input, 
+                                        summary=c.summary,
+                                        ok=c.ok, latency_ms=c.latency_ms) for c in calls],
             model       = usages[-1].served_by,
             cost_usd    = sum(costs) if all(c is not None for c in costs) else None,
         )

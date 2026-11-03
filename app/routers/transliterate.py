@@ -1,10 +1,10 @@
-
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core import guards
 from app.core.config import settings
-from app.core.ratelimit import Cooldown, client_key
+from app.core.ratelimit import Cooldown
 from app.llm import images
 from app.schemas.transliterations import TransliterateRequest, TransliterationOut
 from app.services.transliteration_services import TransliterationService
@@ -20,7 +20,8 @@ REREAD_LIMIT = Cooldown(settings.reread_cooldown_s)
 # endpoint with the detection output + context when they hit Decode.
 
 @router.post("/", response_model=TransliterationOut)
-async def transliterate(body: TransliterateRequest, request: Request) -> TransliterationOut:
+async def transliterate(body: TransliterateRequest,
+                        key: str = Depends(guards.check_llm)) -> TransliterationOut:
 # POST /transliterate/ — the LLM-only second stage.
     if not body.codes:
         raise HTTPException(status_code=422, detail="codes must not be empty")
@@ -37,19 +38,31 @@ async def transliterate(body: TransliterateRequest, request: Request) -> Transli
         except ValueError as e:
             raise HTTPException(status_code=422, detail=f"image: {e}") from e
 
-    # A re-read with the user's corrections is rate limited; a first decode is not.
-    key = None
-    if body.human_corrections:
+    # A re-read with the user's corrections has its own cooldown on top of the daily quota.
+    reread = bool(body.human_corrections)
+    if reread:
         REREAD_LIMIT.window_s = settings.reread_cooldown_s
-        key = client_key(request.client.host if request.client else None)
         wait = REREAD_LIMIT.reserve(key)
         if wait is not None:
-            raise HTTPException(
-                status_code=429,
-                detail=f"One correction re-read per {settings.reread_cooldown_s // 60} minutes. "
-                       f"Try again in {(wait + 59) // 60} min.",
-                headers={"Retry-After": str(wait)},
+            raise guards.refuse(
+                429, "reread",
+                f"One correction re-read per {settings.reread_cooldown_s // 60} minutes. "
+                f"Try again in {(wait + 59) // 60} min.",
+                wait,
             )
+
+    def refund() -> None:
+        """A crash or a failed LLM call must not burn the user's quota."""
+        guards.release_translit(key)
+        if reread:
+            REREAD_LIMIT.release(key)
+
+    try:
+        guards.reserve_translit(key)
+    except HTTPException:
+        if reread:
+            REREAD_LIMIT.release(key)
+        raise
 
     try:
         result = TransliterationService().transliterate_sequence(
@@ -64,9 +77,8 @@ async def transliterate(body: TransliterateRequest, request: Request) -> Transli
             human_corrections = body.human_corrections,
         )
     except Exception:
-        if key:
-            REREAD_LIMIT.release(key)   # a crash must not burn the user's hour
+        refund()
         raise
-    if key and result.error:
-        REREAD_LIMIT.release(key)       # nor a failed LLM call
+    if result.error:
+        refund()
     return result
