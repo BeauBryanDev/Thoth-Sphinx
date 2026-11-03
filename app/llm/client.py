@@ -219,7 +219,8 @@ def _call(*, feature: str,
     if response.stop_reason == 'refusal':
         details = response.stop_details
         _dump(feature, model, system, messages, None, usage)
-        raise LLMRefusal(getattr(details, 'category', None), getattr(details, 'explanation', None))
+        raise LLMRefusal(getattr(details, 'category', None), 
+                        getattr(details, 'explanation', None))
 
     if response.stop_reason == 'max_tokens':
         _dump(feature, model, system, messages, None, usage)
@@ -316,6 +317,7 @@ def _run_tool(model: str,
             trace: Any) -> dict[str, Any]:
     """Run one tool_use block; every outcome becomes a tool_result, errors included."""
     tool_input = dict(use.input or {})
+    
     if len(calls) >= max_tool_calls:
         content, ok, result = BUDGET_SPENT, False, None
         summary = 'refused: tool budget spent'
@@ -349,7 +351,7 @@ def _run_tool(model: str,
                             'tool_use_id': use.id, 
                             'content': content
                             }
-                            
+
     if not ok:
         block['is_error'] = True
 
