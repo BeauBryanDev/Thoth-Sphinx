@@ -3,21 +3,23 @@
 //
 // Adapter layer: the backend serves POST /predict/ returning a
 // PredictResponse; components consume GlyphDecodingResult. The
-// mapping lives HERE, not in components (see CLAUDE.md).
+// mapping lives HERE, not in components .
 // ============================================================
 
+import axios from "axios";
 import http from "@/services/http";
 import type {
   DecodeOptions,
   GlyphDecodingResult,
   PredictResponse,
+  SignCorrection,
   TextContext,
   TransliterationOut,
 } from "@/types";
 
 // Inference on CPU can take a while for dense walls — override the
 // 15 s default on this call only.
-const DECODE_TIMEOUT_MS = 120_000;
+const DECODE_TIMEOUT_MS = 180_000;   // agent reads with tools + escalation take 45–70 s
 
 /** Map the backend PredictResponse to the UI's GlyphDecodingResult. */
 const toDecodingResult = (
@@ -93,6 +95,21 @@ const toDecodingResult = (
         }
       : null,
     imageNotes: llmOk ? llm.image_notes ?? [] : [],
+    evidence: llmOk ? llm.evidence ?? [] : [],
+    toolCalls: llmOk ? llm.tool_calls ?? [] : [],
+    trace: llmOk ? llm.trace ?? [] : [],
+    readingLines: llmOk
+      ? llm.chunks.map((c) => ({
+          line: c.chunk_index + 1,
+          codes: c.gardiner_codes,
+          transliteration: c.transliteration,
+          gloss: c.english_gloss,
+          confidence: c.confidence,
+        }))
+      : lines.map((codes, i) => ({ line: i + 1, codes, transliteration: "", gloss: "", confidence: "LOW" })),
+    secondOpinionReason: llmOk
+      ? String(llm.trace?.find((e) => e.kind === "router")?.detail?.haiku_reason ?? "")
+      : "",
   };
 };
 
@@ -169,6 +186,8 @@ export const transliterateGlyphs = async (
   // The raw upload as a data URL (never the annotated image); the backend
   // downscales it to 640 px and shows it to the LLM next to the codes.
   image?: string,
+  // Signs the user corrected in the reading chat (human in the loop); already applied in the codes.
+  humanCorrections: Omit<SignCorrection, "reason">[] = [],
 ): Promise<TransliterationOut> => {
   const { correction } = detection.outer;
   const body = {
@@ -191,14 +210,35 @@ export const transliterateGlyphs = async (
     layout: detection.layout,
     context,
     image,
+    human_corrections: humanCorrections.map(({ line, position, from_code, to_code }) => ({
+      line, position, from_code, to_code,
+    })),
   };
-  const { data } = await http.post<TransliterationOut>(
-    "/transliterate/",
-    body,
-    { timeout: DECODE_TIMEOUT_MS },
-  );
-  return data;
+  try {
+    const { data } = await http.post<TransliterationOut>(
+      "/transliterate/",
+      body,
+      { timeout: DECODE_TIMEOUT_MS },
+    );
+    return data;
+  } catch (err) {
+    // The server allows one correction re-read per client per hour (app/core/ratelimit.py).
+    if (axios.isAxiosError(err) && err.response?.status === 429) {
+      const retry = Number(err.response.headers["retry-after"]) || 3600;
+      const detail = (err.response.data as { detail?: string } | undefined)?.detail;
+      throw new RereadLimitError(retry, detail ?? "One correction re-read per hour.");
+    }
+    throw err;
+  }
 };
+
+/** Raised when the server's one-re-read-per-hour guardrail refuses a correction. */
+export class RereadLimitError extends Error {
+  constructor(public readonly retryAfterSeconds: number, message: string) {
+    super(message);
+    this.name = "RereadLimitError";
+  }
+}
 
 /** Merge a detection + LLM result into the UI's GlyphDecodingResult. */
 export const mergeDecodingResult = (
