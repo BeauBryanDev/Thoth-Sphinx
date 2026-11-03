@@ -163,3 +163,24 @@ body {
   0%   { transform: translateY(0); }
   100% { transform: translateY(433%); }
 }
+
+/* Reading chat drawer: slides up as a bottom sheet on mobile, in from the right from sm. */
+.reading-drawer {
+  animation: reading-sheet-up 0.28s ease-out;
+}
+@media (min-width: 640px) {
+  .reading-drawer {
+    animation-name: reading-drawer-in;
+  }
+}
+@keyframes reading-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes reading-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reading-drawer { animation: none; }
+}

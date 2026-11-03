@@ -65,6 +65,51 @@ export interface TransliterationOut {
   escalation_note?: string | null;  // e.g. second opinion failed; first reading kept
   cost_usd?: number | null;
   image_notes?: string[];           // Claude's notes on the photograph
+  evidence?: LineEvidence[];        // closest corpus match per line (TLA)
+  tool_calls?: ToolCallOut[];       // every tool call the models made
+  trace?: TraceEvent[];             // the whole read, step by step
+}
+
+/** The closest corpus sentence for a line — mirrors app/schemas/transliterations.py. */
+export interface CorpusMatch {
+  sentence_id: string;
+  rating: string;
+  transliteration: string;
+  translation: string;
+  translation_lang: "en" | "de";
+  date: string | null;
+  text_name: string | null;
+  matched_by: string[];
+}
+
+export interface LineEvidence {
+  line: number;
+  verdict: string;                  // strong | possible | none | too_short | unrated | error
+  query_translit: string | null;
+  best: CorpusMatch | null;
+  searched_by: string;              // a model id, or "evidence_check"
+}
+
+export interface ToolCallOut {
+  model: string;
+  tool: string;
+  input: Record<string, unknown>;
+  summary: string;
+  ok: boolean;
+  latency_ms: number;
+}
+
+export interface TraceEvent {
+  step: number;
+  t_ms: number;
+  kind: string;                     // detection | llm_call | tool_call | router | escalation | evidence_check | final | error
+  actor: string;
+  summary: string;
+  latency_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  detail: Record<string, unknown>;
 }
 
 export interface SegmentedWordOut {
@@ -171,6 +216,37 @@ export interface GlyphDecodingResult {
   reading: ReadingProvenance | null;
   /** Claude's notes on the photograph; empty when there are none. */
   imageNotes: string[];
+  /** Agent activity: corpus evidence per line, tool calls, and the full trace. */
+  evidence: LineEvidence[];
+  toolCalls: ToolCallOut[];
+  trace: TraceEvent[];
+  /** Claude's reading per physical line (for the reading chat snapshot). */
+  readingLines: ReadingLineView[];
+  /** The first reader's own words when it asked for a second opinion ('' otherwise). */
+  secondOpinionReason: string;
+}
+
+export interface ReadingLineView {
+  line: number;
+  codes: string[];
+  transliteration: string;
+  gloss: string;
+  confidence: string;
+}
+
+/** A sign the agent proposes to change — mirrors app/schemas/reading_chat.py. */
+export interface SignCorrection {
+  line: number;
+  position: number;
+  from_code: string;
+  to_code: string;
+  reason: string;
+}
+
+/** A chat message about the reading: may carry corpus tool calls and proposed corrections. */
+export interface ReadingChatMessage extends ChatMessage {
+  toolCalls?: ToolCallOut[];
+  corrections?: SignCorrection[];
 }
 
 /** Provenance of the LLM reading: first reader, router decision, cost. */
