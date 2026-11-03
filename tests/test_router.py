@@ -13,6 +13,11 @@ BASE = dict(n_codes=40, n_lines=3, detector_low_share=0.1, unresolved_cartouches
     ({'line_confidences': ('LOW', 'LOW', 'MEDIUM')}, Decision('escalate', ('most_lines_low_confidence',))),
     ({'line_confidences': ('LOW', 'MEDIUM', 'MEDIUM')}, Decision('answer', ('haiku_confident',))),
     ({'line_confidences': ()}, Decision('escalate', ('most_lines_low_confidence',))),
+    ({'line_verdicts': ('none', 'none', 'too_short')}, Decision('escalate', ('no_corpus_support',))),
+    ({'line_verdicts': ('none', 'possible')}, Decision('answer', ('haiku_confident',))),
+    ({'line_verdicts': ('too_short', 'unrated')}, Decision('answer', ('haiku_confident',))),
+    # Low lines outrank missing corpus support.
+    ({'line_confidences': ('LOW', 'LOW'), 'line_verdicts': ('none',)}, Decision('escalate', ('most_lines_low_confidence',))),
     ({'unresolved_cartouches': 1}, Decision('escalate', ('unresolved_cartouche',))),
     ({'unresolved_cartouches': 1, 'has_image': False}, Decision('answer', ('haiku_confident',))),
     ({'detector_low_share': 0.35}, Decision('escalate', ('detector_low_confidence',))),
@@ -32,7 +37,8 @@ def test_disabled_never_escalates() -> None:
 def test_every_reason_is_in_the_vocabulary() -> None:
     seen = {decide(Signals(**{**BASE, **c}), enabled=e).reasons[0] for c, e in [
         ({}, True), ({'haiku_requested': True}, True), ({'line_confidences': ('LOW',)}, True),
-        ({'unresolved_cartouches': 1}, True), ({'detector_low_share': 0.5}, True), ({}, False)]}
+        ({'unresolved_cartouches': 1}, True), ({'detector_low_share': 0.5}, True), ({}, False),
+        ({'line_verdicts': ('none',)}, True)]}
     assert seen == router.REASONS
 
 

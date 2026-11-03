@@ -171,3 +171,11 @@ def tiny_jpeg() -> bytes:
     ok, buf = cv2.imencode('.jpg', np.full((64, 64, 3), 128, dtype=np.uint8))
     assert ok
     return bytes(buf)
+
+
+@pytest.fixture(autouse=True)
+def fresh_reread_limit(monkeypatch):
+    """Each test starts with an empty re-read cooldown, whatever ran before it."""
+    from app.core.ratelimit import Cooldown
+    from app.routers import transliterate
+    monkeypatch.setattr(transliterate, 'REREAD_LIMIT', Cooldown(3600))

@@ -158,3 +158,16 @@ def test_pyramid_finds_by_alias_and_lists_its_builder():
 
 def test_unknown_entity_finds_nothing():
     assert tools.lookup_entity('zzzzqqq')['found'] == 0
+
+
+def test_mdc_query_is_converted_before_search():
+    # Claude writes MdC ASCII; unconverted, this query found nothing (verdict none).
+    result = tools.search_parallels(translit='anx Hr kA-nxt xa-m-WAst', limit=3)
+    assert result['query_translit'] == 'ꜥnḫ ḥr kꜣ-nḫt ḫꜥ-m-wꜣst'
+    assert result['verdict'] == 'strong'
+    assert 'Kꜣ-nḫt-ḫꜥ-m-Wꜣs,t' in result['hits'][0]['transliteration']
+
+
+def test_apparatus_only_query_is_rejected():
+    with pytest.raises(ValueError, match='Give signs'):
+        tools.search_parallels(translit='[...] ?')

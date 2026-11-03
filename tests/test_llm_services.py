@@ -15,6 +15,29 @@ from tests.test_llm import StubMessages, _response, stub  # noqa: F401  (stub is
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+SEARCHED: list[tuple[int, str, str]] = []
+CORPUS_VERDICT: list[str] = ['possible']   # what the fake corpus answers
+
+
+@pytest.fixture(autouse=True)
+def no_corpus(monkeypatch: pytest.MonkeyPatch) -> list[tuple[int, str, str]]:
+    """The evidence check never touches the database in these tests; lines get 'possible'."""
+    SEARCHED.clear()
+    CORPUS_VERDICT[:] = ['possible']
+
+    def fake(line: int, translit: str, signs: str) -> dict:
+        SEARCHED.append((line, translit, signs))
+        verdict = CORPUS_VERDICT[0]
+        hits = [] if verdict == 'none' else [{
+            'sentence_id': f'S{line}', 'rating': verdict, 'matched_by': ['translit'],
+            'transliteration': 'Ḥr,w Kꜣ-nḫt', 'translation': 'Horus, Strong Bull',
+            'translation_lang': 'en', 'date': 'Thutmosis III.', 'text_name': 'Stele'}]
+        return {'line': line, 'verdict': verdict, 'guide': '', 'query_translit': translit, 'hits': hits}
+
+    monkeypatch.setattr(transliteration_services, '_search_line', fake)
+    return SEARCHED
+
+
 @pytest.fixture()
 def per_line(monkeypatch: pytest.MonkeyPatch) -> None:
     """Force the per-line path by disabling whole-inscription reading."""
@@ -328,3 +351,174 @@ def test_per_line_path_has_no_notes(stub: StubMessages, per_line: None) -> None:
     out = TransliterationService().transliterate_sequence(
         ['S34'], [0.9], [], [], direction='ltr', layout='rows', ctx=TextContext())
     assert out.image_notes == []
+
+
+# ---------------------------------------------------------------------------
+# Agent tools, evidence and trace
+# ---------------------------------------------------------------------------
+
+def _tool_use(name: str, tool_input: dict, use_id: str = 'tu_1') -> object:
+    """A tool_use content block as the SDK returns it."""
+    from types import SimpleNamespace
+    return SimpleNamespace(type='tool_use', id=use_id, name=name, input=tool_input)
+
+
+def _tool_turn(*uses: object) -> object:
+    """A model turn that stops to call tools."""
+    from types import SimpleNamespace
+    r = _response(stop_reason='tool_use')
+    r.content = [SimpleNamespace(type='thinking', thinking='', signature='sig'), *uses]
+    return r
+
+
+@pytest.fixture()
+def fake_tools(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
+    """Replace the real corpus tools with recorders that need no database."""
+    from app.llm import agent_tools
+    ran: list[dict] = []
+
+    def search(line: int, translit: str = '', signs: str = '') -> dict:
+        ran.append({'line': line, 'translit': translit})
+        return {'line': line, 'verdict': 'strong', 'guide': '', 'query_translit': translit,
+                'hits': [{'sentence_id': 'IBUBd3O', 'rating': 'strong', 'matched_by': ['translit'],
+                          'transliteration': 'Ḥr,w Kꜣ-nḫt-ḫꜥ-m-Wꜣs,t', 'translation': 'Horus',
+                          'translation_lang': 'de', 'date': 'Sethos I.', 'text_name': 'Abydos'}]}
+
+    def broken(word: str) -> dict:
+        raise ValueError('A word is required.')
+
+    tools = (agent_tools.AgentTool('search_parallels', 'd', agent_tools.SEARCH_PARALLELS.schema, search),
+             agent_tools.AgentTool('lookup_lemma', 'd', agent_tools.LOOKUP_LEMMA.schema, broken))
+    monkeypatch.setattr(agent_tools, 'READING_TOOLS', tools)
+    return ran
+
+
+def _scripted(stub: StubMessages, replies: list[object]) -> list[dict]:
+    """Make stub.parse return the replies in order; returns the recorded kwargs."""
+    calls: list[dict] = []
+    it = iter(replies)
+
+    def parse(**kwargs: object) -> object:
+        import copy
+        calls.append(copy.deepcopy(kwargs))
+        return next(it)
+
+    stub.parse = parse  # type: ignore[method-assign]
+    return calls
+
+
+def test_haiku_calls_tools_and_evidence_check_fills_the_rest(stub: StubMessages, fake_tools: list[dict],
+                                                             no_corpus: list) -> None:
+    calls = _scripted(stub, [
+        _tool_turn(_tool_use('search_parallels', {'line': 1, 'translit': 'anx Hr kA-nxt'}, 'tu_1'),
+                   _tool_use('lookup_lemma', {'word': ''}, 'tu_2')),
+        _response(parsed=_wall('anx Hr kA-nxt', 'nsw-bjtj')),
+    ])
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert out.error is None and len(calls) == 2
+    # Tools were offered, and the second turn carries the assistant turn + both tool results.
+    assert [t['name'] for t in calls[0]['tools']] == ['search_parallels', 'lookup_lemma']
+    assistant, results = calls[1]['messages'][1], calls[1]['messages'][2]
+    assert assistant['role'] == 'assistant' and assistant['content'][0]['type'] == 'thinking'
+    assert [r['tool_use_id'] for r in results['content']] == ['tu_1', 'tu_2']
+    assert results['content'][1]['is_error'] and 'A word is required' in results['content'][1]['content']
+    # Line 1 searched by Haiku, line 2 by the evidence check (actor pipeline), never twice.
+    assert [(e.line, e.searched_by) for e in out.evidence] == [(1, 'claude-haiku-5-5'), (2, 'evidence_check')]
+    assert out.evidence[0].best and out.evidence[0].best.date == 'Sethos I.'
+    assert [line for line, _, _ in no_corpus] == [2]
+    assert [(c.tool, c.ok) for c in out.tool_calls] == [('search_parallels', True), ('lookup_lemma', False)]
+    kinds = [e.kind for e in out.trace]
+    assert kinds == ['detection', 'llm_call', 'tool_call', 'tool_call', 'llm_call',
+                     'evidence_check', 'router', 'final']
+    assert out.trace[1].input_tokens and out.trace[-1].cost_usd == out.cost_usd
+
+
+def test_tool_budget_is_enforced(stub: StubMessages, fake_tools: list[dict],
+                                 monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, 'haiku_tool_budget', 1)
+    calls = _scripted(stub, [
+        _tool_turn(_tool_use('search_parallels', {'line': 1, 'translit': 'a'}, 'tu_1'),
+                   _tool_use('search_parallels', {'line': 2, 'translit': 'b'}, 'tu_2')),
+        _response(parsed=_wall('a', 'b')),
+    ])
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    second = calls[1]['messages'][2]['content'][1]
+    assert second['is_error'] and 'budget spent' in second['content']
+    assert len(fake_tools) == 1 and out.tool_calls[1].summary.startswith('refused')
+
+
+def test_no_corpus_support_escalates_and_review_sees_evidence(stub: StubMessages) -> None:
+    CORPUS_VERDICT[:] = ['none']
+    review = transliteration_services._WallReading(**{
+        k: v for k, v in _wall('anx', 'nb').model_dump().items()
+        if k in ('lines', 'full_translation', 'period_note', 'image_notes')})
+    calls = _scripted(stub, [_response(parsed=_wall('anx', 'nb')),
+                             _response(parsed=review, model='claude-sonnet-5-5')])
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
+        direction='ltr', layout='rows', ctx=TextContext())
+    assert out.escalated and out.escalation_reasons == ['no_corpus_support']
+    text = calls[1]['messages'][0]['content']
+    assert 'CORPUS EVIDENCE gathered so far' in text and '[1] none' in text
+    kinds = [e.kind for e in out.trace]
+    assert kinds.index('router') < kinds.index('escalation') < len(kinds) - 1
+    assert out.trace[kinds.index('router')].detail['line_verdicts'] == ['none', 'none']
+
+
+def test_tools_off_still_gathers_evidence(stub: StubMessages, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, 'translit_tools', False)
+    stub.response = _response(parsed=_wall('anx'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext())
+    _, kw = stub.calls[0]
+    assert 'tools' not in kw and 'CORPUS TOOLS' not in kw['messages'][0]['content']
+    assert [e.searched_by for e in out.evidence] == ['evidence_check'] and out.tool_calls == []
+
+
+def test_corpus_down_still_ships_the_reading(stub: StubMessages, monkeypatch: pytest.MonkeyPatch) -> None:
+    def down(line: int, translit: str, signs: str) -> dict:
+        raise OSError('connection refused')
+
+    monkeypatch.setattr(transliteration_services, '_search_line', down)
+    stub.response = _response(parsed=_wall('anx'))
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext())
+    assert out.error is None and out.evidence[0].verdict == 'error'
+    assert 'corpus unavailable' in [e for e in out.trace if e.kind == 'evidence_check'][0].summary
+
+
+def test_human_corrections_reach_the_prompt_and_the_trace(stub: StubMessages) -> None:
+    from app.schemas.transliterations import HumanCorrection
+    stub.response = _response(parsed=_wall('anx Hr kA-nxt xa-m-WAst'))
+    fix = HumanCorrection(line=1, position=5, from_code='X1', to_code='N28')
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'G5', 'E1', 'D40', 'N28'], [0.9, 0.9, 0.9, 0.9, 1.0], [], [],
+        direction='ltr', layout='rows', ctx=TextContext(), human_corrections=[fix])
+    text = stub.calls[0][1]['messages'][0]['content']
+    assert 'HUMAN CORRECTIONS' in text and 'the detector had X1; the user confirmed N28' in text
+    human = [e for e in out.trace if e.kind == 'human_feedback']
+    assert len(human) == 1 and human[0].actor == 'user' and 'X1 → N28' in human[0].summary
+    assert [e.kind for e in out.trace][:2] == ['detection', 'human_feedback']
+
+
+def test_no_human_block_without_corrections(stub: StubMessages) -> None:
+    stub.response = _response(parsed=_wall('anx'))
+    TransliterationService().transliterate_sequence(
+        ['S34'], [0.9], [], [], direction='ltr', layout='rows', ctx=TextContext())
+    assert 'HUMAN CORRECTIONS' not in stub.calls[0][1]['messages'][0]['content']
+
+
+def test_transliterate_endpoint_accepts_human_corrections(client, stub: StubMessages) -> None:  # noqa: ANN001
+    stub.response = _response(parsed=_wall('anx'))
+    r = client.post('/transliterate/', json={
+        'codes': ['S34'], 'confidences': [1.0],
+        'human_corrections': [{'line': 1, 'position': 1, 'from_code': 'X1', 'to_code': 'S34'}]})
+    assert r.status_code == 200
+    assert any(e['kind'] == 'human_feedback' for e in r.json()['trace'])
+    bad = client.post('/transliterate/', json={'codes': ['S34'], 'human_corrections': [{'line': 0, 'position': 1,
+                                                                                     'from_code': 'a', 'to_code': 'b'}]})
+    assert bad.status_code == 422
