@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # Controlled vocabularies. 'unknown' is always first = default.
@@ -56,6 +56,14 @@ class ChunkTransliteration(BaseModel):
     is_cartouche     : bool = False
 
 
+class HumanCorrection(BaseModel):
+    """A sign the user checked against the stone and corrected (human in the loop)."""
+    line      : int = Field(..., ge=1)        # 1-based line of the previous reading
+    position  : int = Field(..., ge=1)        # 1-based sign position within that line
+    from_code : str                           # what the detector had
+    to_code   : str                           # what the user confirmed
+
+
 class TransliterateRequest(BaseModel):
     """
     Body for POST /transliterate/ — the LLM-only second stage.
@@ -71,6 +79,52 @@ class TransliterateRequest(BaseModel):
     layout          : Literal['rows', 'columns'] = 'rows'
     context         : TextContext = TextContext()
     image           : Optional[str] = None   # raw upload as a data URL; the LLM sees it at 640 px
+    human_corrections : list[HumanCorrection] = Field(default_factory=list, max_length=50)
+
+
+class CorpusMatch(BaseModel):
+    """The closest corpus sentence for a line (Thesaurus Linguae Aegyptiae)."""
+    sentence_id      : str
+    rating           : str                     # strong | possible | weak | unrated
+    transliteration  : str = ''
+    translation      : str = ''
+    translation_lang : Literal['en', 'de'] = 'de'
+    date             : Optional[str] = None
+    text_name        : Optional[str] = None
+    matched_by       : list[str] = []          # search channels: sign, translit
+
+
+class LineEvidence(BaseModel):
+    """What the corpus says about one line of the reading."""
+    line           : int                       # 1-based, as in the prompt
+    verdict        : str                       # strong | possible | none | too_short | unrated | error
+    query_translit : Optional[str] = None      # the Unicode query actually searched
+    best           : Optional[CorpusMatch] = None
+    searched_by    : str                       # a model id, or 'evidence_check' when code searched
+
+
+class ToolCallOut(BaseModel):
+    """One tool call a model made during the read."""
+    model      : str
+    tool       : str
+    input      : dict = {}
+    summary    : str
+    ok         : bool
+    latency_ms : int
+
+
+class TraceEvent(BaseModel):
+    """One step of the read, in order (spec §11). No secrets, no image data."""
+    step          : int
+    t_ms          : int                        # since the read started
+    kind          : str                        # detection | llm_call | tool_call | router | escalation | evidence_check | final | error
+    actor         : str                        # model id, tool name, router, pipeline
+    summary       : str
+    latency_ms    : Optional[int] = None
+    input_tokens  : Optional[int] = None
+    output_tokens : Optional[int] = None
+    cost_usd      : Optional[float] = None
+    detail        : dict = {}
 
 
 class TransliterationOut(BaseModel):
@@ -86,3 +140,6 @@ class TransliterationOut(BaseModel):
     escalation_note      : Optional[str] = None   # e.g. the second opinion failed; Haiku's reading kept
     cost_usd             : Optional[float] = None # estimated, all calls of this read
     image_notes          : list[str] = []         # Claude's notes on the photograph (whole-wall reads only)
+    evidence             : list[LineEvidence] = []   # closest corpus match per line
+    tool_calls           : list[ToolCallOut] = []    # every tool call the models made
+    trace                : list[TraceEvent] = []     # the whole read, step by step
