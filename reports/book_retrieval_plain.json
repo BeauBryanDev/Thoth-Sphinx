@@ -1,0 +1,158 @@
+{
+  "variant": "plain",
+  "questions": 50,
+  "negatives": 5,
+  "query_embedding_tokens": 1180,
+  "latency_ms": {
+    "text": 22.0,
+    "vector": 5.1,
+    "hybrid": 29.4
+  },
+  "modes": {
+    "text": {
+      "strict": {
+        "hit@1": 0.68,
+        "hit@5": 0.82,
+        "hit@10": 0.9,
+        "mrr@10": 0.739
+      },
+      "loose": {
+        "hit@1": 0.68,
+        "hit@5": 0.82,
+        "hit@10": 0.9,
+        "mrr@10": 0.74
+      }
+    },
+    "vector": {
+      "strict": {
+        "hit@1": 0.52,
+        "hit@5": 0.66,
+        "hit@10": 0.72,
+        "mrr@10": 0.58
+      },
+      "loose": {
+        "hit@1": 0.58,
+        "hit@5": 0.68,
+        "hit@10": 0.74,
+        "mrr@10": 0.614
+      }
+    },
+    "hybrid": {
+      "strict": {
+        "hit@1": 0.6,
+        "hit@5": 0.82,
+        "hit@10": 0.86,
+        "mrr@10": 0.7
+      },
+      "loose": {
+        "hit@1": 0.6,
+        "hit@5": 0.84,
+        "hit@10": 0.88,
+        "mrr@10": 0.71
+      }
+    }
+  },
+  "misses": {
+    "text": [
+      "q004",
+      "q005",
+      "q006",
+      "q008",
+      "q022",
+      "q030",
+      "q036",
+      "q037",
+      "q043"
+    ],
+    "vector": [
+      "q006",
+      "q007",
+      "q011",
+      "q019",
+      "q022",
+      "q023",
+      "q024",
+      "q025",
+      "q027",
+      "q028",
+      "q030",
+      "q032",
+      "q035",
+      "q037",
+      "q042",
+      "q044",
+      "q047"
+    ],
+    "hybrid": [
+      "q005",
+      "q006",
+      "q022",
+      "q024",
+      "q025",
+      "q030",
+      "q037",
+      "q042",
+      "q044"
+    ]
+  },
+  "negative_check": {
+    "vector_top1": {
+      "positives_median": 0.644,
+      "positives_p10": 0.547,
+      "negatives": [
+        0.327,
+        0.368,
+        0.369,
+        0.494,
+        0.514
+      ],
+      "negatives_below_positive_p10": 5
+    }
+  },
+  "judged": {
+    "modes": {
+      "text": {
+        "answered": {
+          "hit@1": 0.78,
+          "hit@5": 0.86,
+          "mrr@5": 0.801
+        },
+        "answered_or_partial": {
+          "hit@1": 0.78,
+          "hit@5": 0.9,
+          "mrr@5": 0.826
+        }
+      },
+      "vector": {
+        "answered": {
+          "hit@1": 0.58,
+          "hit@5": 0.74,
+          "mrr@5": 0.642
+        },
+        "answered_or_partial": {
+          "hit@1": 0.74,
+          "hit@5": 0.86,
+          "mrr@5": 0.792
+        }
+      },
+      "hybrid": {
+        "answered": {
+          "hit@1": 0.72,
+          "hit@5": 0.92,
+          "mrr@5": 0.804
+        },
+        "answered_or_partial": {
+          "hit@1": 0.82,
+          "hit@5": 0.96,
+          "mrr@5": 0.877
+        }
+      }
+    },
+    "judge_checks": {
+      "strict_hits_judged_yes": "45/45",
+      "negative_passages_judged_yes": "0/25"
+    },
+    "judge_cost_usd": 2.531,
+    "judge_calls": 55
+  }
+}

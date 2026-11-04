@@ -3,6 +3,7 @@ from typing import Any
 
 from app.llm import mdc
 from evidence_store import confidence, rerank, retrieve
+from evidence_store.books import search as book_search
 
 CANDIDATES = 10
 MAX_LIMIT = 20
@@ -22,6 +23,13 @@ RELIABILITY_GUIDE = {
     'curated': 'Uncited background knowledge. Do not present it as evidence.',
     'derived': 'Worked out from a name or another link, not stated by a source.',
     'unverified': 'Unchecked, and possibly generated. Treat it as a hint.',
+}
+BOOK_SUPPORT_FLOOR = 0.5   # best vector score below this: the books likely do not cover the question
+MAX_BOOK_QUERY = 300
+BOOK_GUIDE = {
+    True: 'The books seem to cover this. Cite the passage you use by its citation; never invent pages.',
+    False: 'The books do not seem to cover this question. Say so, and answer from general knowledge only '
+           'if you flag it as such.',
 }
 logger = logging.getLogger(__name__)
 
@@ -305,3 +313,45 @@ def lookup_entity(name: str,
                     'reliability.',
             'credit': TLA_CREDIT
             }
+
+
+def search_books(query: str, limit: int = book_search.TOP_K) -> dict[str, Any]:
+    """Hybrid search (full text + meaning) over the Egyptology books; vector failure falls back to full text."""
+    query = required(query, 'A question')[:MAX_BOOK_QUERY]
+    limit = clamp(limit, 1, book_search.TOP_K)
+    try:
+        # Lazy: the OpenAI SDK (embeddings only) loads when books are first searched, not at app start.
+        from evidence_store import embed
+
+        vector = embed.embed_texts(embed.client(), [query])[0][0]
+        hits = book_search.search_hybrid(query, vector, limit=limit)
+        best = book_search.search_vector(vector, limit=1)
+        mode = 'hybrid'
+    except Exception as error:  # an embedding outage must leave book search working
+        logger.warning('book search embedding failed: %s', error)
+        hits = book_search.search_text(query, limit=limit)
+        best = []
+        mode = 'full text only (meaning search unavailable)'
+    top = best[0]['score'] if best else None
+    supported = bool(hits) and (top is None or top >= BOOK_SUPPORT_FLOOR)
+    return {
+        'found': len(hits),
+        'mode': mode,
+        'no_book_support': not supported,
+        'best_meaning_score': round(top, 3) if top is not None else None,
+        'guide': BOOK_GUIDE[supported],
+        'passages': [
+            {
+                'chunk_id': h['id'],
+                'book': h.get('title'),
+                'author': h.get('author'),
+                'section': h['section'],
+                'pages': h['page_start'] if h['page_start'] == h['page_end'] else f"{h['page_start']}–{h['page_end']}",
+                'citation': h['header'],
+                'matched_by': [name for name, key in (('words', 'text_rank'), ('meaning', 'vector_rank')) if h.get(key)]
+                or ['words'],
+                'text': h['body'],
+            }
+            for h in hits
+        ],
+    }

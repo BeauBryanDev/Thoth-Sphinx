@@ -5,6 +5,7 @@ from typing import Any
 from app.llm import tools
 
 MAX_HIT_TEXT = 160   # characters of a hit's text the model sees; enough to judge, cheap in tokens
+MAX_BOOK_TEXT = 1000  # characters of a book passage: book prose needs more than a corpus line
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,15 @@ def run_lookup_entity(name: str) -> dict[str, Any]:
                          | {'corpus_examples': e.get('corpus')} for e in result['entities']]}
 
 
+def run_search_books(query: str) -> dict[str, Any]:
+    """search_books, top 5 passages with their text shortened for the model."""
+    result = tools.search_books(query)
+    for passage in result['passages']:
+        text = passage['text']
+        passage['text'] = text if len(text) <= MAX_BOOK_TEXT else text[:MAX_BOOK_TEXT] + '…'
+    return result
+
+
 SEARCH_PARALLELS = AgentTool(
     name='search_parallels',
     description=('Search the Thesaurus Linguae Aegyptiae corpus (104,285 Egyptian sentences) for '
@@ -109,6 +119,20 @@ LOOKUP_ENTITY = AgentTool(
     run=run_lookup_entity,
 )
 
+SEARCH_BOOKS = AgentTool(
+    name='search_books',
+    description=('Search 17 Egyptology books (Budge, the Pyramid Texts, the Book of the Dead, an '
+                 'encyclopedia of ancient Egypt, Egyptian tales, magic, gods, art, history of '
+                 'Egyptology) for passages that answer a question. Ask in plain English, one topic per '
+                 'search. Returns up to 5 passages with a citation (book › chapter › page). When '
+                 'no_book_support is true, the books do not cover the question: say so instead of '
+                 'quoting weak passages. Books are secondary sources, some over a century old.'),
+    schema={'type': 'object', 'properties': {
+        'query': {'type': 'string', 'description': 'the question in plain English, e.g. who was the wife of Thoth'},
+    }, 'required': ['query']},
+    run=run_search_books,
+)
+
 READING_TOOLS: tuple[AgentTool, ...] = (SEARCH_PARALLELS, LOOKUP_LEMMA, LOOKUP_ENTITY)
 
 
@@ -126,5 +150,10 @@ def summarize(name: str, result: dict[str, Any]) -> str:
         ents = result.get('entities') or []
         return f"{result.get('found', 0)} entities" + (
             f" — {ents[0].get('name')} ({ents[0].get('type')})" if ents else '')
+    if name == 'search_books':
+        if result.get('no_book_support'):
+            return f"{result.get('found', 0)} passages — the books do not seem to cover this"
+        top = (result.get('passages') or [{}])[0]
+        return f"{result.get('found', 0)} passages" + (f" — best: {top.get('citation')}" if top else '')
 
     return 'done'

@@ -150,7 +150,7 @@ class ReadingChatService:
             messages       = messages,
             schema         = _ChatReply,
             effort         = settings.reading_chat_effort,
-            tools          = agent_tools.READING_TOOLS,
+            tools          = agent_tools.READING_TOOLS + (agent_tools.SEARCH_BOOKS,),
             max_tool_turns = settings.reading_chat_tool_budget,
             max_tokens     = MAX_REPLY_TOKENS,
         )

@@ -1,4 +1,5 @@
 import os
+import threading
 from typing import Any
 
 import psycopg
@@ -7,7 +8,8 @@ from psycopg.rows import dict_row
 
 from evidence_store.paths import ENV_FILE
 
-_connection: psycopg.Connection[dict[str, Any]] | None = None
+# One connection per thread: a shared one serializes the parallel tool calls (app.llm.client.TOOL_POOL).
+_local = threading.local()
 
 
 def database_url() -> str:
@@ -20,13 +22,17 @@ def database_url() -> str:
 
 
 def connection() -> psycopg.Connection[dict[str, Any]]:
-    global _connection
-    if _connection is None or _connection.closed:
-        _connection = psycopg.connect(database_url(),
-                                      autocommit=True, 
-                                      row_factory=dict_row)
-        
-    return _connection
+    """This thread's connection, opened on first use."""
+    conn = getattr(_local, 'connection', None)
+    if conn is None or conn.closed:
+        conn = psycopg.connect(
+            database_url(),
+            autocommit=True,
+            row_factory=dict_row,
+        )
+        _local.connection = conn
+
+    return conn
 
 
 def query(sql: str, **params: Any) -> list[dict[str, Any]]:

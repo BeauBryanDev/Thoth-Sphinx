@@ -1,0 +1,110 @@
+{
+  "variant": "semantic",
+  "questions": 50,
+  "negatives": 5,
+  "query_embedding_tokens": 1180,
+  "latency_ms": {
+    "text": 45.0,
+    "vector": 8.5,
+    "hybrid": 58.0
+  },
+  "modes": {
+    "text": {
+      "strict": {
+        "hit@1": 0.68,
+        "hit@5": 0.84,
+        "hit@10": 0.9,
+        "mrr@10": 0.738
+      },
+      "loose": {
+        "hit@1": 0.68,
+        "hit@5": 0.84,
+        "hit@10": 0.9,
+        "mrr@10": 0.74
+      }
+    },
+    "vector": {
+      "strict": {
+        "hit@1": 0.52,
+        "hit@5": 0.68,
+        "hit@10": 0.74,
+        "mrr@10": 0.584
+      },
+      "loose": {
+        "hit@1": 0.58,
+        "hit@5": 0.7,
+        "hit@10": 0.76,
+        "mrr@10": 0.618
+      }
+    },
+    "hybrid": {
+      "strict": {
+        "hit@1": 0.6,
+        "hit@5": 0.82,
+        "hit@10": 0.86,
+        "mrr@10": 0.699
+      },
+      "loose": {
+        "hit@1": 0.6,
+        "hit@5": 0.84,
+        "hit@10": 0.88,
+        "mrr@10": 0.709
+      }
+    }
+  },
+  "misses": {
+    "text": [
+      "q004",
+      "q005",
+      "q006",
+      "q008",
+      "q022",
+      "q030",
+      "q037",
+      "q043"
+    ],
+    "vector": [
+      "q006",
+      "q011",
+      "q019",
+      "q022",
+      "q023",
+      "q024",
+      "q025",
+      "q027",
+      "q028",
+      "q030",
+      "q032",
+      "q035",
+      "q037",
+      "q042",
+      "q044",
+      "q047"
+    ],
+    "hybrid": [
+      "q005",
+      "q006",
+      "q022",
+      "q024",
+      "q025",
+      "q030",
+      "q037",
+      "q042",
+      "q044"
+    ]
+  },
+  "negative_check": {
+    "vector_top1": {
+      "positives_median": 0.644,
+      "positives_p10": 0.548,
+      "negatives": [
+        0.326,
+        0.361,
+        0.369,
+        0.493,
+        0.512
+      ],
+      "negatives_below_positive_p10": 5
+    }
+  }
+}

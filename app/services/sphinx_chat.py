@@ -28,7 +28,7 @@ MAX_REPLY_TOKENS     = 16000   # thinking counts toward it; replies stay short v
 
 SPHINX_PERSONA = load('sphinx_persona')   # app/llm/prompts/
 CHAT_TOOLS_RULES = '\n\n' + load('chat_tools')   # appended: the persona stays word for word
-CHAT_TOOLS = (agent_tools.LOOKUP_ENTITY,)
+CHAT_TOOLS = (agent_tools.LOOKUP_ENTITY, agent_tools.SEARCH_BOOKS)
 
 
 class _ChatAnswer(BaseModel):
