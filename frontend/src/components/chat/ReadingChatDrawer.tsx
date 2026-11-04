@@ -61,7 +61,7 @@ const CorrectionActions = ({ messageId, index }: { messageId: string; index: num
 };
 
 const MessageExtras = ({ message }: { message: ChatMessage }) => {
-  const { toolCalls = [], corrections = [] } = message as ReadingChatMessage;
+  const { toolCalls = [], corrections = [], correctionBatch = false } = message as ReadingChatMessage;
   if (!toolCalls.length && !corrections.length) return null;
 
   return (
@@ -78,9 +78,11 @@ const MessageExtras = ({ message }: { message: ChatMessage }) => {
             <span className="rounded bg-amber-800/70 px-1.5 py-0.5 font-mono text-amber-50">{c.to_code}</span>
           </p>
           <p className="mt-1 text-xs leading-relaxed text-amber-200/80">{c.reason}</p>
-          <CorrectionActions messageId={message.id} index={i} />
+          {/* The user's own batch is applied together: one action row below all its cards. */}
+          {!correctionBatch && <CorrectionActions messageId={message.id} index={i} />}
         </div>
       ))}
+      {correctionBatch && corrections.length > 0 && <CorrectionActions messageId={message.id} index={0} />}
     </div>
   );
 };

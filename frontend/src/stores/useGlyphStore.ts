@@ -64,10 +64,14 @@ export interface GlyphStore {
   reset: () => void;
   decode: () => Promise<void>;
   /** Human in the loop: swap one sign, re-run /transliterate/, return the new result. */
-  applyCorrection: (c: SignCorrection) => Promise<GlyphDecodingResult>;
+  /** Swap one or more signs (at most MAX_CORRECTIONS) and re-read the whole inscription once. */
+  applyCorrections: (cs: SignCorrection[]) => Promise<GlyphDecodingResult>;
 }
 
 /** Index into the flat corrected sequence for a 1-based (line, position) of the reading. */
+/** Signs the user may correct in one re-read (the re-read itself stays once per hour). */
+export const MAX_CORRECTIONS = 3;
+
 const flatIndex = (result: GlyphDecodingResult, line: number, position: number): number => {
   const lines = result.readingLines;
   const target = lines.find((l) => l.line === line);
@@ -184,21 +188,28 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
       }
     },
 
-    applyCorrection: async (c) => {
+    applyCorrections: async (cs) => {
       const { image, result, detection, context, appliedCorrections, isTranslating } = get();
       if (!image || !result || !detection) throw new Error("There is no reading to correct.");
       if (isTranslating) throw new Error("A reading is already in progress.");
-      const i = flatIndex(result, c.line, c.position);
-      const codes = detection.outer.correction.flat_corrected_seq;
-      if (i < 0 || codes[i] !== c.from_code) {
-        throw new Error(`Line ${c.line}, sign ${c.position} is no longer ${c.from_code}.`);
+      if (!cs.length || cs.length > MAX_CORRECTIONS) {
+        throw new Error(`Correct between 1 and ${MAX_CORRECTIONS} signs per re-read.`);
       }
 
-      // Copy, swap the one code, and mark the slot as confirmed by the user (confidence 1.0).
+      // Copy, swap each code, and mark each slot as confirmed by the user (confidence 1.0).
       const next: PredictResponse = structuredClone(detection);
-      next.outer.correction.flat_corrected_seq[i] = c.to_code;
-      next.outer.slots[i] = [[c.to_code, 1.0], ...(next.outer.slots[i] ?? []).slice(1)];
-      const corrections = [...appliedCorrections, c];
+      const seen = new Set<number>();
+      for (const c of cs) {
+        const i = flatIndex(result, c.line, c.position);
+        if (i < 0 || detection.outer.correction.flat_corrected_seq[i] !== c.from_code) {
+          throw new Error(`Line ${c.line}, sign ${c.position} is no longer ${c.from_code}.`);
+        }
+        if (seen.has(i)) throw new Error(`Line ${c.line}, sign ${c.position} is corrected twice.`);
+        seen.add(i);
+        next.outer.correction.flat_corrected_seq[i] = c.to_code;
+        next.outer.slots[i] = [[c.to_code, 1.0], ...(next.outer.slots[i] ?? []).slice(1)];
+      }
+      const corrections = [...appliedCorrections, ...cs];
 
       set({ isTranslating: true, error: null });
       try {

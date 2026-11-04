@@ -65,8 +65,8 @@ export interface ReadingChatStore {
   rereadAvailableAt: number | null;
   applyCorrection: (messageId: string, index: number) => Promise<void>;
   dismissCorrection: (messageId: string, index: number) => void;
-  /** The user's own correction from the drawer form: posted as a card, then applied at once. */
-  applyManualCorrection: (c: SignCorrection) => Promise<void>;
+  /** The user's own corrections from the drawer form (1–3): posted as cards, then applied in one re-read. */
+  applyManualCorrections: (cs: SignCorrection[]) => Promise<void>;
   openFor: (result: GlyphDecodingResult) => void;
   close: () => void;
   send: (prompt: string) => Promise<void>;
@@ -150,10 +150,11 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
     set({ messages: result ? [greeting(result)] : [], error: null, isLoading: false, correctionStatus: {} });
   },
 
-  applyManualCorrection: async (c) => {
+  applyManualCorrections: async (cs) => {
     const availableAt = get().rereadAvailableAt;
-    if (get().isLoading || (availableAt && Date.now() < availableAt)) return;
+    if (!cs.length || get().isLoading || (availableAt && Date.now() < availableAt)) return;
     const id = generateId();
+    const list = cs.map((c) => `line ${c.line}, sign ${c.position}: ${c.from_code} → ${c.to_code}`);
     set((s) => ({
       messages: [
         ...s.messages,
@@ -161,10 +162,11 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
           id,
           role: "assistant",
           content:
-            `You corrected **line ${c.line}, sign ${c.position}: ${c.from_code} → ${c.to_code}** ` +
-            "from your own look at the stone. I will re-read the whole inscription with it.",
+            `You corrected **${list.join("; ")}** from your own look at the stone. ` +
+            `I will re-read the whole inscription with ${cs.length === 1 ? "it" : "them"}.`,
           timestamp: Date.now(),
-          corrections: [c],
+          corrections: cs,
+          correctionBatch: true,
         },
       ],
     }));
@@ -175,10 +177,12 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
     set((s) => ({ correctionStatus: { ...s.correctionStatus, [correctionKey(messageId, index)]: "dismissed" } })),
 
   applyCorrection: async (messageId, index) => {
-    const key = correctionKey(messageId, index);
     const message = get().messages.find((m) => m.id === messageId);
-    const correction = message?.corrections?.[index];
-    if (!correction || get().isLoading) return;
+    const all = message?.corrections ?? [];
+    // The user's own batch goes in together; an agent proposal goes in alone.
+    const indices = message?.correctionBatch ? all.map((_, i) => i) : [index];
+    const corrections = indices.map((i) => all[i]).filter(Boolean);
+    if (!corrections.length || get().isLoading) return;
     const availableAt = get().rereadAvailableAt;
     if (availableAt && Date.now() < availableAt) {
       set({ error: `One correction re-read per hour. Next one at ${new Date(availableAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.` });
@@ -186,12 +190,19 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
     }
 
     const setStatus = (status: CorrectionStatus) =>
-      set((s) => ({ correctionStatus: { ...s.correctionStatus, [key]: status } }));
+      set((s) => {
+        const next = { ...s.correctionStatus };
+        for (const i of indices) next[correctionKey(messageId, i)] = status;
+        return { correctionStatus: next };
+      });
     setStatus("applying");
     set({ isLoading: true, error: null });
 
     try {
-      const updated = await useGlyphStore.getState().applyCorrection(correction);
+      const updated = await useGlyphStore.getState().applyCorrections(corrections);
+      const list = corrections
+        .map((c) => `line ${c.line}, sign ${c.position}: **${c.from_code} → ${c.to_code}**`)
+        .join("; ");
       // Same conversation, new reading: follow the new result id so the chat is not reset.
       set((s) => ({
         readingId: updated.id,
@@ -201,9 +212,9 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
             id: generateId(),
             role: "assistant",
             content:
-              `✓ Applied your correction — line ${correction.line}, sign ${correction.position}: ` +
-              `**${correction.from_code} → ${correction.to_code}**. I re-read the whole inscription ` +
-              `with it:\n\n> ${updated.translation || updated.transliteration}\n\n` +
+              `✓ Applied your correction${corrections.length === 1 ? "" : "s"} — ${list}. ` +
+              `I re-read the whole inscription with ${corrections.length === 1 ? "it" : "them"}:\n\n` +
+              `> ${updated.translation || updated.transliteration}\n\n` +
               "The cards on the page now show the new reading, its corpus evidence and its trace.",
             timestamp: Date.now(),
           },
@@ -213,7 +224,7 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
       set({ rereadAvailableAt: Date.now() + REREAD_COOLDOWN_MS });
     } catch (err) {
       if (err instanceof RereadLimitError) {
-        // Not a failure of this correction: it can still be applied once the hour is up.
+        // Not a failure of these corrections: they can still be applied once the hour is up.
         setStatus("pending");
         set({ rereadAvailableAt: Date.now() + err.retryAfterSeconds * 1000, error: err.message });
         return;

@@ -10,6 +10,22 @@ export interface ChatMessage {
   timestamp: number;
   /** Tools Thot-Sphinx called for this reply (assistant messages only). */
   toolCalls?: ToolCallOut[];
+  /** Book passages search_books retrieved for this reply (top 5, assistant messages only). */
+  bookPassages?: BookPassage[];
+}
+
+/** One passage from the Egyptology books (mirrors app/schemas/books.py). */
+export interface BookPassage {
+  chunk_id: string;
+  book: string | null;
+  author: string | null;
+  section: string;
+  pages: string;
+  citation: string;            // "Book › Section › p. N"
+  similarity: number | null;   // cosine to the question, 0–1; null when meaning search was down
+  matched_by: string[];        // "words" and/or "meaning"
+  text: string;                // clipped to ~1000 characters
+  weak: boolean;               // the search found no strong support
 }
 
 export interface ChatSession {
@@ -267,6 +283,8 @@ export interface SignCorrection {
 export interface ReadingChatMessage extends ChatMessage {
   toolCalls?: ToolCallOut[];
   corrections?: SignCorrection[];
+  /** The user's own corrections from the drawer form: applied together in one re-read. */
+  correctionBatch?: boolean;
 }
 
 /** Provenance of the LLM reading: first reader, router decision, cost. */

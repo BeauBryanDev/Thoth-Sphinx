@@ -1,6 +1,6 @@
 // Public barrel for Zustand stores
 export { useChatStore, type ChatStore } from "./useChatStore";
-export { useGlyphStore, type GlyphStore } from "./useGlyphStore";
+export { useGlyphStore, MAX_CORRECTIONS, type GlyphStore } from "./useGlyphStore";
 export {
   useReverseStore,
   MAX_REVERSE_CHARS,

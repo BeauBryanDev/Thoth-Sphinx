@@ -10,6 +10,7 @@ export const TOOL_LABEL: Record<string, string> = {
   search_parallels: "corpus search",
   lookup_lemma: "dictionary",
   lookup_entity: "knowledge graph",
+  search_books: "books",
 };
 
 export const ToolCallChips = ({ calls }: { calls: ToolCallOut[] }) => {
