@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.core import guards
 from app.core.guards import MAX_HISTORY_TURNS, TurnText
+from app.schemas.books import BookPassage
 from app.schemas.transliterations import ToolCallOut
 from app.services.sphinx_chat import ChatService
 
@@ -30,7 +31,8 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply      : str
     message_id : str
-    tool_calls : list[ToolCallOut] = []   # knowledge-graph lookups made for this reply
+    tool_calls : list[ToolCallOut] = []   # knowledge-graph lookups and book searches made for this reply
+    book_passages : list[BookPassage] = []   # top book passages search_books retrieved
 
 
 @router.post("/", response_model=ChatResponse)
@@ -44,7 +46,7 @@ async def chat(body: ChatRequest, _: str = Depends(guards.check_llm)) -> ChatRes
                             detail="Chat is unavailable: ANTHROPIC_API_KEY not configured.")
 
     try:
-        reply, message_id, tool_calls = service.chat(
+        reply, message_id, tool_calls, book_passages = service.chat(
             body.prompt,
             [t.model_dump() for t in body.history],
         )
@@ -56,4 +58,5 @@ async def chat(body: ChatRequest, _: str = Depends(guards.check_llm)) -> ChatRes
         reply=reply,
         message_id=message_id,
         tool_calls=tool_calls,
+        book_passages=book_passages,
     )

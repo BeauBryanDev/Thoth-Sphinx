@@ -348,6 +348,7 @@ def search_books(query: str, limit: int = book_search.TOP_K) -> dict[str, Any]:
                 'section': h['section'],
                 'pages': h['page_start'] if h['page_start'] == h['page_end'] else f"{h['page_start']}–{h['page_end']}",
                 'citation': h['header'],
+                'similarity': round(h['similarity'], 3) if h.get('similarity') is not None else None,
                 'matched_by': [name for name, key in (('words', 'text_rank'), ('meaning', 'vector_rank')) if h.get(key)]
                 or ['words'],
                 'text': h['body'],

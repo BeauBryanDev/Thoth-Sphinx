@@ -11,11 +11,13 @@ from app.llm import agent_tools
 from app.llm.prompts import load
 from app.core import guards
 from app.core.config import settings
+from app.schemas.books import BookPassage
 from app.schemas.transliterations import ToolCallOut
 
 logger = logging.getLogger('sphinxeyes.chat')
 
 MAX_HISTORY_MESSAGES = 20      # keep the context window (and cost) bounded
+MAX_PASSAGES         = 5       # book passages shown beside the chat
 MAX_PROMPT_CHARS     = 4000
 MAX_REPLY_TOKENS     = 16000   # thinking counts toward it; replies stay short via the persona
 
@@ -36,6 +38,21 @@ class _ChatAnswer(BaseModel):
     reply : str
 
 
+def book_passages(calls: list[llm.ToolCall]) -> list[BookPassage]:
+    """Passages from this reply's search_books calls, first seen first, no repeats, at most MAX_PASSAGES."""
+    seen: dict[str, BookPassage] = {}
+    for call in calls:
+        if call.tool != 'search_books' or not call.ok or not call.result:
+            continue
+        weak = bool(call.result.get('no_book_support'))
+        for passage in call.result.get('passages', []):
+            seen.setdefault(
+                passage['chunk_id'],
+                BookPassage(**passage, weak=weak),
+            )
+    return list(seen.values())[:MAX_PASSAGES]
+
+
 class ChatService:
     """Stateless chat turn: history comes from the client each call."""
 
@@ -47,8 +64,8 @@ class ChatService:
         self,
         prompt  : str,
         history : list[dict],          # [{'role': 'user'|'assistant', 'content': str}, ...]
-    ) -> tuple[str, str, list[ToolCallOut]]:
-        """Returns (reply, message_id, tool_calls). Raises RuntimeError when disabled, LLMError on failure."""
+    ) -> tuple[str, str, list[ToolCallOut], list[BookPassage]]:
+        """Returns (reply, message_id, tool_calls, book_passages). Raises RuntimeError when disabled, LLMError on failure."""
         if not self.enabled:
             raise RuntimeError('ANTHROPIC_API_KEY not configured — chat disabled.')
 
@@ -90,4 +107,4 @@ class ChatService:
             )
             for c in calls
         ]
-        return answer.reply, uuid.uuid4().hex, tool_calls
+        return answer.reply, uuid.uuid4().hex, tool_calls, book_passages(calls)
