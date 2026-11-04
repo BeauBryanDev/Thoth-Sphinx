@@ -18,6 +18,7 @@ import { SignFrequencyChart } from "./SignFrequencyChart";
 import { ReadingProvenanceCard } from "./ReadingProvenanceCard";
 import { CorpusEvidenceCard } from "./CorpusEvidenceCard";
 import { AgentTrace } from "./AgentTrace";
+import { Entities } from "./Entities";
 import { ReadingChatDrawer } from "@/components/chat/ReadingChatDrawer";
 import { useReadingChatStore } from "@/stores";
 
@@ -352,6 +353,9 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
                 “{result.translation}”
               </p>
             </div>
+
+            {/* 4·. The kings of the matched cartouches (knowledge graph). */}
+            <Entities entities={result.entities} />
 
             {/* 4a. Claude's notes on the photograph. */}
             {result.imageNotes.length > 0 && (

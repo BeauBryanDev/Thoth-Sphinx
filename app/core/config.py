@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     haiku_tool_budget   : int   = 3      # was 5 calls
     sonnet_tool_budget  : int   = 2      # was 3 calls
     chat_effort         : str   = 'low'
+    chat_tool_budget    : int   = 2        # /chat/: lookup_entity turns
     reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
     reading_chat_tool_budget : int = 3
     reading_chat_history     : int = 12    # messages of the conversation sent each turn

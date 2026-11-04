@@ -8,6 +8,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  /** Tools Thot-Sphinx called for this reply (assistant messages only). */
+  toolCalls?: ToolCallOut[];
 }
 
 export interface ChatSession {
@@ -68,6 +70,22 @@ export interface TransliterationOut {
   evidence?: LineEvidence[];        // closest corpus match per line (TLA)
   tool_calls?: ToolCallOut[];       // every tool call the models made
   trace?: TraceEvent[];             // the whole read, step by step
+  entities?: EntityCard[];          // kings of the matched cartouches (knowledge graph)
+}
+
+/** The king behind a matched cartouche — mirrors app/schemas/transliterations.py EntityCard. */
+export interface EntityCard {
+  id: string;
+  name: string;
+  cartouche: string;
+  dynasty: string | null;
+  period: string | null;
+  reign: string | null;
+  notes: string;
+  monuments: string[];
+  wikipedia_url: string | null;
+  source: string;
+  reliability: string;
 }
 
 /** The closest corpus sentence for a line — mirrors app/schemas/transliterations.py. */
@@ -219,6 +237,8 @@ export interface GlyphDecodingResult {
   /** Agent activity: corpus evidence per line, tool calls, and the full trace. */
   evidence: LineEvidence[];
   toolCalls: ToolCallOut[];
+  /** Kings of the matched cartouches, from the knowledge graph. */
+  entities: EntityCard[];
   trace: TraceEvent[];
   /** Claude's reading per physical line (for the reading chat snapshot). */
   readingLines: ReadingLineView[];

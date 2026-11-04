@@ -130,6 +130,21 @@ class TraceEvent(BaseModel):
     detail        : dict = {}
 
 
+class EntityCard(BaseModel):
+    """The king behind a matched cartouche, from the knowledge graph (background, not evidence)."""
+    id            : str
+    name          : str
+    cartouche     : str                        # the lexicon label, e.g. "Unas (Dynasty V)"
+    dynasty       : Optional[str] = None
+    period        : Optional[str] = None
+    reign         : Optional[str] = None
+    notes         : str = ''
+    monuments     : list[str] = []
+    wikipedia_url : Optional[str] = None
+    source        : str = ''
+    reliability   : str = ''
+
+
 class TransliterationOut(BaseModel):
     """Full-image transliteration assembled from all chunks."""
     chunks               : list[ChunkTransliteration]
@@ -146,3 +161,4 @@ class TransliterationOut(BaseModel):
     evidence             : list[LineEvidence] = []   # closest corpus match per line
     tool_calls           : list[ToolCallOut] = []    # every tool call the models made
     trace                : list[TraceEvent] = []     # the whole read, step by step
+    entities             : list[EntityCard] = []     # kings of the matched cartouches (knowledge graph)

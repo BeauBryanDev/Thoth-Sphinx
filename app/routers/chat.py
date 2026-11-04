@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.core import guards
 from app.core.guards import MAX_HISTORY_TURNS, TurnText
+from app.schemas.transliterations import ToolCallOut
 from app.services.sphinx_chat import ChatService
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -29,6 +30,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply      : str
     message_id : str
+    tool_calls : list[ToolCallOut] = []   # knowledge-graph lookups made for this reply
 
 
 @router.post("/", response_model=ChatResponse)
@@ -42,7 +44,7 @@ async def chat(body: ChatRequest, _: str = Depends(guards.check_llm)) -> ChatRes
                             detail="Chat is unavailable: ANTHROPIC_API_KEY not configured.")
 
     try:
-        reply, message_id = service.chat(
+        reply, message_id, tool_calls = service.chat(
             body.prompt,
             [t.model_dump() for t in body.history],
         )
@@ -50,4 +52,8 @@ async def chat(body: ChatRequest, _: str = Depends(guards.check_llm)) -> ChatRes
 
         raise guards.upstream_error('chat', e) from e
 
-    return ChatResponse(reply=reply, message_id=message_id)
+    return ChatResponse(
+        reply=reply,
+        message_id=message_id,
+        tool_calls=tool_calls,
+    )

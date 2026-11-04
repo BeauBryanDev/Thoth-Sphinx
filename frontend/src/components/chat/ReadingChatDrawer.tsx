@@ -9,15 +9,10 @@
 import { useEffect } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { ManualCorrection } from "@/components/chat/ManualCorrection";
+import { ToolCallChips } from "@/components/chat/ToolCallChips";
 import { correctionKey, useReadingChatStore } from "@/stores";
 import { useRereadCooldown } from "@/hooks/useRereadCooldown";
 import type { ChatMessage, ReadingChatMessage } from "@/types";
-
-const TOOL_LABEL: Record<string, string> = {
-  search_parallels: "corpus search",
-  lookup_lemma: "dictionary",
-  lookup_entity: "knowledge graph",
-};
 
 /** Human in the loop: the user accepts or dismisses each proposed correction. */
 const CorrectionActions = ({ messageId, index }: { messageId: string; index: number }) => {
@@ -71,25 +66,7 @@ const MessageExtras = ({ message }: { message: ChatMessage }) => {
 
   return (
     <div className="mt-3 space-y-2 border-t border-amber-800/50 pt-2">
-      {toolCalls.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {toolCalls.map((c, i) => (
-            <span
-              key={i}
-              title={JSON.stringify(c.input)}
-              className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] ${
-                c.ok
-                  ? "border-amber-700/60 bg-stone-900/70 text-amber-200/90"
-                  : "border-red-500/50 bg-red-950/40 text-red-200"
-              }`}
-            >
-              <span aria-hidden>⌕</span>
-              <span className="font-semibold uppercase tracking-wide">{TOOL_LABEL[c.tool] ?? c.tool}</span>
-              <span className="truncate text-amber-300/80">{c.summary}</span>
-            </span>
-          ))}
-        </div>
-      )}
+      <ToolCallChips calls={toolCalls} />
 
       {corrections.map((c, i) => (
         <div key={i} className="rounded-lg border-2 border-amber-500/70 bg-amber-950/50 p-2.5">

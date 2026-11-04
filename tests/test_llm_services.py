@@ -44,19 +44,34 @@ def per_line(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, 'translit_whole_max_signs', 0)
 
 
-def test_chat_uses_haiku_low_and_persona(stub: StubMessages) -> None:
-    stub.response = _response(text='The sands remember Unas.')
+def test_chat_looks_up_entities_with_haiku_low_and_persona(stub: StubMessages,
+                                                           monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.llm import agent_tools
+    from app.services import sphinx_chat
+    looked_up: list[str] = []
+
+    def lookup(name: str) -> dict:
+        looked_up.append(name)
+        return {'found': 1, 'note': '', 'entities': [{'name': 'Unas', 'type': 'pharaoh'}]}
+    fake = agent_tools.AgentTool('lookup_entity', 'd', agent_tools.LOOKUP_ENTITY.schema, lookup)
+    monkeypatch.setattr(sphinx_chat, 'CHAT_TOOLS', (fake,))
+    calls = _scripted(stub, [
+        _tool_turn(_tool_use('lookup_entity', {'name': 'Unas'})),
+        _response(parsed=sphinx_chat._ChatAnswer(reply='The records place Unas in the Fifth Dynasty.')),
+    ])
     history = [{'role': 'assistant', 'content': 'Greetings, seeker.'},
                {'role': 'user', 'content': 'Who built Saqqara?'},
                {'role': 'assistant', 'content': 'Djoser, through Imhotep.'}]
-    reply, message_id = ChatService().chat('And Unas?', history)
-    assert reply == 'The sands remember Unas.' and len(message_id) == 32
-    _, kw = stub.calls[0]
+    reply, message_id, tool_calls = ChatService().chat('And Unas?', history)
+    assert reply.startswith('The records place Unas') and len(message_id) == 32
+    assert looked_up == ['Unas'] and [(c.tool, c.ok) for c in tool_calls] == [('lookup_entity', True)]
+    kw = calls[0]
     assert kw['model'] == 'claude-haiku-5-5' and kw['output_config'] == {'effort': 'low'}
-    assert kw['system'][0]['text'].startswith(SPHINX_PERSONA)   # persona word for word, rule appended
+    assert [t['name'] for t in kw['tools']] == ['lookup_entity']
+    assert kw['system'][0]['text'].startswith(SPHINX_PERSONA)   # persona word for word, rules appended
     # Leading assistant greeting dropped: Claude needs a user turn first.
     assert [m['role'] for m in kw['messages']] == ['user', 'assistant', 'user']
-    assert kw['messages'][-1]['content'] == '<user_message>\nAnd Unas?\n</user_message>'
+    assert kw['messages'][-1]['content'][0]['text'] == '<user_message>\nAnd Unas?\n</user_message>'
 
 
 def test_chat_disabled_raises(no_api_key: None) -> None:
@@ -258,7 +273,7 @@ def test_confident_draft_is_not_escalated(stub: StubMessages) -> None:
     assert len(stub.calls) == 1 and not out.escalated
     assert out.escalation_reasons == ['haiku_confident'] and out.cost_usd is not None
     # Haiku is told it may ask for a second opinion.
-    assert 'SECOND OPINION' in stub.calls[0][1]['messages'][0]['content']
+    assert 'SECOND OPINION' in stub.calls[0][1]['messages'][0]['content'][-1]['text']
 
 
 def test_haiku_request_escalates_to_sonnet_review(stub: StubMessages) -> None:
@@ -308,7 +323,7 @@ def test_escalation_can_be_switched_off(stub: StubMessages, monkeypatch: pytest.
     out = TransliterationService().transliterate_sequence(
         ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext())
     assert len(stub.calls) == 1 and out.escalation_reasons == ['escalation_disabled']
-    assert 'SECOND OPINION' not in stub.calls[0][1]['messages'][0]['content']
+    assert 'SECOND OPINION' not in stub.calls[0][1]['messages'][0]['content'][-1]['text']
 
 
 def test_whole_wall_returns_image_notes(stub: StubMessages) -> None:
@@ -327,7 +342,7 @@ def test_notes_without_photo_describe_the_inscription(stub: StubMessages) -> Non
     stub.response = _response(parsed=_wall('anx'))
     TransliterationService().transliterate_sequence(
         ['S34'], [0.9], [], [], direction='ltr', layout='rows', ctx=TextContext())
-    assert 'no photograph is attached' in stub.calls[0][1]['messages'][0]['content']
+    assert 'no photograph is attached' in stub.calls[0][1]['messages'][0]['content'][-1]['text']
 
 
 def test_per_line_path_has_no_notes(stub: StubMessages, per_line: None) -> None:
@@ -419,20 +434,25 @@ def test_haiku_calls_tools_and_evidence_check_fills_the_rest(stub: StubMessages,
     assert out.trace[1].input_tokens and out.trace[-1].cost_usd == out.cost_usd
 
 
-def test_tool_budget_is_enforced(stub: StubMessages, fake_tools: list[dict],
-                                 monkeypatch: pytest.MonkeyPatch) -> None:
+def test_tool_budget_counts_turns_and_runs_a_turn_in_parallel(stub: StubMessages, fake_tools: list[dict],
+                                                              monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, 'haiku_tool_budget', 1)
     calls = _scripted(stub, [
         _tool_turn(_tool_use('search_parallels', {'line': 1, 'translit': 'a'}, 'tu_1'),
                    _tool_use('search_parallels', {'line': 2, 'translit': 'b'}, 'tu_2')),
+        _tool_turn(_tool_use('lookup_lemma', {'query': 'anx'}, 'tu_3')),
         _response(parsed=_wall('a', 'b')),
     ])
     out = TransliterationService().transliterate_sequence(
         ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
         direction='ltr', layout='rows', ctx=TextContext())
-    second = calls[1]['messages'][2]['content'][1]
+    # Turn 1: both searches run, results in the model's order.
+    first = calls[1]['messages'][2]['content']
+    assert [b['tool_use_id'] for b in first] == ['tu_1', 'tu_2'] and not any(b.get('is_error') for b in first)
+    # Turn 2 is over the one-turn budget: refused, and the model answers next.
+    second = calls[2]['messages'][4]['content'][0]
     assert second['is_error'] and 'budget spent' in second['content']
-    assert len(fake_tools) == 1 and out.tool_calls[1].summary.startswith('refused')
+    assert len(fake_tools) == 2 and out.tool_calls[2].summary.startswith('refused')
 
 
 def test_no_corpus_support_escalates_and_review_sees_evidence(stub: StubMessages) -> None:
@@ -446,7 +466,7 @@ def test_no_corpus_support_escalates_and_review_sees_evidence(stub: StubMessages
         ['S34', 'G5', 'M23', 'L2'], [0.9] * 4, [2], [],
         direction='ltr', layout='rows', ctx=TextContext())
     assert out.escalated and out.escalation_reasons == ['no_corpus_support']
-    text = calls[1]['messages'][0]['content']
+    text = calls[1]['messages'][0]['content'][-1]['text']
     assert 'CORPUS EVIDENCE gathered so far' in text and '[1] none' in text
     kinds = [e.kind for e in out.trace]
     assert kinds.index('router') < kinds.index('escalation') < len(kinds) - 1
@@ -459,7 +479,7 @@ def test_tools_off_still_gathers_evidence(stub: StubMessages, monkeypatch: pytes
     out = TransliterationService().transliterate_sequence(
         ['S34', 'G5'], [0.9] * 2, [], [], direction='ltr', layout='rows', ctx=TextContext())
     _, kw = stub.calls[0]
-    assert 'tools' not in kw and 'CORPUS TOOLS' not in kw['messages'][0]['content']
+    assert 'tools' not in kw and 'CORPUS TOOLS' not in kw['messages'][0]['content'][-1]['text']
     assert [e.searched_by for e in out.evidence] == ['evidence_check'] and out.tool_calls == []
 
 
@@ -482,7 +502,7 @@ def test_human_corrections_reach_the_prompt_and_the_trace(stub: StubMessages) ->
     out = TransliterationService().transliterate_sequence(
         ['S34', 'G5', 'E1', 'D40', 'N28'], [0.9, 0.9, 0.9, 0.9, 1.0], [], [],
         direction='ltr', layout='rows', ctx=TextContext(), human_corrections=[fix])
-    text = stub.calls[0][1]['messages'][0]['content']
+    text = stub.calls[0][1]['messages'][0]['content'][-1]['text']
     assert 'HUMAN CORRECTIONS' in text and 'the detector had X1; the user confirmed N28' in text
     human = [e for e in out.trace if e.kind == 'human_feedback']
     assert len(human) == 1 and human[0].actor == 'user' and 'X1 → N28' in human[0].summary
@@ -493,7 +513,7 @@ def test_no_human_block_without_corrections(stub: StubMessages) -> None:
     stub.response = _response(parsed=_wall('anx'))
     TransliterationService().transliterate_sequence(
         ['S34'], [0.9], [], [], direction='ltr', layout='rows', ctx=TextContext())
-    assert 'HUMAN CORRECTIONS' not in stub.calls[0][1]['messages'][0]['content']
+    assert 'HUMAN CORRECTIONS' not in stub.calls[0][1]['messages'][0]['content'][-1]['text']
 
 
 def test_transliterate_endpoint_accepts_human_corrections(client, stub: StubMessages) -> None:  # noqa: ANN001

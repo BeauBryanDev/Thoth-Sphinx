@@ -12,6 +12,7 @@ from app import llm
 from app.llm.prompts import load
 from app.core.config import settings
 from app.core.guards import public_message
+from app.services import entity_cards
 from app.llm import agent_tools, images, router
 from app.llm.trace import Trace
 from app.schemas.transliterations import (
@@ -106,7 +107,13 @@ def _cartouche_block(cartouche_names: list[str]) -> str:
     return '\n- '.join(parts) if parts else 'Contains cartouche: no'
 
 
-def _context_block(ctx: TextContext, direction: str, layout: str, cartouche_names: list[str]) -> str:
+def _context_block(
+    ctx: TextContext,
+    direction: str,
+    layout: str,
+    cartouche_names: list[str],
+    graph: str = '',
+) -> str:
     """The ARCHAEOLOGICAL CONTEXT section shared by both prompt builders."""
     return f"""ARCHAEOLOGICAL CONTEXT (fields marked 'unknown' were not supplied by the user — do not invent them, but exploit every field that IS given):
 - Period: {_h(ctx.period)}
@@ -118,7 +125,7 @@ def _context_block(ctx: TextContext, direction: str, layout: str, cartouche_name
 - Site: {_h(ctx.site)}
 - Reading direction: {direction}
 - Layout: {layout}
-- {_cartouche_block(cartouche_names)}"""
+- {_cartouche_block(cartouche_names)}{graph}"""
 
 
 def _photo_rules() -> str:
@@ -141,6 +148,7 @@ def build_egyptologist_prompt(
     chunk_info       : str,
     full_sequence    : str = '',
     has_image        : bool = False,
+    graph            : str = '',
 ) -> str:
     """Build the per-chunk USER message (the system message is static)."""
     signs = _signs(codes, confidences)
@@ -166,7 +174,7 @@ def build_egyptologist_prompt(
     return f"""DETECTED SIGN SEQUENCE ({chunk_info}; each segment is one physical line of text; Gardiner codes with detector confidence):
 {signs}
 
-{_context_block(ctx, direction, layout, cartouche_names)}
+{_context_block(ctx, direction, layout, cartouche_names, graph)}
 {whole_block}{previous_block}{photo_block}
 Transliterate and gloss this segment. JSON only."""
 
@@ -181,6 +189,7 @@ def build_wall_prompt(
     ask_second_opinion : bool = False,
     use_tools       : bool = False,
     human_corrections : list[HumanCorrection] | None = None,
+    graph           : str = '',
 ) -> str:
     """Build the USER message that reads the whole inscription in one call."""
     numbered = '\n'.join(
@@ -217,7 +226,7 @@ def build_wall_prompt(
     return f"""DETECTED SIGN SEQUENCE (the WHOLE inscription, {len(lines)} physical lines in reading order; Gardiner codes with detector confidence):
 {numbered}
 
-{_context_block(ctx, direction, layout, cartouche_names)}
+{_context_block(ctx, direction, layout, cartouche_names, graph)}
 {photo_block}{_human_block(human_corrections)}{tools_block}{second_opinion}
 WHOLE-INSCRIPTION READING: read all {len(lines)} lines together as one text — a sentence or a royal titulary may run on from one line into the next. The response has one `lines` entry per numbered line, in order, each with the OUTPUT fields for that line alone, plus `full_translation`: the whole inscription as one connected English translation (the reading a museum label would print), and one `period_note` for the whole text.
 {_notes_rules(has_image)}"""
@@ -378,6 +387,39 @@ class TransliterationService:
         image_bgr       : np.ndarray | None = None,
         human_corrections : list[HumanCorrection] | None = None,
     ) -> TransliterationOut:
+        """Pre-fetch the cartouche kings from the graph, read, and attach the cards to the result."""
+        cards, card_calls = entity_cards.prefetch(cartouche_names)
+        out = self._transliterate(
+            codes,
+            confidences,
+            boundary_hints,
+            cartouche_names,
+            direction=direction,
+            layout=layout,
+            ctx=ctx,
+            image_bgr=image_bgr,
+            human_corrections=human_corrections,
+            graph=entity_cards.prompt_block(cards),
+            card_calls=card_calls,
+        )
+        out.entities = cards
+        return out
+
+    def _transliterate(
+        self,
+        codes           : list[str],
+        confidences     : list[float],
+        boundary_hints  : list[int],
+        cartouche_names : list[str],
+        *,
+        direction       : str,
+        layout          : str,
+        ctx             : TextContext,
+        image_bgr       : np.ndarray | None = None,
+        human_corrections : list[HumanCorrection] | None = None,
+        graph           : str = '',
+        card_calls      : list[ToolCallOut] | None = None,
+    ) -> TransliterationOut:
 
         if not self.enabled:
             
@@ -396,7 +438,8 @@ class TransliterationService:
             try:
                 return self._read_wall(codes, confidences, boundary_hints, cartouche_names,
                                        direction=direction, layout=layout, ctx=ctx, photo=photo,
-                                       human_corrections=human_corrections or [])
+                                       human_corrections=human_corrections or [],
+                                       graph=graph, card_calls=card_calls or [])
             except llm.LLMTruncated:
                 logger.warning('whole-inscription reply hit max_tokens; reading per line instead')
             except Exception as e:
@@ -435,6 +478,7 @@ class TransliterationService:
                 chunk_info=f'Segment {i + 1} of {len(chunks)}',
                 full_sequence=full_sequence,
                 has_image=photo is not None,
+                graph=graph,
             )
             content: str | list[dict] = (
                 [photo, {'type': 'text', 'text': prompt}] if photo is not None else prompt)
@@ -491,6 +535,8 @@ class TransliterationService:
         ctx             : TextContext,
         photo           : dict | None,
         human_corrections : list[HumanCorrection] | None = None,
+        graph           : str = '',
+        card_calls      : list[ToolCallOut] | None = None,
     ) -> TransliterationOut:
         """Haiku reads the wall with corpus tools; the router may ask Sonnet for a second opinion."""
         human = human_corrections or []
@@ -506,6 +552,14 @@ class TransliterationService:
                   f'{len(cartouche_names)} cartouche(s)' + (f': {matched[0].split(" — ")[1]}' if matched and ' — ' in matched[0] else ''),
                   detail={'n_signs': len(codes), 'n_lines': len(lines), 'cartouches': cartouche_names,
                           'photo_attached': photo is not None})
+        for call in card_calls or []:
+            trace.add(
+                'tool_call',
+                call.tool,
+                f'pre-fetched: {call.summary}',
+                latency_ms=call.latency_ms,
+                detail={'called_by': 'pipeline', 'input': call.input, 'ok': call.ok},
+            )
         for c in human:
             trace.add('human_feedback', 'user',
                       f'corrected line {c.line}, sign {c.position}: {c.from_code} → {c.to_code}',
@@ -518,7 +572,7 @@ class TransliterationService:
             messages       = [{'role': 'user', 'content': _with_photo(photo, build_wall_prompt(
                 lines, ctx, direction, layout, cartouche_names, has_image=photo is not None,
                 ask_second_opinion=escalation_on, use_tools=bool(reading_tools),
-                human_corrections=human))}],
+                human_corrections=human, graph=graph))}],
             schema         = _DraftWallReading,
             effort         = settings.translit_effort,
             tools          = reading_tools,
@@ -568,6 +622,7 @@ class TransliterationService:
             review_prompt = build_wall_prompt(
                 lines, ctx, direction, layout, cartouche_names, has_image=photo is not None,
                 ask_second_opinion=False, use_tools=bool(reading_tools), human_corrections=human,
+                graph=graph,
             ) + build_review_block(draft, signals.haiku_reason, evidence)
             try:
                 reading, review_usages, review_calls = llm.complete_parsed_with_tools(
@@ -607,8 +662,9 @@ class TransliterationService:
         costs = [u.cost_usd for u in usages]
         out.cost_usd = sum(costs) if all(c is not None for c in costs) else None
         out.evidence = [evidence[n] for n in sorted(evidence)]
-        out.tool_calls = [ToolCallOut(model=c.model, tool=c.tool, input=c.input, summary=c.summary,
-                                      ok=c.ok, latency_ms=c.latency_ms) for c in calls]
+        out.tool_calls = list(card_calls or []) + [
+            ToolCallOut(model=c.model, tool=c.tool, input=c.input, summary=c.summary,
+                        ok=c.ok, latency_ms=c.latency_ms) for c in calls]
         trace.add('final', served_by,
                   f'reading delivered: {len(out.chunks)} lines, {len(calls)} tool calls, '
                   f'{sum(e.verdict in ("strong", "possible") for e in out.evidence)} lines with corpus support',

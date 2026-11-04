@@ -97,6 +97,7 @@ const toDecodingResult = (
     imageNotes: llmOk ? llm.image_notes ?? [] : [],
     evidence: llmOk ? llm.evidence ?? [] : [],
     toolCalls: llmOk ? llm.tool_calls ?? [] : [],
+    entities: llm?.entities ?? [],
     trace: llmOk ? llm.trace ?? [] : [],
     readingLines: llmOk
       ? llm.chunks.map((c) => ({

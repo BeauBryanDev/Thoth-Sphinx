@@ -59,7 +59,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }));
 
     try {
-      const { reply, messageId } = await sendChatMessage({
+      const { reply, messageId, toolCalls } = await sendChatMessage({
         prompt: trimmed,
         history,
       });
@@ -68,6 +68,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         role: "assistant",
         content: reply,
         timestamp: Date.now(),
+        toolCalls,
       };
       set((s) => ({ messages: [...s.messages, assistantMsg] }));
     } catch (err) {

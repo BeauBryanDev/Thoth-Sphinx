@@ -4,10 +4,14 @@ from __future__ import annotations
 import logging
 import uuid
 
+from pydantic import BaseModel
+
 from app import llm
+from app.llm import agent_tools
 from app.llm.prompts import load
 from app.core import guards
 from app.core.config import settings
+from app.schemas.transliterations import ToolCallOut
 
 logger = logging.getLogger('sphinxeyes.chat')
 
@@ -23,6 +27,13 @@ MAX_REPLY_TOKENS     = 16000   # thinking counts toward it; replies stay short v
 # degrades gracefully when no API key is configured.
 
 SPHINX_PERSONA = load('sphinx_persona')   # app/llm/prompts/
+CHAT_TOOLS_RULES = '\n\n' + load('chat_tools')   # appended: the persona stays word for word
+CHAT_TOOLS = (agent_tools.LOOKUP_ENTITY,)
+
+
+class _ChatAnswer(BaseModel):
+    """Thot-Sphinx's answer, in markdown."""
+    reply : str
 
 
 class ChatService:
@@ -36,8 +47,8 @@ class ChatService:
         self,
         prompt  : str,
         history : list[dict],          # [{'role': 'user'|'assistant', 'content': str}, ...]
-    ) -> tuple[str, str]:
-        """Returns (reply, message_id). Raises RuntimeError when disabled, LLMError on failure."""
+    ) -> tuple[str, str, list[ToolCallOut]]:
+        """Returns (reply, message_id, tool_calls). Raises RuntimeError when disabled, LLMError on failure."""
         if not self.enabled:
             raise RuntimeError('ANTHROPIC_API_KEY not configured — chat disabled.')
 
@@ -57,12 +68,26 @@ class ChatService:
         ]
 
         # No temperature on current Claude models: the persona carries the tone.
-        reply, _ = llm.complete_text(
-            feature    = 'chat',
-            model      = settings.haiku_model,
-            system     = SPHINX_PERSONA + guards.USER_TEXT_RULE,
-            messages   = messages,
-            effort     = settings.chat_effort,
-            max_tokens = MAX_REPLY_TOKENS,
+        answer, _, calls = llm.complete_parsed_with_tools(
+            feature        = 'chat',
+            model          = settings.haiku_model,
+            system         = SPHINX_PERSONA + CHAT_TOOLS_RULES + guards.USER_TEXT_RULE,
+            messages       = messages,
+            schema         = _ChatAnswer,
+            effort         = settings.chat_effort,
+            tools          = CHAT_TOOLS,
+            max_tool_turns = settings.chat_tool_budget,
+            max_tokens     = MAX_REPLY_TOKENS,
         )
-        return reply, uuid.uuid4().hex
+        tool_calls = [
+            ToolCallOut(
+                model=c.model,
+                tool=c.tool,
+                input=c.input,
+                summary=c.summary,
+                ok=c.ok,
+                latency_ms=c.latency_ms,
+            )
+            for c in calls
+        ]
+        return answer.reply, uuid.uuid4().hex, tool_calls

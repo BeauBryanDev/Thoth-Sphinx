@@ -3,7 +3,7 @@
 // ============================================================
 
 import http from "@/services/http";
-import type { ChatMessage } from "@/types";
+import type { ChatMessage, ToolCallOut } from "@/types";
 
 export interface SendMessagePayload {
   prompt: string;
@@ -13,6 +13,7 @@ export interface SendMessagePayload {
 export interface SendMessageResponse {
   reply: string;
   messageId: string;
+  toolCalls: ToolCallOut[];
 }
 
 const CHAT_TIMEOUT_MS = 60_000;
@@ -21,12 +22,12 @@ const CHAT_TIMEOUT_MS = 60_000;
 export const sendChatMessage = async (
   payload: SendMessagePayload,
 ): Promise<SendMessageResponse> => {
-  const { data } = await http.post<{ reply: string; message_id: string }>(
+  const { data } = await http.post<{ reply: string; message_id: string; tool_calls?: ToolCallOut[] }>(
     "/chat/",
     { prompt: payload.prompt, history: payload.history ?? [] },
     { timeout: CHAT_TIMEOUT_MS },
   );
-  return { reply: data.reply, messageId: data.message_id };
+  return { reply: data.reply, messageId: data.message_id, toolCalls: data.tool_calls ?? [] };
 };
 
 /**
