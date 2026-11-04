@@ -346,7 +346,9 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
               <p className="mb-1.5 text-[10px] uppercase tracking-[0.25em] text-amber-500/80">
                 English translation · gloss
               </p>
-              <p className="text-sm leading-relaxed text-amber-100/90">
+              {/* The translation is always italic; Claude's notes below stay roman, so the
+                  reader can tell the ancient text from the commentary. */}
+              <p className="font-serif text-base italic leading-relaxed text-amber-100/90">
                 “{result.translation}”
               </p>
             </div>

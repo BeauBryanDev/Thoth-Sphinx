@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import pytest
 
+from app.core.guards import fence_user_text
 from app.schemas.reading_chat import ReadingChatTurn, ReadingLine, ReadingSnapshot, SignCorrection
 from app.schemas.transliterations import CorpusMatch, LineEvidence
 from app.services import reading_chat
@@ -67,7 +68,7 @@ def test_turn_sends_snapshot_first_and_keeps_the_prefix_stable(stub: StubMessage
     # Turn 2 repeats the same cached prefix, then the conversation, then the new question.
     assert second['messages'][0] == first['messages'][0] and second['system'] == first['system']
     assert [m['role'] for m in second['messages']] == ['user', 'assistant', 'user', 'assistant', 'user']
-    assert second['messages'][-1]['content'] == 'Is line 1 in the corpus?'
+    assert second['messages'][-1]['content'] == fence_user_text('Is line 1 in the corpus?')
     assert out1.reply == 'The Horus name is attested.' and out1.corrections == []
 
 
@@ -78,7 +79,8 @@ def test_history_is_capped(stub: StubMessages, monkeypatch: pytest.MonkeyPatch) 
     history = [ReadingChatTurn(role='user' if i % 2 else 'assistant', content=f'm{i}') for i in range(9)]
     ReadingChatService().reply('next', history, _reading())
     msgs = stub.calls[0][1]['messages']
-    assert [m['content'] for m in msgs[1:]] == ['m7', 'm8', 'next']
+    # m7 is the visitor's (fenced), m8 is ours (only cleaned).
+    assert [m['content'] for m in msgs[1:]] == [fence_user_text('m7'), 'm8', fence_user_text('next')]
 
 
 def test_corrections_are_validated_against_the_reading() -> None:

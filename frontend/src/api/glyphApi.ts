@@ -222,8 +222,10 @@ export const transliterateGlyphs = async (
     );
     return data;
   } catch (err) {
-    // The server allows one correction re-read per client per hour (app/core/ratelimit.py).
-    if (axios.isAxiosError(err) && err.response?.status === 429) {
+    // The server allows one correction re-read per client per hour (app/routers/transliterate.py).
+    // Other 429s (daily quota, request window) carry another X-Guard and surface as plain errors.
+    if (axios.isAxiosError(err) && err.response?.status === 429
+        && err.response.headers["x-guard"] === "reread") {
       const retry = Number(err.response.headers["retry-after"]) || 3600;
       const detail = (err.response.data as { detail?: string } | undefined)?.detail;
       throw new RereadLimitError(retry, detail ?? "One correction re-read per hour.");

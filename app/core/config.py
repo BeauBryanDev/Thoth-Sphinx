@@ -63,8 +63,9 @@ class Settings(BaseSettings):
     router_max_detector_low_share : float = 0.35
     # Corpus tools for the whole-wall read (app/llm/agent_tools.py); off = no tool loop
     translit_tools      : bool  = True
-    haiku_tool_budget   : int   = 5
-    sonnet_tool_budget  : int   = 3
+    # Tool budgets count TURNS (model round trips); calls within a turn run in parallel.
+    haiku_tool_budget   : int   = 3      # was 5 calls
+    sonnet_tool_budget  : int   = 2      # was 3 calls
     chat_effort         : str   = 'low'
     reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
     reading_chat_tool_budget : int = 3

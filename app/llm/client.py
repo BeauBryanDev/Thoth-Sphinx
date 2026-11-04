@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -241,7 +242,26 @@ class ToolCall:
     result     : dict[str, Any] | None   # compact result; None when the call failed
 
 
+def cache_turn(message: dict[str, Any]) -> dict[str, Any]:
+    """A text message as one block marked for caching: later tool turns and the next chat turn read it."""
+    return {
+        'role': message['role'],
+        'content': [
+            {
+                'type': 'text',
+                'text': message['content'],
+                'cache_control': {'type': 'ephemeral'},
+            },
+        ],
+    }
+
+
 BUDGET_SPENT = 'Tool budget spent for this reading. Answer now with what you have.'
+
+# Shared by every request: one turn's tool calls, and the evidence check, run side by side.
+# Bounded, so each worker keeps at most one corpus DB connection (evidence_store.retrieve).
+TOOL_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix='sphinx-tool')
+MAX_CALLS_PER_TURN = 12   # one search per line of a whole-wall read, plus a few lookups
 
 
 def _assistant_content(response: Any) -> list[dict[str, Any]]:
@@ -259,7 +279,7 @@ def complete_parsed_with_tools(*, feature: str,
                             messages: list[dict[str, Any]],
                             schema: type[T], effort: str,
                             tools: Sequence[Any],
-                            max_tool_calls: int,
+                            max_tool_turns: int,
                             trace: Any = None,
                             max_tokens: int = 16000
                             ) -> tuple[T, list[Usage], list[ToolCall]]:
@@ -270,7 +290,8 @@ def complete_parsed_with_tools(*, feature: str,
     usages: list[Usage] = []
     calls: list[ToolCall] = []
 
-    for turn in range(max_tool_calls + 2):
+    # A budget of round trips, not calls: one turn's calls run side by side.
+    for turn in range(max_tool_turns + 2):
         response, usage = _call(feature=feature, 
                                 model=model, 
                                 system=system, 
@@ -296,9 +317,14 @@ def complete_parsed_with_tools(*, feature: str,
 
             return parsed, usages, calls
 
-        results = []
-        for use in uses:
-            results.append(_run_tool(model, use, by_name, calls, max_tool_calls, trace))
+        results = _run_tools(
+            model,
+            uses,
+            by_name,
+            calls,
+            MAX_CALLS_PER_TURN if turn < max_tool_turns else 0,
+            trace,
+        )
 
         history = history + [{'role': 'assistant', 
                             'content': _assistant_content(response)},
@@ -306,36 +332,60 @@ def complete_parsed_with_tools(*, feature: str,
                              'content': results}
                              ]
 
-    raise LLMError(f'{feature}: no final answer after {max_tool_calls + 2} turns')
+    raise LLMError(f'{feature}: no final answer after {max_tool_turns + 2} turns')
 
 
-def _run_tool(model: str, 
-            use: Any, 
-            by_name: dict[str, Any], 
-            calls: list[ToolCall],
-            max_tool_calls: int, 
-            trace: Any) -> dict[str, Any]:
-    """Run one tool_use block; every outcome becomes a tool_result, errors included."""
+def _run_tools(
+    model: str,
+    uses: list[Any],
+    by_name: dict[str, Any],
+    calls: list[ToolCall],
+    room: int,
+    trace: Any,
+) -> list[dict[str, Any]]:
+    """Run up to `room` of this turn's tool calls in parallel; results keep the model's order."""
+    outcomes = list(TOOL_POOL.map(lambda use: _execute(use, by_name), uses[:room]))
+    outcomes += [_REFUSED] * (len(uses) - len(outcomes))
+    return [
+        _run_tool(model, use, outcome, calls, trace)
+        for use, outcome in zip(uses, outcomes)
+    ]
+
+
+# (content, ok, result, summary, latency_ms) of one tool call
+_Outcome = tuple[str, bool, dict[str, Any] | None, str, int]
+_REFUSED: _Outcome = (BUDGET_SPENT, False, None, 'refused: tool budget spent', 0)
+
+
+def _execute(
+    use: Any,
+    by_name: dict[str, Any],
+) -> _Outcome:
+    """Call one tool; errors become an outcome, never an exception."""
+    if use.name not in by_name:
+        return f'Unknown tool {use.name}.', False, None, 'unknown tool', 0
+    started = time.monotonic()
+    try:
+        result = by_name[use.name].run(**dict(use.input or {}))
+        content, ok = json.dumps(result, ensure_ascii=False, default=str), True
+        summary = _summarize(use.name, result)
+    except Exception as e:  # tool errors go back to the model, never swallowed (spec §12)
+        log.warning('tool %s failed: %s', use.name, e)
+        content, ok, result = f'Tool error: {e}', False, None
+        summary = f'error: {e}'
+    return content, ok, result, summary, int((time.monotonic() - started) * 1000)
+
+
+def _run_tool(
+    model: str,
+    use: Any,
+    outcome: _Outcome,
+    calls: list[ToolCall],
+    trace: Any,
+) -> dict[str, Any]:
+    """Record one tool call (calls list, trace) and return its tool_result block."""
     tool_input = dict(use.input or {})
-    
-    if len(calls) >= max_tool_calls:
-        content, ok, result = BUDGET_SPENT, False, None
-        summary = 'refused: tool budget spent'
-        latency = 0
-    elif use.name not in by_name:
-        content, ok, result = f'Unknown tool {use.name}.', False, None
-        summary, latency = 'unknown tool', 0
-    else:
-        started = time.monotonic()
-        try:
-            result = by_name[use.name].run(**tool_input)
-            content, ok = json.dumps(result, ensure_ascii=False, default=str), True
-            summary = _summarize(use.name, result)
-        except Exception as e:  # tool errors go back to the model, never swallowed (spec §12)
-            log.warning('tool %s failed: %s', use.name, e)
-            content, ok, result = f'Tool error: {e}', False, None
-            summary = f'error: {e}'
-        latency = int((time.monotonic() - started) * 1000)
+    content, ok, result, summary, latency = outcome
 
     calls.append(ToolCall(model=model, tool=use.name, 
                           input=tool_input, summary=summary,

@@ -111,6 +111,7 @@ reading: ReadingSnapshot) -> list[SignCorrection]:
             logger.warning('dropped correction with an invalid to_code: %s', c)
         else:
             kept.append(c.model_copy(update={'to_code': to_code, 'from_code': c.from_code.strip()}))
+
     return kept
 
 
@@ -137,7 +138,9 @@ class ReadingChatService:
         messages = (
             [{'role': 'user', 'content': first}]
             + _history(history)
-            + [guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS])]
+            # Breakpoints: system, the snapshot (stable all conversation), and this question,
+            # which every tool turn re-sends.
+            + [llm.cache_turn(guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS]))]
         )
 
         parsed, usages, calls = llm.complete_parsed_with_tools(
@@ -148,15 +151,18 @@ class ReadingChatService:
             schema         = _ChatReply,
             effort         = settings.reading_chat_effort,
             tools          = agent_tools.READING_TOOLS,
-            max_tool_calls = settings.reading_chat_tool_budget,
+            max_tool_turns = settings.reading_chat_tool_budget,
             max_tokens     = MAX_REPLY_TOKENS,
         )
         costs = [u.cost_usd for u in usages]
+
         return ReadingChatResponse(
             reply       = parsed.reply,
             message_id  = uuid.uuid4().hex,
             corrections = valid_corrections(parsed.corrections, reading),
-            tool_calls  = [ToolCallOut(model=c.model, tool=c.tool, input=c.input, 
+            tool_calls  = [ToolCallOut(model=c.model, 
+                                        tool=c.tool, 
+                                        input=c.input, 
                                         summary=c.summary,
                                         ok=c.ok, latency_ms=c.latency_ms) for c in calls],
             model       = usages[-1].served_by,

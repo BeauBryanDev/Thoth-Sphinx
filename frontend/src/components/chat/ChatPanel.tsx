@@ -105,9 +105,10 @@ export const ChatPanel = ({
                   <p className="whitespace-pre-wrap">{m.content}</p>
                 ) : (
                   /* Claude often answers in markdown (**bold**, lists,
-                     headings) — render it instead of showing raw marks. */
+                     headings) — render it instead of showing raw marks.
+                     No images: a reply must never auto-load a URL (prompt-injection exfiltration). */
                   <div className="chat-markdown">
-                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                    <ReactMarkdown disallowedElements={["img"]}>{m.content}</ReactMarkdown>
                   </div>
                 )}
                 {!isUser && renderExtras?.(m)}

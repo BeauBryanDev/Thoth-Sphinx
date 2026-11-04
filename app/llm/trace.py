@@ -32,10 +32,21 @@ class Trace:
         self.events.append(event)
         return event
 
-    def add_usage(self, usage: Any, summary: str, detail: dict[str, Any] | None = None) -> dict[str, Any]:
+    def add_usage(self, usage: Any, 
+    summary: str, 
+    detail: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Record one model turn from an app.llm.Usage."""
-        return self.add('llm_call', usage.served_by, summary, latency_ms=usage.latency_ms,
+        return self.add('llm_call', usage.served_by, summary, 
+                        latency_ms=usage.latency_ms,
                         input_tokens=usage.input_tokens + usage.cache_read + usage.cache_write,
-                        output_tokens=usage.output_tokens, cost_usd=usage.cost_usd,
-                        detail={'feature': usage.feature, 'cache_read': usage.cache_read,
-                                'fallback_used': usage.fallback_used, **(detail or {})})
+                        output_tokens=usage.output_tokens, 
+                        cost_usd=usage.cost_usd,
+                        detail={
+                            'feature': usage.feature,
+                            'cache_read': usage.cache_read,
+                            'cache_write': usage.cache_write,
+                            'uncached_input': usage.input_tokens,
+                            'fallback_used': usage.fallback_used,
+                            **(detail or {}),
+                        })

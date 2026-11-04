@@ -179,3 +179,12 @@ def fresh_reread_limit(monkeypatch):
     from app.core.ratelimit import Cooldown
     from app.routers import transliterate
     monkeypatch.setattr(transliterate, 'REREAD_LIMIT', Cooldown(3600))
+
+
+@pytest.fixture(autouse=True)
+def fresh_guards(monkeypatch):
+    """Each test starts with empty request windows, daily quotas and spend."""
+    from app.core import ratelimit
+    monkeypatch.setattr(ratelimit, 'REQUESTS', ratelimit.SlidingWindow())
+    monkeypatch.setattr(ratelimit, 'TRANSLIT_DAILY', ratelimit.DailyQuota())
+    monkeypatch.setattr(ratelimit, 'SPEND', ratelimit.SpendCap())

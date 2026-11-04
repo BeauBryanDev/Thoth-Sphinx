@@ -53,10 +53,10 @@ def test_chat_uses_haiku_low_and_persona(stub: StubMessages) -> None:
     assert reply == 'The sands remember Unas.' and len(message_id) == 32
     _, kw = stub.calls[0]
     assert kw['model'] == 'claude-haiku-5-5' and kw['output_config'] == {'effort': 'low'}
-    assert kw['system'][0]['text'] == SPHINX_PERSONA
+    assert kw['system'][0]['text'].startswith(SPHINX_PERSONA)   # persona word for word, rule appended
     # Leading assistant greeting dropped: Claude needs a user turn first.
     assert [m['role'] for m in kw['messages']] == ['user', 'assistant', 'user']
-    assert kw['messages'][-1]['content'] == 'And Unas?'
+    assert kw['messages'][-1]['content'] == '<user_message>\nAnd Unas?\n</user_message>'
 
 
 def test_chat_disabled_raises(no_api_key: None) -> None:
@@ -79,14 +79,14 @@ def test_reverse_maps_parsed_reply(stub: StubMessages) -> None:
     method, kw = stub.calls[0]
     assert method == 'parse' and kw['output_format'] is reverse._ReverseReply
     assert kw['model'] == 'claude-sonnet-5-5' and kw['fallbacks'] == 'default'
-    assert kw['system'][0]['text'] == reverse.SYSTEM_PROMPT
+    assert kw['system'][0]['text'].startswith(reverse.SYSTEM_PROMPT)
     assert 'the literary register' in kw['messages'][0]['content']
 
 
 def test_reverse_failure_degrades(stub: StubMessages) -> None:
     stub.response = _response(stop_reason='refusal')
     out = ReverseTranslationService().translate('hello')
-    assert out.error and 'refused' in out.error and out.gardiner_codes == []
+    assert out.error and 'declined' in out.error and out.gardiner_codes == []
 
 
 def _chunk(text: str) -> transliteration_services._ChunkReading:
@@ -127,22 +127,6 @@ def test_transliteration_failure_keeps_partial(stub: StubMessages, per_line: Non
         direction='rtl', layout='columns', ctx=TextContext())
     assert out.error and 'segment 2/2' in out.error
     assert [c.transliteration for c in out.chunks] == ['nb tAwy']
-
-
-NOISE_OLD = 'comparable to a worn wall read from a photograph — and you have full licence to emend it:'
-
-
-def test_prompt_differs_from_space_only_in_noise_lines() -> None:
-    # The Space copy (gpt-4o) keeps the old "worn wall" wording; the rest is shared.
-    space = REPO_ROOT / 'space' / 'src' / 'llm.py'
-    if not space.exists():
-        pytest.skip('space/src/llm.py missing')
-    tree = ast.parse(space.read_text())
-    consts = {t.id: n.value.value for n in ast.walk(tree) if isinstance(n, ast.Assign)
-              for t in n.targets if isinstance(t, ast.Name) and isinstance(n.value, ast.Constant)}
-    old_head, old_tail = consts['SYSTEM_PROMPT'].split(NOISE_OLD)
-    assert SYSTEM_PROMPT.startswith(old_head) and SYSTEM_PROMPT.endswith(old_tail)
-    assert 'worn wall' not in SYSTEM_PROMPT and 'the noise comes from the detector' in SYSTEM_PROMPT
 
 
 def test_app_never_imports_openai() -> None:

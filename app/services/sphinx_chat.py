@@ -53,7 +53,7 @@ class ChatService:
         while trimmed and trimmed[0]['role'] != 'user':
             trimmed.pop(0)
         messages = trimmed + [
-            guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS]),
+            llm.cache_turn(guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS])),   # read back next turn
         ]
 
         # No temperature on current Claude models: the persona carries the tone.
