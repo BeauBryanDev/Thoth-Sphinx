@@ -5,6 +5,7 @@
 import {
   useCallback,
   useRef,
+  useState,
   type DragEvent,
   type ChangeEvent,
 } from "react";
@@ -21,6 +22,9 @@ import { AgentTrace } from "./AgentTrace";
 import { Entities } from "./Entities";
 import { ReadingChatDrawer } from "@/components/chat/ReadingChatDrawer";
 import { useReadingChatStore } from "@/stores";
+import { HintButton, HintModal, LayoutHint, DirectionHint } from "./DecoderHints";
+import queenIcon from "@/assets/qeen.svg";
+import pharaohIcon from "@/assets/pharaoh.svg";
 
 // Controlled vocabularies — must match app/schemas/transliterations.py.
 // "unknown" first = default, for the tourist who knows nothing.
@@ -73,6 +77,8 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
   const openReadingChat = useReadingChatStore((s) => s.openFor);
   const inputRef = useRef<HTMLInputElement>(null);
   const dragActiveRef = useRef(false);
+  const [hint, setHint] = useState<"layout" | "direction" | null>(null);
+  const closeHint = useCallback(() => setHint(null), []);
 
   const onFile = useCallback(
     (file: File | undefined | null) => {
@@ -108,7 +114,52 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
       subtitle="Upload an image to transliterate hieroglyphs"
       icon="𓂀"
       className="flex h-full flex-col"
+      headerStart={
+        <HintButton
+          icon={queenIcon}
+          caption="Layout"
+          label="How to choose the layout (rows or columns)"
+          onClick={() => setHint("layout")}
+        />
+      }
+      headerEnd={
+        <HintButton
+          icon={pharaohIcon}
+          caption="Direction"
+          label="How to choose the reading direction"
+          onClick={() => setHint("direction")}
+        />
+      }
     >
+      <HintModal
+        open={hint === "layout"}
+        onClose={closeHint}
+        icon={queenIcon}
+        title="Image layout"
+      >
+        <LayoutHint
+          layout={layout}
+          onPick={(l) => {
+            setLayout(l);
+            closeHint();
+          }}
+        />
+      </HintModal>
+      <HintModal
+        open={hint === "direction"}
+        onClose={closeHint}
+        icon={pharaohIcon}
+        title="Reading direction"
+      >
+        <DirectionHint
+          direction={direction}
+          onPick={(d) => {
+            selectDirection(d);
+            closeHint();
+          }}
+        />
+      </HintModal>
+
       {/* Dropzone */}
       <div
         onClick={() => inputRef.current?.click()}

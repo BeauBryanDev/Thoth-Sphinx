@@ -13,6 +13,9 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   padded?: boolean;
   /** Extra classes for the body wrapper (e.g. flex-1 for full-height panels). */
   bodyClassName?: string;
+  /** Optional content at the left / right edge of the header (e.g. hint buttons). */
+  headerStart?: ReactNode;
+  headerEnd?: ReactNode;
 }
 
 export const Card = ({
@@ -22,10 +25,13 @@ export const Card = ({
   footer,
   padded = true,
   bodyClassName,
+  headerStart,
+  headerEnd,
   className,
   children,
   ...rest
 }: CardProps) => {
+  const sided = Boolean(headerStart || headerEnd);
   return (
     <div
       className={cn(
@@ -39,7 +45,14 @@ export const Card = ({
       <span className="pointer-events-none absolute right-2 top-2 text-amber-600/60 text-xs">𓂀</span>
 
       {(title || icon) && (
-        <header className="flex flex-col items-center gap-1 border-b border-amber-700/40 px-6 pt-5 pb-3 text-center">
+        <header
+          className={cn(
+            "border-b border-amber-700/40 px-6 pt-5 pb-3 text-center",
+            sided && "grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:px-6",
+          )}
+        >
+          {sided && <div className="flex justify-start">{headerStart}</div>}
+          <div className="flex flex-col items-center gap-1">
           {icon && <span className="text-amber-400">{icon}</span>}
           {title && (
             <h3 className="text-lg font-bold tracking-[0.25em] text-amber-300 uppercase">
@@ -54,6 +67,8 @@ export const Card = ({
             <span>☥</span>
             <span>—</span>
           </div>
+          </div>
+          {sided && <div className="flex justify-end">{headerEnd}</div>}
         </header>
       )}
 
