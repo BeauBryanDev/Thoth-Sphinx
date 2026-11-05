@@ -1,7 +1,7 @@
 import re
 import unicodedata
 
-from evidence_store.extract import normalize_translit
+from corpus.extract import normalize_translit
 
 # Manuel de Codage letters -> the Unicode Leiden letters the AAEW corpus uses (case matters in MdC).
 MDC_TO_UNICODE: dict[str, str] = {

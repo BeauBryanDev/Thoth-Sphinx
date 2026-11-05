@@ -1,6 +1,6 @@
 from typing import Any
 
-from evidence_store import retrieve
+from corpus import retrieve
 
 # Search over book_chunks: full text, embeddings, and reciprocal rank fusion of the two.
 
@@ -46,14 +46,36 @@ def search_hybrid(
     variant: str = 'plain',
     limit: int = TOP_K,
 ) -> list[dict[str, Any]]:
-    """Reciprocal rank fusion of both channels; each hit keeps its rank in each channel."""
+    """Reciprocal rank fusion of both channels; each hit keeps its rank in each channel and its cosine similarity."""
     fused: dict[str, dict[str, Any]] = {}
     for channel, hits in (
         ('text', search_text(query, variant, CANDIDATES)),
         ('vector', search_vector(embedding, variant, CANDIDATES)),
     ):
         for rank, hit in enumerate(hits, start=1):
-            row = fused.setdefault(hit['id'], {**hit, 'score': 0.0, 'text_rank': None, 'vector_rank': None})
+            row = fused.setdefault(
+                hit['id'],
+                {**hit, 'score': 0.0, 'text_rank': None, 'vector_rank': None, 'similarity': None},
+            )
             row[f'{channel}_rank'] = rank
             row['score'] += 1 / (RRF_K + rank)
-    return sorted(fused.values(), key=lambda r: (-r['score'], r['id']))[:limit]
+            if channel == 'vector':
+                row['similarity'] = hit['score']
+    top = sorted(fused.values(), key=lambda r: (-r['score'], r['id']))[:limit]
+    missing = [r['id'] for r in top if r['similarity'] is None]
+    if missing:
+        found = similarities(missing, embedding)
+        for r in top:
+            r['similarity'] = found.get(r['id'], r['similarity'])
+    return top
+
+
+def similarities(chunk_ids: list[str], embedding: list[float]) -> dict[str, float]:
+    """Exact cosine similarity of the given chunks, for hits that only full text found."""
+    rows = retrieve.query(
+        'SELECT chunk_id, 1 - (embedding <=> %(v)s::vector) AS similarity '
+        'FROM book_chunk_embeddings WHERE chunk_id = ANY(%(ids)s)',
+        v=retrieve.vector_literal(embedding),
+        ids=chunk_ids,
+    )
+    return {r['chunk_id']: r['similarity'] for r in rows}

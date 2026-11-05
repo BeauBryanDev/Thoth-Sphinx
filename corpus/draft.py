@@ -5,7 +5,7 @@ import anthropic
 from anthropic.types import JSONOutputFormatParam, MessageParam, OutputConfigParam
 from dotenv import dotenv_values
 
-from evidence_store.paths import ENV_FILE
+from corpus.paths import ENV_FILE
 
 MODEL = 'claude-haiku-5-5'
 MAX_TOKENS = 2000

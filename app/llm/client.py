@@ -259,7 +259,7 @@ def cache_turn(message: dict[str, Any]) -> dict[str, Any]:
 BUDGET_SPENT = 'Tool budget spent for this reading. Answer now with what you have.'
 
 # Shared by every request: one turn's tool calls, and the evidence check, run side by side.
-# Bounded, so each worker keeps at most one corpus DB connection (evidence_store.retrieve).
+# Bounded, so each worker keeps at most one corpus DB connection (corpus.retrieve).
 TOOL_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix='sphinx-tool')
 MAX_CALLS_PER_TURN = 12   # one search per line of a whole-wall read, plus a few lookups
 

@@ -1,7 +1,7 @@
 import psycopg
 import pytest
 
-from evidence_store import retrieve
+from corpus import retrieve
 
 
 @pytest.fixture(scope='module', autouse=True)

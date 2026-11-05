@@ -3,10 +3,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from evidence_store import embed, retrieve
-from evidence_store.books.book_inspector import MANIFEST
-from evidence_store.books.chunk import MD_DIR, Chunk, chunk_book, read_book
-from evidence_store.paths import CODE_ROOT
+from corpus import embed, retrieve
+from corpus.books.book_inspector import MANIFEST
+from corpus.books.chunk import MD_DIR, Chunk, chunk_book, read_book
+from corpus.paths import CODE_ROOT
 
 # Loads the plain chunks of the Markdown books into book_chunks and embeds what is not embedded yet.
 # Re-running replaces changed chunks; embeddings of chunks whose id and text are unchanged are kept.

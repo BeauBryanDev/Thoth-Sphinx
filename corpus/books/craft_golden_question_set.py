@@ -10,8 +10,8 @@ import anthropic
 from anthropic.types import JSONOutputFormatParam, OutputConfigParam
 from dotenv import dotenv_values
 
-from evidence_store.books.chunk import MD_DIR, Chunk, chunk_book, read_book
-from evidence_store.paths import ENV_FILE, REPORTS_DIR
+from corpus.books.chunk import MD_DIR, Chunk, chunk_book, read_book
+from corpus.paths import ENV_FILE, REPORTS_DIR
 
 # Haiku writes one question per sampled chunk; the gold is the book, the pages and a verbatim quote.
 # Quotes are checked against the chunk, so the set scores any chunking of the same books.

@@ -5,11 +5,11 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from evidence_store.paths import REPORTS_DIR
+from corpus.paths import REPORTS_DIR
 
 # Combine every saved evaluation run into reports/evaluation_summary.csv and .json.
 
-# Usage: python -m evidence_store.summarize
+# Usage: python -m corpus.summarize
 
 METRICS = ('queries', 'hit@1', 'hit@5', 'hit@10', 'recall@10', 'mrr@10', 'median_ms')
 RUNS = (

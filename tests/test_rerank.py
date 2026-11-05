@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from evidence_store import rerank, retrieve
+from corpus import rerank, retrieve
 
 HITS = [{'sentence_id': name, 'score': 0.1, 'sign_rank': None, 'translit_rank': rank,
          'embedding_rank': None, 'date': None}

@@ -6,7 +6,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from evidence_store.books.headings import (
+from corpus.books.headings import (
     FINDERS,
     Heading,
     clean_text,

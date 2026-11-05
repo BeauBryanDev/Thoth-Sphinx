@@ -14,8 +14,8 @@ from typing import Any
 import cohere
 import pandas as pd
 
-from evidence_store import draft, embed, rerank, retrieve
-from evidence_store.paths import BUILD_DIR, REPORTS_DIR, VISION_SIGNS
+from corpus import draft, embed, rerank, retrieve
+from corpus.paths import BUILD_DIR, REPORTS_DIR, VISION_SIGNS
 
 MIN_RUN = 4
 MIN_SHARED_LEMMAS = 4

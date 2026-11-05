@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from evidence_store import evaluate as ev
+from corpus import evaluate as ev
 
 
 def test_select_modes_adds_rerank_and_respects_an_explicit_list():

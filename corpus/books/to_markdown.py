@@ -3,8 +3,8 @@ import json
 import re
 from pathlib import Path
 
-from evidence_store.books.book_inspector import MANIFEST, page_texts
-from evidence_store.books.headings import clean_text
+from corpus.books.book_inspector import MANIFEST, page_texts
+from corpus.books.headings import clean_text
 
 # Writes one Markdown file per manifest book: its sections as '##', printed-page markers for citations.
 # Text comes from pdftotext, like ingest; strip_lines, char_map and junk filtering are applied per page.

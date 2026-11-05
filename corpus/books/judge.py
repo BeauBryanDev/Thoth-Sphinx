@@ -8,16 +8,16 @@ import anthropic
 from anthropic.types import JSONOutputFormatParam
 from dotenv import dotenv_values
 
-from evidence_store.paths import ENV_FILE, REPORTS_DIR
+from corpus.paths import ENV_FILE, REPORTS_DIR
 
-# Claude Opus judges whether a retrieved passage answers a golden question, from any book.
+# Claude Sonnet judges whether a retrieved passage answers a golden question, from any book.
 # Verdicts are cached by question and passage text, so a new chunking only pays for passages it has not seen.
 
-MODEL = 'claude-opus-5-5'
+MODEL = 'claude-sonnet-5-5'
 EFFORT = 'medium'
 MAX_TOKENS = 16000
-PRICE_PER_MILLION_INPUT = 4.00
-PRICE_PER_MILLION_OUTPUT = 20.00
+PRICE_PER_MILLION_INPUT = 2.00
+PRICE_PER_MILLION_OUTPUT = 10.00
 FALLBACK_BETA = 'server-side-fallback-2026-07-01'
 CACHE_FILE = REPORTS_DIR / 'book_judgments.jsonl'
 VERDICTS = ('yes', 'partial', 'no')
@@ -80,7 +80,7 @@ def cache_key(question: str, body: str) -> str:
 
 
 class Judge:
-    """Cached Opus verdicts, with a running cost and a spending guard."""
+    """Cached Sonnet verdicts, with a running cost and a spending guard."""
 
     def __init__(self, path: Path = CACHE_FILE, max_usd: float = 5.0) -> None:
         self.path = path

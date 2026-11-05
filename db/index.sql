@@ -1,7 +1,7 @@
 -- Run from the repo root after db/load.sql and db/retrieval.sql.
 BEGIN;
 TRUNCATE sentence_grams, gram_stats, sentence_stats, channel_stats, vision_signs;
-\copy vision_signs FROM 'evidence_store/vision_signs.txt'
+\copy vision_signs FROM 'corpus/vision_signs.txt'
 
 INSERT INTO sentence_grams (channel, gram, sentence_id)
 SELECT DISTINCT 'sign', g, s.id

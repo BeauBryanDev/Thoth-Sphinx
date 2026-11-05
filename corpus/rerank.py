@@ -4,8 +4,8 @@ from typing import Any
 import cohere
 from dotenv import dotenv_values
 
-from evidence_store import retrieve
-from evidence_store.paths import ENV_FILE
+from corpus import retrieve
+from corpus.paths import ENV_FILE
 
 MODEL = 'rerank-v5.0-fast'
 CANDIDATES = 50

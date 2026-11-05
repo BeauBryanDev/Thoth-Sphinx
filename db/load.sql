@@ -1,4 +1,4 @@
--- Run after evidence_store.extract, passing the folder that holds its CSVs:
+-- Run after corpus.extract, passing the folder that holds its CSVs:
 --   psql "$DB" -v build_dir="$HOME/Downloads/AncientLanguage/build" -f db/load.sql
 -- psql does not expand variables inside \copy, so this changes into that folder first.
 \if :{?build_dir}

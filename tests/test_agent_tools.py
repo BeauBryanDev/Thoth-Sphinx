@@ -2,7 +2,7 @@ import psycopg
 import pytest
 
 from app.llm import agent_tools
-from evidence_store import retrieve
+from corpus import retrieve
 
 
 def test_compact_hit_clips_and_prefers_english() -> None:

@@ -8,8 +8,8 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from evidence_store import retrieve
-from evidence_store.paths import BUILD_DIR, KNOWLEDGE_DIR, ROYAL_NAMES_FILE
+from corpus import retrieve
+from corpus.paths import BUILD_DIR, KNOWLEDGE_DIR, ROYAL_NAMES_FILE
 
 GODS_FILE = KNOWLEDGE_DIR / 'Ancient_Gods.json'
 RULERS_FILE = KNOWLEDGE_DIR / 'master_pharaohs_v2.json'

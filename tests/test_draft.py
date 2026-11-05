@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from evidence_store import draft
+from corpus import draft
 
 
 class FakeClaude:

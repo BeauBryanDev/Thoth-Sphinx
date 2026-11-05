@@ -1,4 +1,4 @@
-from evidence_store import extract as ex
+from corpus import extract as ex
 
 WORD = 'http://btsCorpusModel/1.0#//BTSWord'
 MARKER = 'http://btsCorpusModel/1.0#//BTSMarker'

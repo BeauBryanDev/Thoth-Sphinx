@@ -10,10 +10,10 @@ from pathlib import Path
 
 import tiktoken
 
-from evidence_store.books.headings import is_word
+from corpus.books.headings import is_word
 
 # Splits the Markdown books into search chunks: never across a section, whole sentences, 224-640 tokens.
-# Dry run: nothing goes to the database (evidence_store.books.ingest loads them).
+# Dry run: nothing goes to the database (corpus.books.ingest loads them).
 
 MD_DIR = Path('assets/md')
 MIN_TOKENS = 224

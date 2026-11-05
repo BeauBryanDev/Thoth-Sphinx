@@ -6,9 +6,9 @@ from collections import Counter
 from collections.abc import Collection
 from typing import Any
 
-from evidence_store import evaluate as ev
-from evidence_store import retrieve
-from evidence_store.paths import BUILD_DIR, REPORTS_DIR, VISION_SIGNS
+from corpus import evaluate as ev
+from corpus import retrieve
+from corpus.paths import BUILD_DIR, REPORTS_DIR, VISION_SIGNS
 
 ROWS_FILE = BUILD_DIR / 'confidence_rows.jsonl'
 REPORT_FILE = REPORTS_DIR / 'parallel_confidence.json'

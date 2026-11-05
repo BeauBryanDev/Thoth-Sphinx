@@ -3,7 +3,7 @@ import json
 import psycopg
 import pytest
 
-from evidence_store import graph, retrieve
+from corpus import graph, retrieve
 
 
 def test_every_listed_god_relationship_is_reviewed():

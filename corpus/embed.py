@@ -4,8 +4,8 @@ from typing import Any
 from dotenv import dotenv_values
 from openai import OpenAI
 
-from evidence_store import retrieve
-from evidence_store.paths import ENV_FILE
+from corpus import retrieve
+from corpus.paths import ENV_FILE
 
 MODEL = 'text-embedding-3-small'
 DIMENSIONS = 1536

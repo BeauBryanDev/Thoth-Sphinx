@@ -2,8 +2,8 @@ import logging
 from typing import Any
 
 from app.llm import mdc
-from evidence_store import confidence, rerank, retrieve
-from evidence_store.books import search as book_search
+from corpus import confidence, rerank, retrieve
+from corpus.books import search as book_search
 
 CANDIDATES = 10
 MAX_LIMIT = 20
@@ -329,7 +329,7 @@ def search_books(query: str,
     limit = clamp(limit, 1, book_search.TOP_K)
     try:
         # Lazy: the OpenAI SDK (embeddings only) loads when books are first searched, not at app start.
-        from evidence_store import embed
+        from corpus import embed
 
         vector = embed.embed_texts(embed.client(), [query])[0][0]
         hits = book_search.search_hybrid(query, vector, limit=limit)

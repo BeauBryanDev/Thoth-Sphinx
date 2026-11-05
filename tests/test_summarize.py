@@ -1,6 +1,6 @@
 import json
 
-from evidence_store import summarize as sm
+from corpus import summarize as sm
 
 
 def test_rows_flatten_each_test_and_keep_the_status(tmp_path):

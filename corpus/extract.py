@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, TextIO
 
-from evidence_store.paths import BUILD_DIR, DATA_DIR
+from corpus.paths import BUILD_DIR, DATA_DIR
 
 # Same pattern as Sphinx's clean_gardiner_seq, so sign sequences stay comparable.
 SIGN_RE = re.compile(r'[A-Za-z]{1,3}[0-9]{1,3}[a-z]?')

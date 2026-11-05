@@ -6,14 +6,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-from evidence_store import embed
-from evidence_store.books.judge import Judge
-from evidence_store.books.search import search_hybrid, search_text, search_vector
-from evidence_store.paths import REPORTS_DIR
+from corpus import embed
+from corpus.books.judge import Judge
+from corpus.books.search import search_hybrid, search_text, search_vector
+from corpus.paths import REPORTS_DIR
 
 # Scores book search against the golden questions. A strict hit is a chunk of the right book that
 # contains the evidence quote; a loose hit is a chunk of the right book whose pages overlap the gold pages.
-# With --judge, Claude Opus grades whether each top-5 passage answers the question, from any book.
+# With --judge, Claude Sonnet grades whether each top-5 passage answers the question, from any book.
 
 GOLDEN = REPORTS_DIR / 'book_golden_questions.jsonl'
 MODES = ('text', 'vector', 'hybrid')
@@ -111,7 +111,7 @@ def judged(
     golden: list[dict[str, Any]],
     results: dict[str, list[list[dict[str, Any]]]],
 ) -> dict[str, Any]:
-    """Opus verdicts on every top-5 passage, then answered@1/@5 per mode and two checks on the judge itself."""
+    """Sonnet verdicts on every top-5 passage, then answered@1/@5 per mode and two checks on the judge itself."""
     for n, q in enumerate(golden, start=1):
         seen: dict[str, dict[str, Any]] = {}
         for mode in MODES:
@@ -168,7 +168,7 @@ def main() -> None:
     parser.add_argument('--variant', default='plain', help='which chunking in book_chunks to search')
     parser.add_argument('--golden', type=Path, default=GOLDEN, help=f'default {GOLDEN}')
     parser.add_argument('--out', type=Path, help='report JSON (default reports/book_retrieval_<variant>.json)')
-    parser.add_argument('--judge', action='store_true', help='have Claude Opus grade every top-5 passage')
+    parser.add_argument('--judge', action='store_true', help='have Claude Sonnet grade every top-5 passage')
     parser.add_argument('--judge-max-usd', type=float, default=5.0, help='spending guard for --judge')
     args = parser.parse_args()
 
@@ -208,7 +208,7 @@ def main() -> None:
               'below the positives p10)')
     print(f'\nmissed at 5 by hybrid (strict): {", ".join(report["misses"]["hybrid"]) or "none"}')
     if args.judge:
-        print('\njudging top-5 passages with Claude Opus...')
+        print('\njudging top-5 passages with Claude Sonnet...')
         report['judged'] = judged(Judge(max_usd=args.judge_max_usd), golden, results)
         print(f'\n{"mode":<8} {"accept":<20} {"hit@1":>6} {"hit@5":>6} {"mrr@5":>6}')
         for mode, scores in report['judged']['modes'].items():

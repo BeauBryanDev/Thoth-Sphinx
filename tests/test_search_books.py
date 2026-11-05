@@ -1,8 +1,8 @@
 import pytest
 
 from app.llm import agent_tools, tools
-from evidence_store import embed
-from evidence_store.books import search as book_search
+from corpus import embed
+from corpus.books import search as book_search
 
 HIT = {
     'id': 'plain:thoth-the-hermes-of-egypt:120',

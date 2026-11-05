@@ -1,5 +1,5 @@
 -- Knowledge graph of gods, rulers, royal names, dynasties and temples. Safe to rerun;
--- python -m evidence_store.graph replaces the rows.
+-- python -m corpus.graph replaces the rows.
 CREATE TABLE IF NOT EXISTS entities (
     id          text PRIMARY KEY,
     type        text NOT NULL,

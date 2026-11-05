@@ -2,7 +2,7 @@ import psycopg
 import pytest
 
 from app.llm import tools
-from evidence_store import confidence, retrieve
+from corpus import confidence, retrieve
 
 LONG_QUERY = 'ḥtp-ḏi̯ nswt wsjr nb ḏdw'
 

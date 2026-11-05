@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from evidence_store.books.chunk import (
+from corpus.books.chunk import (
     MAX_TOKENS,
     OVERLAP_TOKENS,
     chunk_book,

@@ -1,6 +1,6 @@
 import pytest
 
-from evidence_store.books.headings import clean_title, plausible, split_page
+from corpus.books.headings import clean_title, plausible, split_page
 
 
 @pytest.mark.parametrize(

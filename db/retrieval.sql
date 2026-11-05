@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS channel_stats (
     avg_len double precision NOT NULL
 );
 
--- text-embedding-3-small over German translations. See evidence_store/embed.py.
+-- text-embedding-3-small over German translations. See corpus/embed.py.
 CREATE TABLE IF NOT EXISTS sentence_embeddings (
     sentence_id text PRIMARY KEY REFERENCES sentences (id),
     embedding   vector(1536) NOT NULL

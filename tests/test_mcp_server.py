@@ -9,7 +9,7 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from evidence_store import retrieve
+from corpus import retrieve
 
 ROOT = Path(__file__).resolve().parent.parent
 TOOLS = {'search_parallels', 'lookup_lemma', 'get_context', 'list_periods', 'lookup_entity'}
@@ -25,7 +25,7 @@ def database():
 
 async def session_run(work):
     parameters = StdioServerParameters(command=sys.executable,
-                                       args=['-m', 'evidence_store.mcp_server'], cwd=str(ROOT),
+                                       args=['-m', 'corpus.mcp_server'], cwd=str(ROOT),
                                        env=dict(os.environ))
     async with stdio_client(parameters) as (reader, writer):
         async with ClientSession(reader, writer) as session:

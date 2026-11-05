@@ -6,7 +6,7 @@ import psycopg
 from dotenv import dotenv_values
 from psycopg.rows import dict_row
 
-from evidence_store.paths import ENV_FILE
+from corpus.paths import ENV_FILE
 
 # One connection per thread: a shared one serializes the parallel tool calls (app.llm.client.TOOL_POOL).
 _local = threading.local()
