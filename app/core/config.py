@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     sonnet_tool_budget  : int   = 2      # was 3 calls
     chat_effort         : str   = 'low'
     chat_tool_budget    : int   = 2        # /chat/: lookup_entity turns
+    # Riddle trials in /chat/ (app/services/riddle_sessions.py): in memory, per process.
+    riddle_session_ttl_s     : int = 3600   # an idle game is dropped after this
+    riddle_max_sessions      : int = 2000   # oldest games are dropped beyond this
     reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
     reading_chat_tool_budget : int = 3
     reading_chat_history     : int = 12    # messages of the conversation sent each turn

@@ -28,6 +28,8 @@ export interface ChatStore {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
+  /** Server-side riddle game ID; the trial's state lives on the server, never here. */
+  riddleSession?: string | null;
   send: (prompt: string) => Promise<void>;
   reset: () => void;
 }
@@ -36,6 +38,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [INITIAL_MESSAGE],
   isLoading: false,
   error: null,
+  riddleSession: null,
 
   send: async (prompt: string) => {
     const trimmed = prompt.trim();
@@ -59,10 +62,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }));
 
     try {
-      const { reply, messageId, toolCalls, bookPassages } = await sendChatMessage({
-        prompt: trimmed,
-        history,
-      });
+      const { reply, messageId, toolCalls, bookPassages, riddleSession } =
+        await sendChatMessage({
+          prompt: trimmed,
+          history,
+          riddleSession: get().riddleSession,
+        });
       const assistantMsg: ChatMessage = {
         id: messageId || generateId(),
         role: "assistant",
@@ -71,7 +76,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         toolCalls,
         bookPassages,
       };
-      set((s) => ({ messages: [...s.messages, assistantMsg] }));
+      set((s) => ({ messages: [...s.messages, assistantMsg], riddleSession }));
     } catch (err) {
       set({
         error:
@@ -82,5 +87,5 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 
-  reset: () => set({ messages: [INITIAL_MESSAGE], error: null }),
+  reset: () => set({ messages: [INITIAL_MESSAGE], error: null, riddleSession: null }),
 }));

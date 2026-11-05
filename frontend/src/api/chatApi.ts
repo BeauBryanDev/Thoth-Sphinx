@@ -8,6 +8,8 @@ import type { BookPassage, ChatMessage, ToolCallOut } from "@/types";
 export interface SendMessagePayload {
   prompt: string;
   history?: Pick<ChatMessage, "role" | "content">[];
+  /** Server-side riddle game ID from the last reply; null when no trial has begun. */
+  riddleSession?: string | null;
 }
 
 export interface SendMessageResponse {
@@ -15,6 +17,7 @@ export interface SendMessageResponse {
   messageId: string;
   toolCalls: ToolCallOut[];
   bookPassages: BookPassage[];
+  riddleSession: string | null;
 }
 
 const CHAT_TIMEOUT_MS = 60_000;
@@ -28,9 +31,14 @@ export const sendChatMessage = async (
     message_id: string;
     tool_calls?: ToolCallOut[];
     book_passages?: BookPassage[];
+    riddle_session?: string | null;
   }>(
     "/chat/",
-    { prompt: payload.prompt, history: payload.history ?? [] },
+    {
+      prompt: payload.prompt,
+      history: payload.history ?? [],
+      riddle_session: payload.riddleSession ?? null,
+    },
     { timeout: CHAT_TIMEOUT_MS },
   );
   return {
@@ -38,6 +46,7 @@ export const sendChatMessage = async (
     messageId: data.message_id,
     toolCalls: data.tool_calls ?? [],
     bookPassages: data.book_passages ?? [],
+    riddleSession: data.riddle_session ?? null,
   };
 };
 

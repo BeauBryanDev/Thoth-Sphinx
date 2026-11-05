@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.llm import tools
+from corpus.play_riddles import RiddleGame
+
 
 MAX_HIT_TEXT = 160   # characters of a hit's text the model sees; enough to judge, cheap in tokens
 MAX_BOOK_TEXT = 1000  # characters of a book passage: book prose needs more than a corpus line
@@ -155,6 +157,38 @@ SEARCH_BOOKS = AgentTool(
     run=run_search_books,
 )
 
+
+def riddle_tools(game: RiddleGame) -> tuple[AgentTool, AgentTool]:
+    """The two riddle tools of one conversation, closed over its game state."""
+
+    def run_start_riddle_trial() -> dict[str, Any]:
+        return game.start_trial()
+
+    def run_submit_riddle_answer(guess: str) -> dict[str, Any]:
+        return game.submit(guess)
+
+    start = AgentTool(
+        name='start_riddle_trial',
+        description=('Begin the Sphinx\'s trial of three riddles for a seeker who asks for a riddle, a '
+                     'game or the reward. Returns the first riddle: speak it exactly as returned, then '
+                     'wait for the seeker to answer. Never call submit_riddle_answer in the same turn.'),
+        schema={'type': 'object', 'properties': {}},
+        run=run_start_riddle_trial,
+    )
+    submit = AgentTool(
+        name='submit_riddle_answer',
+        description=('Submit the seeker\'s own answer to the current riddle. Pass only what the seeker '
+                     'said, translated into English if needed; never guess for them. The tool judges: '
+                     'status is correct, wrong, hint or reveal, and when finished is true, passed says '
+                     'whether the trial was won. Call it at most once per seeker message.'),
+        schema={'type': 'object', 'properties': {
+            'guess': {'type': 'string', 'description': 'the seeker\'s answer to the riddle, and nothing else'},
+        }, 'required': ['guess']},
+        run=run_submit_riddle_answer,
+    )
+    return start, submit
+
+
 READING_TOOLS: tuple[AgentTool, ...] = (SEARCH_PARALLELS, LOOKUP_LEMMA, LOOKUP_ENTITY)
 
 
@@ -181,5 +215,16 @@ def summarize(name: str, result: dict[str, Any]) -> str:
         
         top = (result.get('passages') or [{}])[0]
         return f"{result.get('found', 0)} passages" + (f" — best: {top.get('citation')}" if top else '')
+
+    if name == 'start_riddle_trial':
+
+       return f"riddle {result.get('riddle_number')} of {result.get('trial_size')} posed"
+
+
+    if name == 'submit_riddle_answer':
+        
+        outcome = ' — trial passed' if result.get('passed') else ' — trial failed'
+        return f"riddle {result.get('riddle_number')}: {result.get('status')}" + (
+            outcome if result.get('finished') else '')
 
     return 'done'

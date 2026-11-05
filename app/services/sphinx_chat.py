@@ -13,6 +13,7 @@ from app.core import guards
 from app.core.config import settings
 from app.schemas.books import BookPassage
 from app.schemas.transliterations import ToolCallOut
+from app.services.riddle_sessions import RIDDLE_SESSIONS
 
 logger = logging.getLogger('sphinxeyes.chat')
 
@@ -64,8 +65,9 @@ class ChatService:
         self,
         prompt  : str,
         history : list[dict],          # [{'role': 'user'|'assistant', 'content': str}, ...]
-    ) -> tuple[str, str, list[ToolCallOut], list[BookPassage]]:
-        """Returns (reply, message_id, tool_calls, book_passages). Raises RuntimeError when disabled, LLMError on failure."""
+        riddle_session : str | None = None,
+    ) -> tuple[str, str, list[ToolCallOut], list[BookPassage], str | None]:
+        """Returns (reply, message_id, tool_calls, book_passages, riddle_session). Raises RuntimeError when disabled, LLMError on failure."""
         if not self.enabled:
             raise RuntimeError('ANTHROPIC_API_KEY not configured — chat disabled.')
 
@@ -84,6 +86,9 @@ class ChatService:
             llm.cache_turn(guards.chat_turn('user', prompt[:MAX_PROMPT_CHARS])),   # read back next turn
         ]
 
+        session_id, game = RIDDLE_SESSIONS.get(riddle_session)
+        game.begin_turn()   # one riddle action per seeker message
+
         # No temperature on current Claude models: the persona carries the tone.
         answer, _, calls = llm.complete_parsed_with_tools(
             feature        = 'chat',
@@ -92,7 +97,7 @@ class ChatService:
             messages       = messages,
             schema         = _ChatAnswer,
             effort         = settings.chat_effort,
-            tools          = CHAT_TOOLS,
+            tools          = CHAT_TOOLS + agent_tools.riddle_tools(game),
             max_tool_turns = settings.chat_tool_budget,
             max_tokens     = MAX_REPLY_TOKENS,
         )
@@ -107,4 +112,11 @@ class ChatService:
             )
             for c in calls
         ]
-        return answer.reply, uuid.uuid4().hex, tool_calls, book_passages(calls)
+        stored = RIDDLE_SESSIONS.keep(session_id, game)
+        return (
+            answer.reply,
+            uuid.uuid4().hex,
+            tool_calls,
+            book_passages(calls),
+            session_id if stored else None,
+        )
