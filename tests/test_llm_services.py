@@ -62,9 +62,10 @@ def test_chat_looks_up_entities_with_haiku_low_and_persona(stub: StubMessages,
     history = [{'role': 'assistant', 'content': 'Greetings, seeker.'},
                {'role': 'user', 'content': 'Who built Saqqara?'},
                {'role': 'assistant', 'content': 'Djoser, through Imhotep.'}]
-    reply, message_id, tool_calls = ChatService().chat('And Unas?', history)
+    reply, message_id, tool_calls, passages = ChatService().chat('And Unas?', history)
     assert reply.startswith('The records place Unas') and len(message_id) == 32
     assert looked_up == ['Unas'] and [(c.tool, c.ok) for c in tool_calls] == [('lookup_entity', True)]
+    assert passages == []   # no book search, no passages
     kw = calls[0]
     assert kw['model'] == 'claude-haiku-5-5' and kw['output_config'] == {'effort': 'low'}
     assert [t['name'] for t in kw['tools']] == ['lookup_entity']

@@ -20,7 +20,7 @@ def llm_stubbed(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.services.transliteration_services import TransliterationService
     monkeypatch.setattr(settings, 'anthropic_api_key', 'sk-test')
     monkeypatch.setattr(TransliterationService, 'transliterate_sequence', lambda self, *a, **k: OK)
-    monkeypatch.setattr(ChatService, 'chat', lambda self, prompt, history: ('hail', 'm1', []))
+    monkeypatch.setattr(ChatService, 'chat', lambda self, prompt, history: ('hail', 'm1', [], []))
 
 
 def test_input_caps_reject_injection_and_keep_real_requests() -> None:

@@ -51,3 +51,26 @@ def test_search_books_support_flag_and_fallback(
     assert passage['matched_by'] == (['words', 'meaning'] if embedding_up else ['words'])
     with pytest.raises(ValueError):
         tools.search_books('  ')
+
+
+def test_chat_book_passages_dedup_weak_and_cap() -> None:
+    """Passages from search_books calls only, no repeats, weak when unsupported, at most five."""
+    from app.llm import ToolCall
+    from app.services.sphinx_chat import MAX_PASSAGES, book_passages
+
+    def passage(n: int) -> dict[str, object]:
+        return {'chunk_id': f'c{n}', 'book': 'Thoth', 'author': None, 'section': 'S', 'pages': 'p. 1',
+                'citation': 'Thoth › S › p. 1', 'matched_by': ['words'], 'text': 'x'}
+
+    def call(tool: str, ok: bool, passages: list[int], weak: bool = False) -> ToolCall:
+        result = {'no_book_support': weak, 'passages': [passage(n) for n in passages]} if ok else None
+        return ToolCall(model='m', tool=tool, input={}, summary='', ok=ok, latency_ms=1, result=result)
+
+    out = book_passages([
+        call('lookup_entity', True, [9]),
+        call('search_books', True, [1, 2, 3], weak=True),
+        call('search_books', False, []),
+        call('search_books', True, [3, 4, 5, 6]),
+    ])
+    assert [p.chunk_id for p in out] == ['c1', 'c2', 'c3', 'c4', 'c5'] and len(out) == MAX_PASSAGES
+    assert [p.weak for p in out] == [True, True, True, False, False]

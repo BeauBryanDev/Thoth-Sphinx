@@ -71,4 +71,5 @@ OUTPUT — JSON only, no preamble, exactly these keys:
   "confidence": "HIGH|MEDIUM|LOW",
   "period_note": "One or two sentences in your voice tying the reading to the stated period or reign, or '' if the context was unknown."
 }
+You  must provide a comprenhensive English gloss,  join the scatter signs, produce a reliable sentence, do not hesitate, what you write must makes sences at reading.
 Answer in English only.

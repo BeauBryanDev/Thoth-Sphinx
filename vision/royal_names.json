@@ -658,6 +658,73 @@
       "verified": true,
       "source": "claude-generated, prenomen mn-phtj-ra, nomen ra-ms-sw. Validate against Beckerath p.150-151"
     },
+    "tA_wsrt": {
+      "translit": "tA-wsrt stpt.n-mwt (sAt-ra mrjt-jmn)",
+      "english": "Tawosret / Tewosre / Thuoris, queen regnant (Dynasty XIX)",
+      "spellings": [
+        [
+          "A40",
+          "A42",
+          "Y5",
+          "N35",
+          "N36",
+          "X1",
+          "M17",
+          "M17"
+        ],
+        [
+          "A40",
+          "A42",
+          "Y5",
+          "N35",
+          "G39",
+          "X1"
+        ],
+        [
+          "N5",
+          "G39",
+          "X1",
+          "U6",
+          "M17",
+          "Y5",
+          "N35"
+        ],
+        [
+          "X1",
+          "G1",
+          "F12",
+          "S29",
+          "D21",
+          "X1",
+          "B1"
+        ],
+        [
+          "X1",
+          "F12",
+          "A42",
+          "X1",
+          "N35"
+        ],
+        [
+          "F12",
+          "A42",
+          "X1",
+          "N35"
+        ],
+        [
+          "N5",
+          "A42",
+          "A42",
+          "N36",
+          "X1",
+          "M17",
+          "M17"
+        ]
+      ],
+      "freq": 20,
+      "verified": true,
+      "source": "Beckerath, Handbuch p.162-163 (T2, T4, T7, E1, E3); MET 32.2.44 foundation brick. C1 Ra -> A40, C12 Amun / Mut -> A42 (no C classes in YOLO); U21 stp adze dropped from E3 (not a class). Last two spellings are v9C reads of the brick, not real writings: E3 (vulture/adze merge into the X1 slot) and T4 (Ra read as A42, sun disc split off as N5)"
+    },
     "stj_i": {
       "translit": "stj mry.n-ptH (mn-maat-ra)",
       "english": "Seti I (Dynasty XIX)",

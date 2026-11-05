@@ -1,3 +1,4 @@
+
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -60,7 +61,9 @@ class Decision:
     reasons : tuple[str, ...] = field(default_factory=tuple)
 
 
-def detector_low_share(codes: list[str], confidences: list[float]) -> float:
+def detector_low_share(codes: list[str], 
+                       confidences: list[float]
+                       ) -> float:
     """Share of codes the detector was unsure of (confidence below 0.5, or Unknown)."""
     if not codes:
         return 1.0
@@ -70,7 +73,10 @@ def detector_low_share(codes: list[str], confidences: list[float]) -> float:
     return low / len(codes)
 
 
-def decide(signals: Signals, thresholds: Thresholds = Thresholds(), enabled: bool = True) -> Decision:
+def decide(signals: Signals, 
+           thresholds: Thresholds = Thresholds(), 
+           enabled: bool = True
+           ) -> Decision:
     """Answer with Haiku or escalate to Sonnet; rules in order, first match wins."""
     # If escalation is disabled, return an answer with the reason code 'escalation_disabled'
     if not enabled:
@@ -93,3 +99,5 @@ def decide(signals: Signals, thresholds: Thresholds = Thresholds(), enabled: boo
         return Decision('escalate', ('detector_low_confidence',))
     # If the detector was confident, return an answer with the reason code 'haiku_confident'
     return Decision('answer', ('haiku_confident',))
+
+

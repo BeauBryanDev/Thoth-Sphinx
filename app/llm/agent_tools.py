@@ -43,10 +43,13 @@ def compact_hit(hit: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def run_search_parallels(line: int, translit: str = '', signs: str = '') -> dict[str, Any]:
+def run_search_parallels(line: int, translit: str = '', 
+                         signs: str = ''
+                         ) -> dict[str, Any]:
     """search_parallels for one numbered line, trimmed for the model."""
     result = tools.search_parallels(signs=signs or None,
-                                    translit=translit or None, limit=3)
+                                    translit=translit or None, 
+                                    limit=3)
 
     return {'line': line,
             'verdict': result['verdict'], 
@@ -60,17 +63,21 @@ def run_lookup_lemma(word: str) -> dict[str, Any]:
     """lookup_lemma, top 5 senses."""
     result = tools.lookup_lemma(word, limit=5)
     return {'found': result['found'],
-            'lemmas': [{k: lemma.get(k) for k in ('id', 'name', 'pos', 'gloss_en', 'sign_seq')}
-                       for lemma in result['lemmas']]}
+            'lemmas': [{k: lemma.get(k) for k in ('id', 'name', 'pos', 'gloss_en', 'sign_seq')
+                        }  for lemma in result['lemmas']]
+            }
 
 
 def run_lookup_entity(name: str) -> dict[str, Any]:
     """lookup_entity, best match without its long link list."""
     result = tools.lookup_entity(name, limit=1, examples=2)
-    return {'found': result['found'], 'note': result['note'],
-            'entities': [{k: e.get(k) for k in ('name', 'type', 'aliases', 'start_year', 'end_year',
+    
+    return {'found': result['found'], 
+            'note': result['note'],
+            'entities': [{ k: e.get(k) for k in ('name', 'type', 'aliases', 'start_year', 'end_year',
                                                 'reliability', 'reliability_guide')}
-                         | {'corpus_examples': e.get('corpus')} for e in result['entities']]}
+                         | {'corpus_examples': e.get('corpus')} for e in result['entities']]
+            }
 
 
 def run_search_books(query: str) -> dict[str, Any]:
@@ -79,6 +86,7 @@ def run_search_books(query: str) -> dict[str, Any]:
     for passage in result['passages']:
         text = passage['text']
         passage['text'] = text if len(text) <= MAX_BOOK_TEXT else text[:MAX_BOOK_TEXT] + '…'
+    
     return result
 
 
@@ -98,26 +106,36 @@ SEARCH_PARALLELS = AgentTool(
     run=run_search_parallels,
 )
 
+
 LOOKUP_LEMMA = AgentTool(
     name='lookup_lemma',
     description=('Look up a word in the TLA dictionary (38,775 lemmas) by transliteration or '
                  'English gloss. Returns senses with their usual sign spelling, which helps pick '
                  'the right sense from the signs you see.'),
-    schema={'type': 'object', 'properties': {
-        'word': {'type': 'string', 'description': 'a transliteration such as xa or an English word'},
+    schema={'type': 'object', 
+            'properties': {
+                            'word': {'type': 'string', 
+                            'description': 'a transliteration such as xa or an English word'
+                              },
     }, 'required': ['word']},
     run=run_lookup_lemma,
 )
+
 
 LOOKUP_ENTITY = AgentTool(
     name='lookup_entity',
     description=('Look up a king, god, temple or pyramid in the knowledge graph. Returns dates, '
                  'aliases and a reliability label; only corpus sentences count as evidence.'),
-    schema={'type': 'object', 'properties': {
-        'name': {'type': 'string', 'description': 'e.g. Thutmose III, Amasis, Osiris'},
-    }, 'required': ['name']},
+    schema={'type': 'object', 
+            'properties': {
+            'name': {
+                    'type': 'string',
+                    'description': 'e.g. Thutmose III, Amasis, Osiris'
+                    },
+            }, 'required': ['name']},
     run=run_lookup_entity,
 )
+
 
 SEARCH_BOOKS = AgentTool(
     name='search_books',
@@ -127,9 +145,13 @@ SEARCH_BOOKS = AgentTool(
                  'search. Returns up to 5 passages with a citation (book › chapter › page). When '
                  'no_book_support is true, the books do not cover the question: say so instead of '
                  'quoting weak passages. Books are secondary sources, some over a century old.'),
-    schema={'type': 'object', 'properties': {
-        'query': {'type': 'string', 'description': 'the question in plain English, e.g. who was the wife of Thoth'},
-    }, 'required': ['query']},
+    schema={'type': 'object', 
+            'properties': {
+                            'query': {'type': 'string', 
+                                      'description': 'the question in plain English, e.g. who was the wife of Thoth'
+                                      },
+    }, 'required': ['query']
+           },
     run=run_search_books,
 )
 
@@ -142,17 +164,21 @@ def summarize(name: str, result: dict[str, Any]) -> str:
         best = (result.get('hits') or [{}])[0]
         where = f" — best: {best.get('transliteration', '')[:60]} ({best.get('date') or 'undated'})" if best else ''
         return f"line {result.get('line')}: {result.get('verdict')}{where}"
+    
     if name == 'lookup_lemma':
         lemmas = result.get('lemmas') or []
         return f"{result.get('found', 0)} lemmas" + (
             f" — {lemmas[0].get('name')}: {lemmas[0].get('gloss_en')}" if lemmas else '')
+    
     if name == 'lookup_entity':
         ents = result.get('entities') or []
         return f"{result.get('found', 0)} entities" + (
             f" — {ents[0].get('name')} ({ents[0].get('type')})" if ents else '')
+    
     if name == 'search_books':
         if result.get('no_book_support'):
             return f"{result.get('found', 0)} passages — the books do not seem to cover this"
+        
         top = (result.get('passages') or [{}])[0]
         return f"{result.get('found', 0)} passages" + (f" — best: {top.get('citation')}" if top else '')
 

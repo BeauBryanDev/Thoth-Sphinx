@@ -103,3 +103,5 @@ class Settings(BaseSettings):
  
 # Single instance imported everywhere
 settings = Settings()
+
+

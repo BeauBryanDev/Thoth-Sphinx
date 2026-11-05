@@ -10,7 +10,7 @@ MAX_SIDE: int = 640  # fit 640x640, keeps tokens low and signs legible
 JPEG_QUALITY: int = 90
 MAX_DATA_URL_CHARS: int = 30_000_000   # about 22 MB of image before base64
 
-
+# Downscale image to save token from my Anthropic Key 
 def downscale(bgr: np.ndarray, max_side: int = MAX_SIDE) -> np.ndarray:
     """Fit the image inside max_side x max_side, keeping the aspect ratio; never upscale."""
     # Get the height and width of the image
@@ -21,7 +21,7 @@ def downscale(bgr: np.ndarray, max_side: int = MAX_SIDE) -> np.ndarray:
     if scale >= 1.0:
         return bgr
     # Calculate the new size of the image
-    size = (max(1, round(w * scale)), max(1, round(h * scale)))
+    size = ( max(1, round(w * scale)), max(1, round(h * scale)) )
     # Resize the image to the new size using the area interpolation method
     return cv2.resize(bgr, size, interpolation=cv2.INTER_AREA)
 
@@ -62,3 +62,5 @@ def decode_data_url(data_url: str) -> np.ndarray:
         raise ValueError('image could not be decoded')
     # Return the BGR image
     return bgr
+
+

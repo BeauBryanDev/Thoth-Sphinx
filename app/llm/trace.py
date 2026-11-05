@@ -12,10 +12,14 @@ class Trace:
     started : float = field(default_factory=time.monotonic)
     events  : list[dict[str, Any]] = field(default_factory=list)
 
-    def add(self, kind: TraceKind, actor: str, summary: str, *,
-            latency_ms: int | None = None, input_tokens: int | None = None,
-            output_tokens: int | None = None, cost_usd: float | None = None,
-            detail: dict[str, Any] | None = None) -> dict[str, Any]:
+    def add(self, kind: TraceKind, 
+            actor: str, summary: str, *,
+            latency_ms: int | None = None, 
+            input_tokens: int | None = None,
+            output_tokens: int | None = None, 
+            cost_usd: float | None = None,
+            detail: dict[str, Any] | None = None
+            ) -> dict[str, Any]:
         """Record one event and return it."""
         event = {
             'step'          : len(self.events) + 1,
@@ -30,7 +34,9 @@ class Trace:
             'detail'        : detail or {},
         }
         self.events.append(event)
+        
         return event
+
 
     def add_usage(self, usage: Any, 
     summary: str, 

@@ -85,7 +85,8 @@ def reranked_hits(translit: str,
     """Return (hits, status). A Cohere failure falls back to hybrid order and says so."""
     try:
         return rerank.search_reranked(translit, signs,
-                                      translit, limit, **filters), 'applied'
+                                      translit, limit, 
+                                      **filters), 'applied'
     except Exception as error:  # any provider failure must leave search working
         logger.warning('rerank failed: %s', error)
         
@@ -155,7 +156,8 @@ def search_parallels(signs: str | None = None,
             'hits': [{
                 'sentence_id': hit['sentence_id'], 
                 'rating': rating or 'unrated',
-                'matched_by': matched_by(hit), **details[hit['sentence_id']]
+                'matched_by': matched_by(hit), 
+                **details[hit['sentence_id']]
                 } for hit, rating in ranked],
             'credit': TLA_CREDIT
             }
@@ -229,11 +231,13 @@ def corpus_mentions(item: dict[str, Any],
     if item['lemma_ids']:
         count = retrieve.query('SELECT count(DISTINCT sentence_id) AS n FROM tokens '
                                'WHERE lemma_id = ANY(%(ids)s)', ids=item['lemma_ids'])[0]['n']
-        found['by_word'] = {'sentences': count, 'examples': example_sentences(
+        found['by_word'] = {'sentences': count, 
+                            'examples': example_sentences(
             'JOIN tokens t ON t.sentence_id = s.id WHERE t.lemma_id = ANY(%(ids)s)', examples,
             ids=item['lemma_ids'])}
         
     spots = item['attributes'].get('corpus_find_spots') or []
+
     if spots:
         count = retrieve.query('SELECT count(*) AS n FROM sentences s JOIN documents d '
                                'ON d.id = s.text_id WHERE d.find_spot = ANY(%(spots)s)',
@@ -288,8 +292,10 @@ def entity_result(item: dict[str, Any],
     return {key: item[key] for key in ('id', 'type', 'name', 'aliases', 'start_year', 'end_year',
                                        'attributes', 'source', 'reliability')} | {
         'reliability_guide': RELIABILITY_GUIDE[item['reliability']],
-        'links': links[:MAX_LINKS], 'links_total': len(links),
-        'corpus': corpus_mentions(item, examples)}
+        'links': links[:MAX_LINKS],
+        'links_total': len(links),
+        'corpus': corpus_mentions(item, examples)
+        }
 
 
 def lookup_entity(name: str,
@@ -315,7 +321,9 @@ def lookup_entity(name: str,
             }
 
 
-def search_books(query: str, limit: int = book_search.TOP_K) -> dict[str, Any]:
+def search_books(query: str, 
+                 limit: int = book_search.TOP_K
+                 ) -> dict[str, Any]:
     """Hybrid search (full text + meaning) over the Egyptology books; vector failure falls back to full text."""
     query = required(query, 'A question')[:MAX_BOOK_QUERY]
     limit = clamp(limit, 1, book_search.TOP_K)

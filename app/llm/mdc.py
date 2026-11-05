@@ -61,3 +61,5 @@ def translit_query(text: str | None) -> str:
     # Normalize the text to NFC form (canonical decomposition, followed by canonical composition)
     # and join the words with spaces
     return ' '.join(normalize_translit(text).split())
+
+

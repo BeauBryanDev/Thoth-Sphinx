@@ -271,6 +271,7 @@ def _assistant_content(response: Any) -> list[dict[str, Any]]:
         data = block.to_dict() if hasattr(block, 'to_dict') else dict(vars(block))
         data.pop('parsed_output', None)
         blocks.append(data)
+    
     return blocks
 
 
@@ -282,7 +283,8 @@ def complete_parsed_with_tools(*, feature: str,
                             max_tool_turns: int,
                             trace: Any = None,
                             max_tokens: int = 16000
-                            ) -> tuple[T, list[Usage], list[ToolCall]]:
+                            ) -> tuple[T, list[Usage], 
+                                       list[ToolCall]]:
     """Hand-written tool loop : the model may call tools, then answers in the schema."""
     by_name = {t.name: t for t in tools}
     definitions = [t.definition() for t in tools]
@@ -373,6 +375,7 @@ def _execute(
         log.warning('tool %s failed: %s', use.name, e)
         content, ok, result = f'Tool error: {e}', False, None
         summary = f'error: {e}'
+
     return content, ok, result, summary, int((time.monotonic() - started) * 1000)
 
 
@@ -394,7 +397,9 @@ def _run_tool(
                           
     if trace is not None:
         trace.add('tool_call', use.name, summary, latency_ms=latency,
-                  detail={'called_by': model, 'input': tool_input, 'ok': ok}
+                  detail={'called_by': model, 
+                          'input': tool_input, 
+                          'ok': ok}
                   )
     block: dict[str, Any] = {
                             'type': 'tool_result', 
@@ -483,3 +488,6 @@ reply: Any, usage: Usage
 
     except OSError as e:
         log.warning('debug_prompts dump failed: %s', e)
+
+
+
