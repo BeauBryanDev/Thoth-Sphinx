@@ -7,6 +7,7 @@
 
 import http from "@/services/http";
 import type {
+  BookPassage,
   ChatMessage,
   GlyphDecodingResult,
   LineEvidence,
@@ -38,6 +39,7 @@ export interface ReadingChatReply {
   messageId: string;
   corrections: SignCorrection[];
   toolCalls: ToolCallOut[];
+  bookPassages: BookPassage[];
   model: string;
   costUsd: number | null;
 }
@@ -73,6 +75,7 @@ export const sendReadingChat = async (payload: {
     message_id: string;
     corrections: SignCorrection[];
     tool_calls: ToolCallOut[];
+    book_passages?: BookPassage[];
     model: string;
     cost_usd: number | null;
   }>("/chat/reading/", payload, { timeout: READING_CHAT_TIMEOUT_MS });
@@ -81,6 +84,7 @@ export const sendReadingChat = async (payload: {
     messageId: data.message_id,
     corrections: data.corrections ?? [],
     toolCalls: data.tool_calls ?? [],
+    bookPassages: data.book_passages ?? [],
     model: data.model,
     costUsd: data.cost_usd ?? null,
   };

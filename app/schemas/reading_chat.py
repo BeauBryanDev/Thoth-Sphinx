@@ -13,6 +13,7 @@ from app.core.guards import (
     NoteText,
     TurnText,
 )
+from app.schemas.books import BookPassage
 from app.schemas.transliterations import LineEvidence, TextContext, ToolCallOut
 
 # Schemas for POST /chat/reading/ — chat with Thot-Sphinx about the reading on screen.
@@ -87,5 +88,6 @@ class ReadingChatResponse(BaseModel):
     message_id  : str
     corrections : list[SignCorrection] = []    # validated against the snapshot
     tool_calls  : list[ToolCallOut] = []       # corpus calls made this turn
+    book_passages : list[BookPassage] = []     # top book passages search_books retrieved
     model       : str = ''
     cost_usd    : Optional[float] = None

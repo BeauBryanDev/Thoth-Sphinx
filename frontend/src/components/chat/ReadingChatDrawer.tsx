@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { ManualCorrection } from "@/components/chat/ManualCorrection";
 import { ToolCallChips } from "@/components/chat/ToolCallChips";
+import { Chunks } from "@/components/chat/Chunks";
 import { correctionKey, useReadingChatStore } from "@/stores";
 import { useRereadCooldown } from "@/hooks/useRereadCooldown";
 import type { ChatMessage, ReadingChatMessage } from "@/types";
@@ -61,12 +62,29 @@ const CorrectionActions = ({ messageId, index }: { messageId: string; index: num
 };
 
 const MessageExtras = ({ message }: { message: ChatMessage }) => {
-  const { toolCalls = [], corrections = [], correctionBatch = false } = message as ReadingChatMessage;
-  if (!toolCalls.length && !corrections.length) return null;
+  const {
+    toolCalls = [],
+    bookPassages = [],
+    corrections = [],
+    correctionBatch = false,
+  } = message as ReadingChatMessage;
+  if (!toolCalls.length && !bookPassages.length && !corrections.length) return null;
 
   return (
     <div className="mt-3 space-y-2 border-t border-amber-800/50 pt-2">
       <ToolCallChips calls={toolCalls} />
+
+      {bookPassages.length > 0 && (
+        <details className="group rounded-lg border border-amber-700/50 bg-stone-900/40">
+          <summary className="cursor-pointer select-none px-2.5 py-1.5 text-[10px] uppercase tracking-[0.2em] text-amber-400 hover:text-amber-300">
+            📜 Scrolls consulted ({bookPassages.length})
+            <span className="ml-1 normal-case tracking-normal text-amber-500/70 group-open:hidden">— click to open</span>
+          </summary>
+          <div className="px-2 pb-2">
+            <Chunks passages={bookPassages} />
+          </div>
+        </details>
+      )}
 
       {corrections.map((c, i) => (
         <div key={i} className="rounded-lg border-2 border-amber-500/70 bg-amber-950/50 p-2.5">

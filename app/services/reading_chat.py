@@ -17,7 +17,7 @@ from app.schemas.reading_chat import (
     SignCorrection,
 )
 from app.schemas.transliterations import ToolCallOut
-from app.services.sphinx_chat import MAX_PROMPT_CHARS, SPHINX_PERSONA
+from app.services.sphinx_chat import MAX_PROMPT_CHARS, SPHINX_PERSONA, book_passages
 
 logger = logging.getLogger('sphinxeyes.reading_chat')
 
@@ -165,6 +165,7 @@ class ReadingChatService:
                                         input=c.input, 
                                         summary=c.summary,
                                         ok=c.ok, latency_ms=c.latency_ms) for c in calls],
+            book_passages = book_passages(calls),
             model       = usages[-1].served_by,
             cost_usd    = sum(costs) if all(c is not None for c in costs) else None,
         )

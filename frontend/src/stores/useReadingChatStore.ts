@@ -132,6 +132,7 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
             content: reply.reply,
             timestamp: Date.now(),
             toolCalls: reply.toolCalls,
+            bookPassages: reply.bookPassages,
             corrections: reply.corrections,
           },
         ],
