@@ -11,6 +11,9 @@ export const TOOL_LABEL: Record<string, string> = {
   lookup_lemma: "dictionary",
   lookup_entity: "knowledge graph",
   search_books: "books",
+  start_riddle_trial: "riddle trial",
+  submit_riddle_answer: "riddle verdict",
+  create_royal_cartouche: "cartouche gift",
 };
 
 export const ToolCallChips = ({ calls }: { calls: ToolCallOut[] }) => {

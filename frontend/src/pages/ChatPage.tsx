@@ -7,6 +7,7 @@
 // behind the last reply.
 
 import { ChatPanel } from "@/components/chat";
+import { CartoucheGift } from "@/components/chat/CartoucheGift";
 import { Chunks } from "@/components/chat/Chunks";
 import { ToolCallChips } from "@/components/chat/ToolCallChips";
 import { Card } from "@/components/common";
@@ -25,13 +26,16 @@ export const ChatPage = () => {
       <div className="h-[calc(100dvh-14rem)] min-h-[28rem] lg:h-[calc(100dvh-11rem)]">
         <ChatPanel
           controller={chat}
-          renderExtras={(m) =>
-            m.toolCalls?.length ? (
-              <div className="mt-3 border-t border-amber-800/50 pt-2">
-                <ToolCallChips calls={m.toolCalls} />
-              </div>
-            ) : null
-          }
+          renderExtras={(m) => (
+            <>
+              {m.cartoucheImage ? <CartoucheGift src={m.cartoucheImage} /> : null}
+              {m.toolCalls?.length ? (
+                <div className="mt-3 border-t border-amber-800/50 pt-2">
+                  <ToolCallChips calls={m.toolCalls} />
+                </div>
+              ) : null}
+            </>
+          )}
         />
       </div>
 

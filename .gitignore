@@ -341,3 +341,8 @@ bryan.webp
 charlotte.webp
 dhyjukilo.tx
 manifest.sh
+
+
+scripts/generate_cartouche_frame.py
+scripts/image_generator.py
+assets

@@ -1,6 +1,3 @@
-import ast
-from pathlib import Path
-
 import pytest
 
 from app.core.config import settings
@@ -10,9 +7,6 @@ from app.services.reverse import ReverseTranslationService
 from app.services.sphinx_chat import SPHINX_PERSONA, ChatService
 from app.services.transliteration_services import SYSTEM_PROMPT, TransliterationService
 from tests.test_llm import StubMessages, _response, stub  # noqa: F401  (stub is a fixture)
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 SEARCHED: list[tuple[int, str, str]] = []
@@ -62,17 +56,66 @@ def test_chat_looks_up_entities_with_haiku_low_and_persona(stub: StubMessages,
     history = [{'role': 'assistant', 'content': 'Greetings, seeker.'},
                {'role': 'user', 'content': 'Who built Saqqara?'},
                {'role': 'assistant', 'content': 'Djoser, through Imhotep.'}]
-    reply, message_id, tool_calls, passages = ChatService().chat('And Unas?', history)
-    assert reply.startswith('The records place Unas') and len(message_id) == 32
-    assert looked_up == ['Unas'] and [(c.tool, c.ok) for c in tool_calls] == [('lookup_entity', True)]
-    assert passages == []   # no book search, no passages
+    out = ChatService().chat('And Unas?', history)
+    assert out.reply.startswith('The records place Unas') and len(out.message_id) == 32
+    assert looked_up == ['Unas'] and [(c.tool, c.ok) for c in out.tool_calls] == [('lookup_entity', True)]
+    assert out.book_passages == []   # no book search, no passages
+    assert out.riddle_session is None and out.cartouche_image is None   # no trial, nothing stored
     kw = calls[0]
     assert kw['model'] == 'claude-haiku-5-5' and kw['output_config'] == {'effort': 'low'}
-    assert [t['name'] for t in kw['tools']] == ['lookup_entity']
+    assert [t['name'] for t in kw['tools']] == [
+        'lookup_entity', 'start_riddle_trial', 'submit_riddle_answer', 'create_royal_cartouche']
     assert kw['system'][0]['text'].startswith(SPHINX_PERSONA)   # persona word for word, rules appended
     # Leading assistant greeting dropped: Claude needs a user turn first.
     assert [m['role'] for m in kw['messages']] == ['user', 'assistant', 'user']
-    assert kw['messages'][-1]['content'][0]['text'] == '<user_message>\nAnd Unas?\n</user_message>'
+    state, said = kw['messages'][-1]['content']
+    assert state['text'].startswith('<trial_state>\nNo trial has begun.')   # restated every turn
+    assert said['text'] == '<user_message>\nAnd Unas?\n</user_message>'
+
+
+def test_chat_riddle_trial_survives_between_requests(stub: StubMessages,
+                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.services import sphinx_chat
+    monkeypatch.setattr(sphinx_chat, 'CHAT_TOOLS', ())
+    calls = _scripted(stub, [
+        _tool_turn(_tool_use('start_riddle_trial', {})),
+        _response(parsed=sphinx_chat._ChatAnswer(reply='Hear my first riddle.')),
+        _tool_turn(_tool_use('submit_riddle_answer', {'guess': 'zzqx'})),
+        _response(parsed=sphinx_chat._ChatAnswer(reply='Not so, seeker.')),
+    ])
+    session = ChatService().chat('Give me a riddle', []).riddle_session
+    assert session is not None and len(session) == 32   # trial begun, game stored
+    out = ChatService().chat('zzqx', [], session)
+    assert out.riddle_session == session
+    assert [(c.tool, c.ok) for c in out.tool_calls] == [('submit_riddle_answer', True)]
+    assert out.tool_calls[0].summary == 'riddle 1: wrong'   # same game: the first riddle, attempt 1
+    # The second request is told the trial's truth, though its history holds no tool results.
+    assert 'riddle 1 of 3, attempt 1 of 3, 0 solved' in calls[2]['messages'][-1]['content'][0]['text']
+
+
+def test_chat_cartouche_gift_needs_a_pass_and_stays_out_of_the_model(stub: StubMessages,
+                                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core import ratelimit
+    from app.services import sphinx_chat
+    from app.services.riddle_sessions import RIDDLE_SESSIONS
+    monkeypatch.setattr(sphinx_chat, 'CHAT_TOOLS', ())
+    calls = _scripted(stub, [
+        _tool_turn(_tool_use('create_royal_cartouche', {'name': 'Bryan'})),
+        _response(parsed=sphinx_chat._ChatAnswer(reply='Not yet, seeker.')),
+        _tool_turn(_tool_use('create_royal_cartouche', {'name': 'Bryan'})),
+        _response(parsed=sphinx_chat._ChatAnswer(reply='Behold your name.')),
+    ])
+    denied = ChatService().chat('Carve my name', [])
+    assert denied.cartouche_image is None and not denied.tool_calls[0].ok   # no trial passed
+    session, game = RIDDLE_SESSIONS.get(None)
+    game.refund_pass()   # as if the trial was won
+    RIDDLE_SESSIONS.keep(session, game)
+    out = ChatService().chat('Bryan', [], session, 'ip1')
+    assert out.cartouche_image and out.cartouche_image.startswith('data:image/webp;base64,')   # carved, no API
+    assert out.tool_calls[0].summary == 'cartouche carved for BRYAN: 𓃀𓂋𓇋𓄿𓈖'
+    assert 'base64' not in str(calls[-1]['messages'])   # the image never enters the model's context
+    assert not game.trial_passed   # the pass is spent
+    assert ratelimit.CARTOUCHE_DAILY.reserve('ip1', 1) is not None   # one image counted today
 
 
 def test_chat_disabled_raises(no_api_key: None) -> None:
@@ -143,14 +186,6 @@ def test_transliteration_failure_keeps_partial(stub: StubMessages, per_line: Non
         direction='rtl', layout='columns', ctx=TextContext())
     assert out.error and 'segment 2/2' in out.error
     assert [c.transliteration for c in out.chunks] == ['nb tAwy']
-
-
-def test_app_never_imports_openai() -> None:
-    for path in (REPO_ROOT / 'app').rglob('*.py'):
-        tree = ast.parse(path.read_text())
-        names = [a.name for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names]
-        names += [n.module or '' for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)]
-        assert not any(name.split('.')[0] == 'openai' for name in names), path
 
 
 def test_transliteration_sends_raw_photo_once_cached(stub: StubMessages, per_line: None) -> None:

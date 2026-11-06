@@ -188,3 +188,4 @@ def fresh_guards(monkeypatch):
     monkeypatch.setattr(ratelimit, 'REQUESTS', ratelimit.SlidingWindow())
     monkeypatch.setattr(ratelimit, 'TRANSLIT_DAILY', ratelimit.DailyQuota())
     monkeypatch.setattr(ratelimit, 'SPEND', ratelimit.SpendCap())
+    monkeypatch.setattr(ratelimit, 'CARTOUCHE_DAILY', ratelimit.DailyQuota())

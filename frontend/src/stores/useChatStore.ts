@@ -14,7 +14,8 @@ import type { ChatMessage } from "@/types";
 
 // Short conversational memory: only the last N messages travel to the
 // backend each turn.
-const MEMORY_WINDOW = 4;
+// 10 messages: a riddle trial runs over many turns; the seeker's name must still be in view.
+const MEMORY_WINDOW = 10;
 
 const INITIAL_MESSAGE: ChatMessage = {
   id: "welcome",
@@ -62,7 +63,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }));
 
     try {
-      const { reply, messageId, toolCalls, bookPassages, riddleSession } =
+      const { reply, messageId, toolCalls, bookPassages, riddleSession, cartoucheImage } =
         await sendChatMessage({
           prompt: trimmed,
           history,
@@ -75,6 +76,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         timestamp: Date.now(),
         toolCalls,
         bookPassages,
+        cartoucheImage,
       };
       set((s) => ({ messages: [...s.messages, assistantMsg], riddleSession }));
     } catch (err) {

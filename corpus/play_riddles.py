@@ -182,6 +182,26 @@ class RiddleGame:
         return self._pass_available
 
 
+    def state_text(self) -> str:
+        """The trial as it stands, for the model each turn; never includes an answer."""
+        with self._lock:
+            gift = ('EARNED and waiting: carve it the moment the seeker gives a name'
+                    if self._pass_available else 'not earned')
+            trial = self.trial
+            if trial is None:
+                status = 'No trial has begun.'
+            elif trial.finished:
+                outcome = 'WON' if trial.passed else 'LOST'
+                status = f'The trial is over: {outcome}, {trial.solved} of {TRIAL_SIZE} riddles solved.'
+            else:
+                riddle = self.riddles[trial.current_id]
+                status = (f'The trial is under way: riddle {trial.index + 1} of {TRIAL_SIZE}, attempt '
+                          f'{trial.attempt} of {MAX_ATTEMPTS}, {trial.solved} solved so far. '
+                          f'The riddle facing the seeker: "{riddle.riddle_question}"')
+
+        return f'{status}\nThe gift of the cartouche: {gift}.'
+
+
     def begin_turn(self) -> None:
         with self._lock:
             self._acted = False
@@ -194,7 +214,13 @@ class RiddleGame:
                 return False
             self._pass_available = False
             return True
- 
+
+
+    def refund_pass(self) -> None:
+        """Give back a pass whose gift could not be made."""
+        with self._lock:
+            self._pass_available = True
+
 
     def start_trial(self) -> dict:
 

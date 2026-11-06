@@ -12,6 +12,8 @@ export interface ChatMessage {
   toolCalls?: ToolCallOut[];
   /** Book passages search_books retrieved for this reply (top 5, assistant messages only). */
   bookPassages?: BookPassage[];
+  /** WebP data URL of the royal cartouche gift carved for this reply (assistant messages only). */
+  cartoucheImage?: string;
 }
 
 /** One passage from the Egyptology books (mirrors app/schemas/books.py). */

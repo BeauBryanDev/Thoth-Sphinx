@@ -18,9 +18,11 @@ export interface SendMessageResponse {
   toolCalls: ToolCallOut[];
   bookPassages: BookPassage[];
   riddleSession: string | null;
+  cartoucheImage?: string;
 }
 
-const CHAT_TIMEOUT_MS = 60_000;
+// A reply that carves the cartouche gift waits on image generation (~20–60 s) between two Haiku turns.
+const CHAT_TIMEOUT_MS = 150_000;
 
 /** Send a prompt to Thot-Sphinx. Backend returns the reply bare (no envelope). */
 export const sendChatMessage = async (
@@ -32,6 +34,7 @@ export const sendChatMessage = async (
     tool_calls?: ToolCallOut[];
     book_passages?: BookPassage[];
     riddle_session?: string | null;
+    cartouche_image?: string | null;
   }>(
     "/chat/",
     {
@@ -47,6 +50,7 @@ export const sendChatMessage = async (
     toolCalls: data.tool_calls ?? [],
     bookPassages: data.book_passages ?? [],
     riddleSession: data.riddle_session ?? null,
+    cartoucheImage: data.cartouche_image ?? undefined,
   };
 };
 
