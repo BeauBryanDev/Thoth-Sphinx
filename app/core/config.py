@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from tokenize import Single
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
  
 
@@ -71,6 +72,14 @@ class Settings(BaseSettings):
     # Riddle trials in /chat/ (app/services/riddle_sessions.py): in memory, per process.
     riddle_session_ttl_s     : int = 3600   # an idle game is dropped after this
     riddle_max_sessions      : int = 2000   # oldest games are dropped beyond this
+    # Cartouche gift (app/services/cartouche_image.py), unlocked by a passed riddle trial: the name is
+    # carved on assets/cartouche_frame.webp; the OpenAI image settings make frames (scripts/generate_cartouche_frame.py).
+    cartouche_model          : str   = 'gpt-image-1.5'   # gpt-image-1 retired by OpenAI 2026-10-23
+    cartouche_size           : str   = '1024x1536'   # vertical
+    cartouche_quality        : str   = 'low'
+    cartouche_compression    : int   = 80            # WebP
+    cartouche_timeout_s      : float = 120.0
+    cartouche_images_per_day : int   = Field(3, ge=1)   # per client IP per UTC day; always on, never 0
     reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
     reading_chat_tool_budget : int = 3
     reading_chat_history     : int = 12    # messages of the conversation sent each turn

@@ -162,3 +162,4 @@ class SpendCap:
 REQUESTS = SlidingWindow()  # every LLM route, per client
 TRANSLIT_DAILY = DailyQuota()   # transliteration runs, per client
 SPEND = SpendCap()   # the whole agent, all clients
+CARTOUCHE_DAILY = DailyQuota()   # cartouche gift images, per client
