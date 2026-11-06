@@ -101,6 +101,11 @@ class ChatService:
 
         session_id, game = RIDDLE_SESSIONS.get(riddle_session)
         game.begin_turn()   # one riddle action per seeker message
+        # History is text only (no past tool results), so the trial's truth is restated each turn.
+        messages[-1]['content'].insert(0, {
+            'type': 'text',
+            'text': f'<trial_state>\n{game.state_text()}\n</trial_state>',
+        })
         gifts: list[str] = []   # the cartouche tool puts its image here, never in the model's context
         tools = (
             CHAT_TOOLS

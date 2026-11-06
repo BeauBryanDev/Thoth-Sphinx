@@ -49,6 +49,7 @@ def glyph_mask(text: str, font: ImageFont.FreeTypeFont) -> np.ndarray:
     left, top, right, bottom = font.getbbox(text)
     img = Image.new('L', (right - left + 8, bottom - top + 8), 0)
     ImageDraw.Draw(img).text((4 - left, 4 - top), text, font=font, fill=255)
+    
     return np.asarray(img, dtype=np.float32) / 255.0
 
 
@@ -60,14 +61,19 @@ def silhouette(mask: np.ndarray) -> np.ndarray:
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     solid = np.zeros_like(binary)
     cv2.drawContours(solid, contours, -1, 1, thickness=cv2.FILLED)
+    
     return np.maximum(blur(solid.astype(np.float32), 0.8), mask)
 
 
-def sign_mask(glyph: str, cell_w: float, cell_h: float) -> tuple[np.ndarray, np.ndarray]:
+def sign_mask(glyph: str, 
+              cell_w: float, 
+              cell_h: float
+              ) -> tuple[np.ndarray, np.ndarray]:
     """(solid shape, inner line art) of one sign, scaled to fill its cell."""
     probe = glyph_mask(glyph, ImageFont.truetype(str(GLYPH_FONT), 200))
     scale = min(cell_w / probe.shape[1], cell_h / probe.shape[0])
     lines = glyph_mask(glyph, ImageFont.truetype(str(GLYPH_FONT), max(12, int(200 * scale))))
+    
     return silhouette(lines), lines
 
 
@@ -77,15 +83,19 @@ def shift(mask: np.ndarray, dx: int, dy: int) -> np.ndarray:
     h, w = mask.shape
     out[max(dy, 0):h + min(dy, 0), max(dx, 0):w + min(dx, 0)] = \
         mask[max(-dy, 0):h - max(dy, 0), max(-dx, 0):w - max(dx, 0)]
+        
     return out
 
 
 def blur(mask: np.ndarray, radius: float) -> np.ndarray:
     """Gaussian blur of a 0..1 mask."""
     img = Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(radius))
+    
     return np.asarray(img, dtype=np.float32) / 255.0
 
 
+# make the carved signs look like they are sunk into the stone, with a lip that casts a shadow and a far wall that catches light
+#  the image generator model tends to halluciate  the inlay  sings !=  real  user names .
 def carve(canvas: np.ndarray,
           mask: np.ndarray,
           x: int,
@@ -105,6 +115,7 @@ def carve(canvas: np.ndarray,
     gleam = blur(shift(mask, -depth * 2, -depth * 2) * mask, depth)   # polish toward the light
     lapis += gleam[..., None] * 30
     region[:] = region * (1 - mask[..., None]) + lapis * mask[..., None]
+    
     if lines is not None:   # the sign's inner details, engraved into the inlay
         detail = (lines * mask)[..., None] * 0.75
         region[:] = region * (1 - detail) + BROWN * 0.7 * detail
@@ -176,7 +187,8 @@ def carve_name(frame: Image.Image,
                name: str,
                panel: Box = FRAME_PANEL,
                base: Box = FRAME_BASE,
-               seed: int = 0) -> Image.Image:
+               seed: int = 0
+               ) -> Image.Image:
     """The frame with the name's signs carved in the panel, and the spell and Latin name on the base."""
     rng = np.random.default_rng(seed)
     canvas = np.asarray(frame.convert('RGB'), dtype=np.float32).copy()
@@ -208,8 +220,11 @@ def carve_name(frame: Image.Image,
     return Image.fromarray(np.clip(canvas, 0, 255).astype(np.uint8))
 
 
-def to_webp(image: Image.Image, quality: int = 80) -> bytes:
+def to_webp(image: Image.Image, 
+            quality: int = 80
+            ) -> bytes:
     """WebP bytes of the image."""
     out = io.BytesIO()
     image.save(out, 'WEBP', quality=quality, method=6)
+    
     return out.getvalue()

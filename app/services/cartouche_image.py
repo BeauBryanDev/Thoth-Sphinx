@@ -89,7 +89,8 @@ def render(name: str, signs: list[Sign]) -> str:
 
 def gift_tool(game: RiddleGame,
               client_key: str,
-              gifts: list[str]) -> AgentTool:
+              gifts: list[str]
+              ) -> AgentTool:
     """The cartouche tool of one request: spends the game's pass, puts the image in `gifts`."""
 
     def run_create_royal_cartouche(name: str) -> dict[str, Any]:
@@ -125,7 +126,9 @@ def gift_tool(game: RiddleGame,
                      'the seeker chose, in Latin letters, exactly as they wrote it. The image is shown to the '
                      'seeker beside your reply; you receive only the signs used. Call it once per gift.'),
         schema={'type': 'object', 'properties': {
-            'name': {'type': 'string', 'description': 'the seeker\'s chosen name, one word of Latin letters'},
+            'name': {'type': 'string', 
+                     'description': 'the seeker\'s chosen name, one word of Latin letters'
+                     },
         }, 'required': ['name']},
         run=run_create_royal_cartouche,
     )
