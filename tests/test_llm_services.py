@@ -562,3 +562,34 @@ def test_transliterate_endpoint_accepts_human_corrections(client, stub: StubMess
     bad = client.post('/transliterate/', json={'codes': ['S34'], 'human_corrections': [{'line': 0, 'position': 1,
                                                                                      'from_code': 'a', 'to_code': 'b'}]})
     assert bad.status_code == 422
+
+
+def test_semantic_translation_keeps_the_raw_one_and_filters_by_king(stub: StubMessages,
+                                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.services import refine_translation
+    monkeypatch.setattr(settings, 'semantic_translation', True)
+    searched: dict[str, object] = {}
+
+    def fake_search(query: str, king: str | None = None, limit: int = 3) -> dict:
+        searched.update(query=query, king=king)
+        return {'mode': 'hybrid', 'passages': [{
+            'passage_id': 'pyramid_texts:unis:152:0', 'work': 'The Ancient Egyptian Pyramid Texts',
+            'author': 'Allen', 'king': 'UNIS', 'citation': 'Allen › Unis › Spell 152', 'similarity': 0.62,
+            'matched_by': ['meaning'], 'text': 'He will live and this Unis will live.'}]}
+
+    monkeypatch.setattr(refine_translation.tools, 'search_translations', fake_search)
+    replies = iter([
+        _response(parsed=_wall('anx=f anx wnjs')),
+        _response(parsed=refine_translation._Refined(
+            translation='He will live, and this Unis will live.', match='same_text',
+            used_passage='pyramid_texts:unis:152:0', note='Allen Spell 152.')),
+    ])
+    stub.parse = lambda **kwargs: next(replies)  # type: ignore[method-assign]
+    out = TransliterationService().transliterate_sequence(
+        ['S34', 'I9', 'S34'], [0.9] * 3, [], ['wnjs — Unas (Dynasty V) (interior: E34 N35 M17 S29)'],
+        direction='rtl', layout='columns', ctx=TextContext())
+    assert out.full_translation == 'Live the Horus, Strong Bull.'
+    assert searched['king'] == 'UNIS' and '(?)' not in str(searched['query'])
+    assert out.semantic is not None and out.semantic.translation == 'He will live, and this Unis will live.'
+    assert out.semantic.match == 'same_text' and out.semantic.passages[0].spell is None
+    assert any(c.tool == 'search_translations' for c in out.tool_calls)

@@ -89,6 +89,43 @@ export interface TransliterationOut {
   tool_calls?: ToolCallOut[];       // every tool call the models made
   trace?: TraceEvent[];             // the whole read, step by step
   entities?: EntityCard[];          // kings of the matched cartouches (knowledge graph)
+  semantic?: SemanticTranslation | null; // second translation; full_translation stays the raw LLM one
+}
+
+/** A published translation passage — mirrors app/schemas/transliterations.py TranslationPassage. */
+export interface TranslationPassage {
+  passage_id: string;
+  work: string;
+  author: string;
+  king: string | null;
+  location: string | null;
+  section: string | null;
+  spell: number | null;
+  title: string | null;
+  page: string | null;
+  citation: string;
+  similarity: number | null;
+  rerank_score?: number | null;     // Cohere relevance 0–1; null when rerank was unavailable
+  hybrid_rank?: number | null;      // the spell's place before reranking
+  matched_by: string[];
+  text: string;                     // the matching part
+  spell_text?: string;              // the whole spell (small-to-big), what the editor read
+}
+
+/** The LLM translation smoothed against the closest published passages. */
+export interface SemanticTranslation {
+  query: string;
+  king_filter: string | null;
+  search_mode: string;
+  passages: TranslationPassage[];
+  translation: string;
+  match: "same_text" | "related" | "none";
+  used_passage: string | null;
+  note: string;
+  model: string | null;
+  cost_usd: number | null;
+  latency_ms: number | null;
+  error: string | null;
 }
 
 /** The king behind a matched cartouche — mirrors app/schemas/transliterations.py EntityCard. */
@@ -257,6 +294,8 @@ export interface GlyphDecodingResult {
   toolCalls: ToolCallOut[];
   /** Kings of the matched cartouches, from the knowledge graph. */
   entities: EntityCard[];
+  /** Second translation from the published-translation search; null when it did not run. */
+  semantic: SemanticTranslation | null;
   trace: TraceEvent[];
   /** Claude's reading per physical line (for the reading chat snapshot). */
   readingLines: ReadingLineView[];

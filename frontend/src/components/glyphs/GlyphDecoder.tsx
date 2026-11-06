@@ -20,6 +20,7 @@ import { ReadingProvenanceCard } from "./ReadingProvenanceCard";
 import { CorpusEvidenceCard } from "./CorpusEvidenceCard";
 import { AgentTrace } from "./AgentTrace";
 import { Entities } from "./Entities";
+import { SemanticTranslation } from "./SemanticTranslation";
 import { ReadingChatDrawer } from "@/components/chat/ReadingChatDrawer";
 import { useReadingChatStore } from "@/stores";
 import { HintButton, HintModal, LayoutHint, DirectionHint } from "./DecoderHints";
@@ -404,6 +405,9 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
                 “{result.translation}”
               </p>
             </div>
+
+            {/* 4b. Second translation: the raw one above, smoothed against published passages. */}
+            <SemanticTranslation semantic={result.semantic} />
 
             {/* 4·. The kings of the matched cartouches (knowledge graph). */}
             <Entities entities={result.entities} />

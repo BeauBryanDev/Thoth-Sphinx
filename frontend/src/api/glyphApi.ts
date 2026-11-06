@@ -98,6 +98,7 @@ const toDecodingResult = (
     evidence: llmOk ? llm.evidence ?? [] : [],
     toolCalls: llmOk ? llm.tool_calls ?? [] : [],
     entities: llm?.entities ?? [],
+    semantic: llmOk ? llm.semantic ?? null : null,
     trace: llmOk ? llm.trace ?? [] : [],
     readingLines: llmOk
       ? llm.chunks.map((c) => ({
