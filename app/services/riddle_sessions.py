@@ -27,17 +27,20 @@ class RiddleSessions:
             self._expire(now)
             if session_id and session_id in self._games:
                 return session_id, self._games[session_id][0]
+
         return uuid.uuid4().hex, RiddleGame()
 
     def keep(self, session_id: str, game: RiddleGame) -> bool:
         """Store a game once its trial has begun; returns whether it is stored."""
         if game.trial is None and not game.trial_passed:
             return False
+            
         with self._lock:
             self._games[session_id] = (game, time.monotonic())
             self._games.move_to_end(session_id)
             while len(self._games) > self.max_sessions:
                 self._games.popitem(last=False)
+
         return True
 
     def _expire(self, now: float) -> None:

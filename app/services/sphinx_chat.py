@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from typing import NamedTuple
 
 from pydantic import BaseModel
 
@@ -13,6 +14,7 @@ from app.core import guards
 from app.core.config import settings
 from app.schemas.books import BookPassage
 from app.schemas.transliterations import ToolCallOut
+from app.services import cartouche_image
 from app.services.riddle_sessions import RIDDLE_SESSIONS
 
 logger = logging.getLogger('sphinxeyes.chat')
@@ -54,6 +56,16 @@ def book_passages(calls: list[llm.ToolCall]) -> list[BookPassage]:
     return list(seen.values())[:MAX_PASSAGES]
 
 
+class ChatReply(NamedTuple):
+    """One chat turn's result."""
+    reply           : str
+    message_id      : str
+    tool_calls      : list[ToolCallOut]
+    book_passages   : list[BookPassage]
+    riddle_session  : str | None   # set once a riddle trial has begun
+    cartouche_image : str | None   # WebP data URL of the gift, when one was carved this turn
+
+
 class ChatService:
     """Stateless chat turn: history comes from the client each call."""
 
@@ -66,8 +78,9 @@ class ChatService:
         prompt  : str,
         history : list[dict],          # [{'role': 'user'|'assistant', 'content': str}, ...]
         riddle_session : str | None = None,
-    ) -> tuple[str, str, list[ToolCallOut], list[BookPassage], str | None]:
-        """Returns (reply, message_id, tool_calls, book_passages, riddle_session). Raises RuntimeError when disabled, LLMError on failure."""
+        client_key : str = 'local',     # hashed client IP, for the cartouche daily cap
+    ) -> ChatReply:
+        """One chat turn. Raises RuntimeError when disabled, LLMError on failure."""
         if not self.enabled:
             raise RuntimeError('ANTHROPIC_API_KEY not configured — chat disabled.')
 
@@ -88,6 +101,12 @@ class ChatService:
 
         session_id, game = RIDDLE_SESSIONS.get(riddle_session)
         game.begin_turn()   # one riddle action per seeker message
+        gifts: list[str] = []   # the cartouche tool puts its image here, never in the model's context
+        tools = (
+            CHAT_TOOLS
+            + agent_tools.riddle_tools(game)
+            + (cartouche_image.gift_tool(game, client_key, gifts),)
+        )
 
         # No temperature on current Claude models: the persona carries the tone.
         answer, _, calls = llm.complete_parsed_with_tools(
@@ -97,7 +116,7 @@ class ChatService:
             messages       = messages,
             schema         = _ChatAnswer,
             effort         = settings.chat_effort,
-            tools          = CHAT_TOOLS + agent_tools.riddle_tools(game),
+            tools          = tools,
             max_tool_turns = settings.chat_tool_budget,
             max_tokens     = MAX_REPLY_TOKENS,
         )
@@ -113,10 +132,11 @@ class ChatService:
             for c in calls
         ]
         stored = RIDDLE_SESSIONS.keep(session_id, game)
-        return (
-            answer.reply,
-            uuid.uuid4().hex,
-            tool_calls,
-            book_passages(calls),
-            session_id if stored else None,
+        return ChatReply(
+            reply=answer.reply,
+            message_id=uuid.uuid4().hex,
+            tool_calls=tool_calls,
+            book_passages=book_passages(calls),
+            riddle_session=session_id if stored else None,
+            cartouche_image=gifts[0] if gifts else None,
         )
