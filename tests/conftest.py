@@ -182,6 +182,13 @@ def fresh_reread_limit(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def no_semantic_translation(monkeypatch):
+    """The second translation is off unless a test turns it on: it adds an LLM call and a search."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, 'semantic_translation', False)
+
+
+@pytest.fixture(autouse=True)
 def fresh_guards(monkeypatch):
     """Each test starts with empty request windows, daily quotas and spend."""
     from app.core import ratelimit
