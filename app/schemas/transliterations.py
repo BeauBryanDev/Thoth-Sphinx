@@ -116,6 +116,42 @@ class ToolCallOut(BaseModel):
     latency_ms : int
 
 
+class TranslationPassage(BaseModel):
+    """One published translation passage (english_translations) close to the reading."""
+    passage_id : str
+    work       : str
+    author     : str
+    king       : Optional[str] = None             # pyramid owner, e.g. UNIS
+    location   : Optional[str] = None             # the wall, e.g. ANTECHAMBER, WEST GABLE
+    section    : Optional[str] = None
+    spell      : Optional[int] = None
+    title      : Optional[str] = None
+    page       : Optional[str] = None
+    citation   : str
+    similarity : Optional[float] = None           # cosine to the LLM translation, 0–1
+    rerank_score : Optional[float] = None         # Cohere relevance, 0–1; None when rerank was unavailable
+    hybrid_rank  : Optional[int] = None           # the spell's place before reranking
+    matched_by : list[str] = []
+    text       : str                              # the matching part (<= 420 tokens)
+    spell_text : str = ''                         # the whole spell, capped; what the editor reads
+
+
+class SemanticTranslation(BaseModel):
+    """The second translation: the LLM translation, smoothed against the closest published passages."""
+    query        : str                            # the LLM translation as searched
+    king_filter  : Optional[str] = None           # search limited to this pyramid's spells
+    search_mode  : str = 'hybrid'
+    passages     : list[TranslationPassage] = []
+    translation  : str = ''                       # the refined English; '' when the step failed
+    match        : Literal['same_text', 'related', 'none'] = 'none'
+    used_passage : Optional[str] = None           # passage_id the refinement drew on
+    note         : str = ''                       # one sentence on how the passages were used
+    model        : Optional[str] = None
+    cost_usd     : Optional[float] = None
+    latency_ms   : Optional[int] = None
+    error        : Optional[str] = None
+
+
 class TraceEvent(BaseModel):
     """One step of the read, in order (spec §11). No secrets, no image data."""
     step          : int
@@ -162,3 +198,4 @@ class TransliterationOut(BaseModel):
     tool_calls           : list[ToolCallOut] = []    # every tool call the models made
     trace                : list[TraceEvent] = []     # the whole read, step by step
     entities             : list[EntityCard] = []     # kings of the matched cartouches (knowledge graph)
+    semantic             : Optional[SemanticTranslation] = None  # second translation; full_translation stays the raw LLM one

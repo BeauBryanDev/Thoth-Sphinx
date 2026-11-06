@@ -44,7 +44,9 @@ FRAME_PANEL = Box(372, 500, 653, 1045)    # inside the cartouche rope, clear of 
 FRAME_BASE = Box(200, 1203, 820, 1320)    # the flat base under the tied bar
 
 
-def glyph_mask(text: str, font: ImageFont.FreeTypeFont) -> np.ndarray:
+def glyph_mask(text: str, 
+               font: ImageFont.FreeTypeFont
+               ) -> np.ndarray:
     """Anti-aliased coverage (0..1) of the text, cropped to its ink."""
     left, top, right, bottom = font.getbbox(text)
     img = Image.new('L', (right - left + 8, bottom - top + 8), 0)
@@ -101,7 +103,8 @@ def carve(canvas: np.ndarray,
           x: int,
           y: int,
           rng: np.random.Generator,
-          lines: np.ndarray | None = None) -> None:
+          lines: np.ndarray | None = None
+          ) -> None:
     """Cut the mask into the stone at (x, y): sunk relief inlaid with lapis, lit from the upper left."""
     h, w = mask.shape
     region = canvas[y:y + h, x:x + w]
@@ -131,7 +134,8 @@ def place(canvas: np.ndarray,
           cx: float,
           cy: float,
           rng: np.random.Generator,
-          lines: np.ndarray | None = None) -> None:
+          lines: np.ndarray | None = None
+        )-> None:
     """Carve the mask centred on (cx, cy)."""
     h, w = mask.shape
     carve(canvas, mask, round(cx - w / 2), round(cy - h / 2), rng, lines)
@@ -143,7 +147,8 @@ def place_sign(canvas: np.ndarray,
                cy: float,
                cell_w: float,
                cell_h: float,
-               rng: np.random.Generator) -> None:
+               rng: np.random.Generator
+               ) -> None:
     """Carve one sign, solid and scaled to its cell, centred on (cx, cy)."""
     solid, lines = sign_mask(glyph, cell_w, cell_h)
     place(canvas, solid, cx, cy, rng, lines)
@@ -198,6 +203,7 @@ def carve_name(frame: Image.Image,
     row_h = panel.h / len(rows)
     cell_w = min(panel.w * 0.8, row_h * 1.8)   # flat signs go wide, but stay in scale with the birds
     cx = panel.x0 + panel.w / 2
+    
     for n, (kind, glyphs) in enumerate(rows):
         cy = panel.y0 + row_h * (n + 0.5)
         if kind == 'one':

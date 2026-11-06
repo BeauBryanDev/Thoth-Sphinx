@@ -4,6 +4,7 @@ from typing import Any
 from app.llm import mdc
 from corpus import confidence, rerank, retrieve
 from corpus.books import search as book_search
+from corpus.translations import search as translation_search
 
 CANDIDATES = 10
 MAX_LIMIT = 20
@@ -26,6 +27,7 @@ RELIABILITY_GUIDE = {
 }
 BOOK_SUPPORT_FLOOR = 0.5   # best vector score below this: the books likely do not cover the question
 MAX_BOOK_QUERY = 300
+MAX_TRANSLATION_QUERY = 2000
 BOOK_GUIDE = {
     True: 'The books seem to cover this. Cite the passage you use by its citation; never invent pages.',
     False: 'The books do not seem to cover this question. Say so, and answer from general knowledge only '
@@ -360,6 +362,65 @@ def search_books(query: str,
                 'matched_by': [name for name, key in (('words', 'text_rank'), ('meaning', 'vector_rank')) if h.get(key)]
                 or ['words'],
                 'text': h['body'],
+            }
+            for h in hits
+        ],
+    }
+
+
+def search_translations(query: str,
+                        king: str | None = None,
+                        limit: int = translation_search.TOP_K
+                        ) -> dict[str, Any]:
+    """Published English translations of whole spells: hybrid search on parts, one hit per spell, Cohere rerank."""
+    # Rerank lifted hit@1 0.716 -> 0.826 on 218 Allen -> Piankoff pairs (reports/translation_retrieval.json).
+    query = required(query, 'A translation')[:MAX_TRANSLATION_QUERY]
+    limit = clamp(limit, 1, translation_search.TOP_K)
+    variants = translation_search.name_variants(query, king)
+    try:
+        # Lazy, like search_books: the OpenAI SDK loads only when translations are searched.
+        from corpus import embed
+
+        vectors = embed.embed_texts(embed.client(), variants)[0]
+        parts = translation_search.search_variants(variants, vectors, king=king)
+        mode = 'hybrid'
+    except Exception as error:  # an embedding outage must leave the search working
+        logger.warning('translation search embedding failed: %s', error)
+        parts = [h for v in variants for h in translation_search.search_text(v, king=king, limit=translation_search.CANDIDATES)]
+        mode = 'full text only (meaning search unavailable)'
+    if len(variants) > 1:
+        mode += f', {len(variants)} name spellings'
+    spells = translation_search.group_by_spell(parts)
+    try:
+        hits = translation_search.rerank(query, spells[:translation_search.RERANK_CANDIDATES], limit, king)
+        mode += ', grouped by spell, reranked'
+    except Exception as error:  # Cohere down or no key: keep the hybrid order
+        logger.warning('translation rerank failed: %s', error)
+        hits = spells[:limit]
+        mode += ', grouped by spell (rerank unavailable)'
+    return {
+        'found': len(hits),
+        'mode': mode,
+        'king': king,
+        'passages': [
+            {
+                'passage_id': h['id'],
+                'work': h['work'],
+                'author': h['author'],
+                'king': h['king'],
+                'location': h['location'],
+                'section': h['section'],
+                'spell': h['spell'],
+                'title': h['title'],
+                'page': h['page'],
+                'citation': h['citation'],
+                'similarity': round(h['similarity'], 3) if h.get('similarity') is not None else None,
+                'rerank_score': round(h['rerank_score'], 3) if h.get('rerank_score') is not None else None,
+                'hybrid_rank': h.get('hybrid_rank'),
+                'matched_by': [name for name, key in (('words', 'text_rank'), ('meaning', 'vector_rank')) if h.get(key)]
+                or ['words'],
+                'text': h['body'],
+                'spell_text': translation_search.whole_spell(h),
             }
             for h in hits
         ],

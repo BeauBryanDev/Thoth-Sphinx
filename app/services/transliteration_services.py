@@ -12,7 +12,7 @@ from app import llm
 from app.llm.prompts import load
 from app.core.config import settings
 from app.core.guards import public_message
-from app.services import entity_cards
+from app.services import entity_cards , refine_translation
 from app.llm import agent_tools, images, router
 from app.llm.trace import Trace
 from app.schemas.transliterations import (
@@ -403,6 +403,27 @@ class TransliterationService:
             card_calls=card_calls,
         )
         out.entities = cards
+        if settings.semantic_translation and out.full_translation and not out.error:
+            # The raw LLM translation stays in full_translation; the refined one goes beside it.
+            out.semantic, call = refine_translation.refine(out.full_translation, cartouche_names)
+            if call is not None:
+                out.tool_calls.append(call)
+            if out.cost_usd is not None:
+                out.cost_usd = (out.cost_usd + out.semantic.cost_usd
+                                if out.semantic.cost_usd is not None else None)
+            out.trace.append(TraceEvent(
+                step=len(out.trace) + 1,
+                t_ms=(out.trace[-1].t_ms if out.trace else 0) + (out.semantic.latency_ms or 0),
+                kind='semantic_translation',
+                actor=out.semantic.model or settings.semantic_model,
+                summary=(f'second translation ({out.semantic.match}): '
+                         f'{len(out.semantic.passages)} published passages'
+                         + (f', king {out.semantic.king_filter}' if out.semantic.king_filter else '')
+                         if not out.semantic.error else f'second translation failed: {out.semantic.error}'),
+                latency_ms=out.semantic.latency_ms,
+                cost_usd=out.semantic.cost_usd,
+                detail={'used_passage': out.semantic.used_passage},
+            ))
         return out
 
     def _transliterate(
