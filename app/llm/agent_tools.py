@@ -227,4 +227,8 @@ def summarize(name: str, result: dict[str, Any]) -> str:
         return f"riddle {result.get('riddle_number')}: {result.get('status')}" + (
             outcome if result.get('finished') else '')
 
+    if name == 'create_royal_cartouche':
+        glyphs = ''.join(s.get('glyph', '') for s in result.get('signs') or [])
+        return f"cartouche carved for {result.get('name')}: {glyphs}"
+
     return 'done'

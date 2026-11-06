@@ -30,7 +30,7 @@ class Signals:
     """Measured inputs to the escalation decision for one read."""
     n_codes               : int
     n_lines               : int
-    detector_low_share    : float          # codes with confidence < 0.5, Unknown included
+    detector_low_share    : float  # codes with confidence < 0.5, Unknown included
     unresolved_cartouches : int
     has_image             : bool
     line_confidences      : tuple[str, ...]   # Haiku's HIGH/MEDIUM/LOW per line
