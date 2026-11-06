@@ -6,6 +6,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from app.core.config import settings
 from app.schemas.cartouches import CartoucheOut
 from app.schemas.corrections import CorrectionOut, SegmentedWordOut, ResolvedUnknownOut
 from app.schemas.predict import PredictResponse, OuterOut
@@ -42,6 +43,7 @@ class InferenceService:
             use_enhance = preset != 'none',
             preset      = preset if preset != 'none' else 'default',
             annotate    = True,
+            use_corrector = settings.use_corrector,
         )
         response = self._map(raw)
         response.annotated_image = self._encode_annotated(

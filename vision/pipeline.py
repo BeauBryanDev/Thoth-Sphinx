@@ -186,6 +186,7 @@ class SphinxPipeline:
         use_enhance : bool = False,
         preset      : str  = 'default',
         annotate    : bool = False,   # add 'annotated_bgr' ndarray to result
+        use_corrector : bool = True,  # False: YOLO top-1 codes go out as they are (A/B, 2026-11-06)
     ) -> dict:
         bgr = self._load_image(image)
         if use_enhance:
@@ -241,11 +242,23 @@ class SphinxPipeline:
 
         canon_outer = self._canon_slots(outer_ro.slots)
         
-        correction  = SC.correct(
-            canon_outer, self.trie, self.log_prob, self.unigrams,
-            sub_cost_matrix=self.sub_cost,
-            boundary_hints=outer_ro.boundary_hints,
-        )
+        if use_corrector:
+            correction = SC.correct(
+                canon_outer, self.trie, self.log_prob, self.unigrams,
+                sub_cost_matrix=self.sub_cost,
+                boundary_hints=outer_ro.boundary_hints,
+            )
+        else:
+            # Same shape, no trie and no Viterbi: each slot's top-1 code, empty slots as Unknown.
+            correction = SC.CorrectionResult(
+                segmented_words    = [],
+                unknowns_resolved  = [],
+                flat_corrected_seq = [slot[0][0] if slot else 'Unknown' for slot in canon_outer],
+                flat_translit      = '',
+                flat_translation   = '',
+                score              = 0.0,
+                had_fallback       = False,
+            )
 
         # 4) Cartouches (interior reading + royal-name match + consensus)
         cart_results  : list[Optional[CM.RoyalMatch]] = []

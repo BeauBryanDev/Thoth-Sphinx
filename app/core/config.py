@@ -31,7 +31,10 @@ class Settings(BaseSettings):
     # Pipeline parameters
     default_dir      : str   = 'rtl'    # 'rtl' or 'ltr'
     default_preset   : str   = 'default'
- 
+    # A/B 2026-11-06: off sends YOLO's top-1 codes in reading order straight to the LLM, skipping
+    # vision/sphinx_corrector.py (trie + Viterbi). Cartouche matching is unaffected. True restores it.
+    use_corrector    : bool  = False
+
 
     # Request limits
  
@@ -93,6 +96,12 @@ class Settings(BaseSettings):
     translit_runs_per_day    : int   = 5      # transliterations (re-reads included) per client IP per UTC day
     daily_budget_usd         : float = 3.0    # whole agent, all clients; checked before every LLM call
     translit_effort     : str   = 'medium'
+    # Second translation (app/services/refine_translation.py): search the published spell
+    # translations with the LLM's English, then smooth it against them. The raw translation is kept.
+    semantic_translation : bool = True
+    semantic_model      : str   = 'claude-haiku-5-5'
+    semantic_effort     : str   = 'low'
+    semantic_top_k      : int   = 3
     reverse_effort      : str   = 'medium'
     llm_timeout         : float = 120.0  # seconds per request, SDK retries on top
 
