@@ -4,10 +4,21 @@ from typing import Any
 from app.llm import mdc
 from corpus import confidence, rerank, retrieve
 from corpus.books import search as book_search
+from corpus.extract import SIGN_RE
 from corpus.translations import search as translation_search
 
 CANDIDATES = 10
 MAX_LIMIT = 20
+MAX_SIGNS = 40          # signs per lookup_signs call: about one long line
+MAX_WORD_SIGNS = 8      # longest span tried as one word; 95% of corpus spellings have 7 or fewer
+MIN_CORRECTION_TOKENS = 3   # a corrected spelling seen fewer times is more likely noise than a fix
+CORRECTIONS_PER_SPAN = 2
+WORDS_PER_SPELLING = 3
+SIGNS_GUIDE = ('exact: a word attested with exactly these signs. corrected: an attested spelling one '
+               'edit away, with the change named; the detector may have misread, missed or added '
+               'a sign, or the signs may be transposed. tokens counts attestations in the TLA '
+               'corpus and me_tokens those in Middle Egyptian texts (First Intermediate to Second '
+               'Intermediate Period). A frequent spelling is a strong hint, not proof.')
 MAX_WINDOW = 5
 MAX_LINKS = 30
 TLA_CREDIT = 'Thesaurus Linguae Aegyptiae, BBAW. CC BY-SA 4.0.'
@@ -179,6 +190,134 @@ def lookup_lemma(text: str,
             'obsolete': row['revision_state'] == 'published-obsolete'} for row in rows],
             'credit': TLA_CREDIT
             }
+
+
+def sign_runs(signs: str) -> tuple[list[list[str]], list[str]]:
+    """Split codes into runs at Unknown or unreadable codes; returns (runs, ignored codes)."""
+    runs: list[list[str]] = [[]]
+    ignored: list[str] = []
+    for code in signs.replace(',', ' ').split():
+        if SIGN_RE.fullmatch(code):
+            # Uppercase, as sign_spellings.sign_key is: Aa1 and AA1 are one sign.
+            runs[-1].append(code.upper())
+            continue
+        if code.lower() != 'unknown':
+            ignored.append(code)
+        runs.append([])
+    return [run for run in runs if run], ignored
+
+
+def spelling_edit(span: list[str], spelling: list[str]) -> str | None:
+    """Name the one edit turning the detected span into an attested spelling, or None."""
+    if span == spelling:
+        return 'exact'
+    if len(span) == len(spelling):
+        diff = [i for i, (a, b) in enumerate(zip(span, spelling)) if a != b]
+        if len(diff) == 1:
+            i = diff[0]
+            return f'read {span[i]} as {spelling[i]}'
+        if (len(diff) == 2 and diff[1] == diff[0] + 1
+                and span[diff[0]] == spelling[diff[1]] and span[diff[1]] == spelling[diff[0]]):
+            return f'swap {span[diff[0]]} and {span[diff[1]]}'
+        return None
+    if len(spelling) == len(span) + 1:
+        for i in range(len(spelling)):
+            if spelling[:i] + spelling[i + 1:] == span:
+                return f'add missing {spelling[i]}'
+    if len(span) == len(spelling) + 1:
+        # Interior only: an extra sign at either end is just the shorter span, looked up already.
+        for i in range(1, len(span) - 1):
+            if span[:i] + span[i + 1:] == spelling:
+                return f'drop extra {span[i]}'
+    return None
+
+
+def span_keys(span: list[str]) -> set[str]:
+    """The span, its adjacent swaps and, from 3 signs, its one-sign deletions."""
+    keys = {' '.join(span)}
+    for i in range(len(span) - 1):
+        swapped = span[:i] + [span[i + 1], span[i]] + span[i + 2:]
+        keys.add(' '.join(swapped))
+    if len(span) >= 3:
+        keys.update(' '.join(span[:i] + span[i + 1:]) for i in range(len(span)))
+    return keys
+
+
+def lookup_signs(signs: str,
+                 middle_egyptian_only: bool = False,
+                 limit: int = 15
+                 ) -> dict[str, Any]:
+    """Find attested words in a run of Gardiner codes, exactly or one edit away."""
+    runs, ignored = sign_runs(required(signs, 'Gardiner codes'))
+    if not runs:
+        raise ValueError('No Gardiner codes found. Give codes such as "G39 N5 M17 Y5 N35".')
+    if sum(len(run) for run in runs) > MAX_SIGNS:
+        raise ValueError(f'At most {MAX_SIGNS} signs per call. Look up one line at a time.')
+
+    # Every span of 2+ signs inside one run; a lone sign is looked up only when it is all there is.
+    spans: list[tuple[int, list[str]]] = []
+    offset = 0
+    for run in runs:
+        for start in range(len(run)):
+            for end in range(start + 2, min(start + MAX_WORD_SIGNS, len(run)) + 1):
+                spans.append((offset + start, run[start:end]))
+        offset += len(run)
+    if not spans and len(runs) == 1 and len(runs[0]) == 1:
+        spans.append((0, runs[0]))
+
+    keys = sorted(set().union(*(span_keys(span) for _, span in spans))) if spans else []
+    rows = retrieve.lookup_signs(keys, middle_egyptian_only) if keys else []
+    by_spelling: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_spelling.setdefault(row['sign_key'], []).append(row)
+
+    count = 'me_tokens' if middle_egyptian_only else 'tokens'
+    matches: list[dict[str, Any]] = []
+    for start, span in spans:
+        found: list[dict[str, Any]] = []
+        for spelling, words in by_spelling.items():
+            edit = spelling_edit(span, spelling.split())
+            if edit is None:
+                continue
+            best = max(word[count] for word in words)
+            if edit != 'exact' and best < MIN_CORRECTION_TOKENS:
+                continue
+            found.append({'start': start + 1, 'end': start + len(span), 'signs': ' '.join(span),
+                          'match': 'exact' if edit == 'exact' else 'corrected',
+                          'spelling': spelling, 'change': None if edit == 'exact' else edit,
+                          'words': word_senses(words, count), '_best': best})
+        exact = [m for m in found if m['match'] == 'exact']
+        fixes = sorted((m for m in found if m['match'] == 'corrected'), key=lambda m: -m['_best'])
+        matches.extend(exact + fixes[:CORRECTIONS_PER_SPAN])
+
+    # Keep exact and longer matches first, then show them in reading order.
+    matches.sort(key=lambda m: (m['match'] != 'exact', -(m['end'] - m['start']), -m['_best']))
+    kept = sorted(matches[:clamp(limit, 1, MAX_LIMIT)], key=lambda m: (m['start'], m['end']))
+    for m in kept:
+        del m['_best']
+    return {'found': len(kept),
+            'matches': kept,
+            'ignored_codes': ignored,
+            'guide': SIGNS_GUIDE if kept else 'No attested word is spelled with these signs, '
+                     'exactly or one edit away. The signs may be misread, or the word is written '
+                     'in a way the corpus does not record.',
+            'credit': TLA_CREDIT}
+
+
+def word_senses(words: list[dict[str, Any]], count: str) -> list[dict[str, Any]]:
+    """Distinct senses of one spelling, most attested first."""
+    senses: dict[tuple[str, str], dict[str, Any]] = {}
+    for word in sorted(words, key=lambda w: -w[count]):
+        key = (word['name'], word['gloss_en'] or word['gloss_de'] or '')
+        if key in senses:
+            senses[key]['tokens'] += word['tokens']
+            senses[key]['me_tokens'] += word['me_tokens']
+            continue
+        senses[key] = {'lemma_id': word['lemma_id'], 'name': word['name'], 'pos': word['pos'],
+                       'gloss_en': word['gloss_en'], 'gloss_de': word['gloss_de'],
+                       'tokens': word['tokens'], 'me_tokens': word['me_tokens'],
+                       'obsolete': word['obsolete']}
+    return list(senses.values())[:WORDS_PER_SPELLING]
 
 
 def get_context(sentence_id: str,

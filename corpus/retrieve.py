@@ -143,3 +143,8 @@ def context(sentence_id: str, window: int = 2) -> list[dict[str, Any]]:
 def lookup_lemma(text: str, limit: int = 10) -> list[dict[str, Any]]:
     return query('SELECT * FROM lookup_lemma(%(text)s, %(limit)s)',
                  text=text, limit=limit)
+
+
+def lookup_signs(keys: list[str], me_only: bool = False) -> list[dict[str, Any]]:
+    return query('SELECT * FROM lookup_signs(%(keys)s, %(me_only)s)',
+                 keys=keys, me_only=me_only)

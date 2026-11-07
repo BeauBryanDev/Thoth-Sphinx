@@ -70,6 +70,19 @@ def run_lookup_lemma(word: str) -> dict[str, Any]:
             }
 
 
+def run_lookup_signs(signs: str, middle_egyptian_only: bool = False) -> dict[str, Any]:
+    """lookup_signs, with each sense cut to what helps choose a reading."""
+    result = tools.lookup_signs(signs, middle_egyptian_only=middle_egyptian_only, limit=12)
+    return {'found': result['found'],
+            'guide': result['guide'],
+            'ignored_codes': result['ignored_codes'],
+            'matches': [{k: m[k] for k in ('start', 'end', 'signs', 'match', 'spelling', 'change')}
+                        | {'words': [{k: w[k] for k in ('name', 'pos', 'gloss_en', 'tokens', 'me_tokens')}
+                                     for w in m['words']]}
+                        for m in result['matches']]
+            }
+
+
 def run_lookup_entity(name: str) -> dict[str, Any]:
     """lookup_entity, best match without its long link list."""
     result = tools.lookup_entity(name, limit=1, examples=2)
@@ -121,6 +134,28 @@ LOOKUP_LEMMA = AgentTool(
                               },
     }, 'required': ['word']},
     run=run_lookup_lemma,
+)
+
+
+LOOKUP_SIGNS = AgentTool(
+    name='lookup_signs',
+    description=('Optional spelling check against the TLA corpus vocabulary: give a run of Gardiner '
+                 'codes (one line, or part of one) and get the attested words written with those '
+                 'signs, with glosses and how often each spelling occurs. It also proposes '
+                 'corrections one edit away — a misread, missing or extra sign, or two transposed '
+                 'signs — and names the change, so you can catch detector errors. Use it when a run '
+                 'of signs looks like a word you cannot place, or to test a correction you suspect; '
+                 'skip it when the reading is clear. Counts are hints, not proof.'),
+    schema={'type': 'object',
+            'properties': {
+                'signs': {'type': 'string',
+                          'description': 'Gardiner codes in reading order, space-separated, '
+                                         'e.g. "N5 G39 M17 Y5 N35"'},
+                'middle_egyptian_only': {'type': 'boolean',
+                                         'description': 'count only Middle Egyptian texts; default '
+                                                        'false (the whole corpus)'},
+            }, 'required': ['signs']},
+    run=run_lookup_signs,
 )
 
 
@@ -189,7 +224,7 @@ def riddle_tools(game: RiddleGame) -> tuple[AgentTool, AgentTool]:
     return start, submit
 
 
-READING_TOOLS: tuple[AgentTool, ...] = (SEARCH_PARALLELS, LOOKUP_LEMMA, LOOKUP_ENTITY)
+READING_TOOLS: tuple[AgentTool, ...] = (SEARCH_PARALLELS, LOOKUP_LEMMA, LOOKUP_SIGNS, LOOKUP_ENTITY)
 
 
 def summarize(name: str, result: dict[str, Any]) -> str:
@@ -204,6 +239,16 @@ def summarize(name: str, result: dict[str, Any]) -> str:
         return f"{result.get('found', 0)} lemmas" + (
             f" — {lemmas[0].get('name')}: {lemmas[0].get('gloss_en')}" if lemmas else '')
     
+    if name == 'lookup_signs':
+        matches = result.get('matches') or []
+        best = next((m for m in matches if m.get('words')), None)
+        if not best:
+            return f"{result.get('found', 0)} spellings"
+        word = best['words'][0]
+        fix = f", {best['change']}" if best.get('change') else ''
+        return (f"{result.get('found', 0)} spellings — {best['signs']} = {word.get('name')}: "
+                f"{word.get('gloss_en')}{fix}")
+
     if name == 'lookup_entity':
         ents = result.get('entities') or []
         return f"{result.get('found', 0)} entities" + (

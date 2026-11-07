@@ -66,6 +66,20 @@ def lookup_lemma(text: str, limit: int = 10) -> dict[str, Any]:
 
 @server.tool(annotations=READ_ONLY)
 @readable_errors
+def lookup_signs(signs: str, middle_egyptian_only: bool = False,
+                 limit: int = 15) -> dict[str, Any]:
+    """Find attested words in a run of Gardiner codes, as a spelling check for a reading.
+
+    signs are codes in reading order, such as "N5 G39 M17 Y5 N35"; Unknown splits the run.
+    Each match is exact, or corrected one edit away (a misread, missing, extra or transposed
+    sign) with the change named. tokens counts attestations; middle_egyptian_only counts only
+    Middle Egyptian texts.
+    """
+    return tools.lookup_signs(signs, middle_egyptian_only, limit)
+
+
+@server.tool(annotations=READ_ONLY)
+@readable_errors
 def get_context(sentence_id: str, window: int = 2) -> dict[str, Any]:
     """Show the sentences around a hit, because many sentences are short fragments.
 
