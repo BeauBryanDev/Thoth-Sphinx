@@ -18,7 +18,7 @@ CODE_RE = re.compile(r'^(?:[A-Z]|Aa|NL|NU)\d{1,3}[a-z]?$')
 # What a client may send: any casing, plus the two detector classes outside Gardiner.
 INPUT_CODE_PATTERN = r'(?i)^(?:(?:[A-Z]|Aa|NL|NU)\d{1,3}[a-z]?|unknown|cartouche)$'
 MAX_CODES = 300           # = settings.max_detections: a real read never sends more
-MAX_CARTOUCHES = 10
+MAX_CARTOUCHES = 40        # a long wall repeats the king's names; 15 seen on one photo (2026-11-06)
 MAX_HISTORY_TURNS = 40    # the frontend sends a short window; this only bounds the request
 
 GardinerCode = Annotated[str, StringConstraints(max_length=12, pattern=INPUT_CODE_PATTERN)]

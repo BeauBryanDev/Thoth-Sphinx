@@ -944,6 +944,30 @@ def correct(
 # Convenience: load artifacts from disk
 # ---------------------------------------------------------------------------
 
+def apply_trie_additions(trie: 'SphinxTrie', path: Optional[Path] = None) -> int:
+    """Insert trie_additions.json entries; returns how many spellings were added."""
+    p = Path(path) if path else _PRIORS_DIR / 'trie_additions.json'
+    if not p.exists():
+        return 0
+    with open(p, encoding='utf-8') as f:
+        data = json.load(f)
+    added = 0
+    for entry in data.get('entries', []):
+        for codes in entry['spellings']:
+            # Added even where the trie has the word: freq is the segmenter's weight.
+            existing = trie.search(codes) or []
+            if any(r.source == 'curated' and r.translit == entry['translit']
+                   for r in existing):
+                continue
+            record = SourceRecord(source='curated', translit=entry['translit'],
+                                  translation=entry['translation'],
+                                  freq=int(entry.get('freq', 1)),
+                                  gardiner_orig=' '.join(codes))
+            if trie.insert(codes, record):
+                added += 1
+    return added
+
+
 def load_corrector(
     trie_pkl     : str | Path,
     bbaw_parquet : str | Path,
@@ -975,6 +999,7 @@ def load_corrector(
         raise ImportError("sphinx_trie.py must be on the Python path")
 
     trie = SphinxTrie.from_pickle(trie_pkl)
+    apply_trie_additions(trie)
     log_prob, unigrams = build_bigram_model(bbaw_parquet, gardiner_col)
     sub_cost = load_sub_cost_matrix(confusion_csv) if confusion_csv else None
     return trie, log_prob, unigrams, sub_cost

@@ -624,25 +624,67 @@
       "source": "claude-generated, prenomen nb-xprw-ra, nomen twt-anx-jmn with honorific transposition of Amun. The nomen writing has many variants. Validate against Beckerath p.146-147"
     },
     "hr_m_hb": {
-      "translit": "hr-m-hb mry-jmn (dsr-xprw-ra stp.n-ra)",
+      "translit": "hr-m-hb mrj.n-jmn (dsr-xprw-ra stp.n-ra)",
       "english": "Horemheb (Dynasty XVIII)",
       "spellings": [
         [
           "N5",
           "D45",
           "L1",
-          "Z2"
+          "Z2",
+          "N5",
+          "N35"
         ],
         [
+          "N5",
+          "D45",
+          "S38",
+          "L1",
+          "H6",
+          "Z2",
+          "N5",
+          "N35"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "G5",
+          "W19"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "N35",
+          "G5"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
           "G5",
           "G17",
-          "V28",
-          "D58"
+          "N5",
+          "U6",
+          "N35"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "G5",
+          "S3",
+          "Aa15",
+          "V30"
         ]
       ],
       "freq": 30,
       "verified": true,
-      "source": "claude-generated, prenomen dsr-xprw-ra, nomen hr-m-hb. G5=Horus falcon for hr. Validate against Beckerath p.148-149"
+      "source": "Beckerath, Handbuch p.146-147 (T1, T2, E2, E4, E5), checked 2026-11-06. T1 dsr-xprw-ra stp.n-ra, T2 adds hqA-maat (S38, H6); nomen mrj.n-jmn hr-m-hb with Amun written first. U21 stp adze and W3 hb basin dropped (not classes); U7 -> U6. Earlier phonetic nomen G5 G17 V28 D58 is not in Beckerath and was removed"
     },
     "ra_ms_sw_i": {
       "translit": "ra-ms-sw (mn-phtj-ra)",

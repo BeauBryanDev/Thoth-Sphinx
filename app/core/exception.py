@@ -5,6 +5,7 @@ import logging
 import uuid
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger('sphinxeyes.exception')
@@ -22,6 +23,13 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code = 422,
             content     = {'error': 'inference_failed', 'detail': str(exc)},
         )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError):
+        # Log which field failed (input values left out: they can be whole images).
+        errors = [{k: e.get(k) for k in ('loc', 'type', 'msg')} for e in exc.errors()]
+        logger.warning(f'422 on {request.method} {request.url.path}: {errors}')
+        return JSONResponse(status_code=422, content={'detail': errors})
 
     @app.exception_handler(Exception)
     async def unhandled_error_handler(request: Request, exc: Exception):
