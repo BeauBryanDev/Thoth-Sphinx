@@ -24,8 +24,8 @@ ARTIFACTS = REPO_ROOT / 'artifacts'
 
 @pytest.fixture(scope='session')
 def royal_names():
-    from cartouche_matcher import load_royal_names
-    names = load_royal_names()          # repo-root royal_names.json
+    from vision.cartouche_matcher import load_royal_names
+    names = load_royal_names()          # vision/royal_names.json
     assert 'wnjs' in names, 'royal_names.json must contain wnjs'
     return names
 
@@ -38,7 +38,7 @@ def corrector():
     confusion = ARTIFACTS / 'confusion_matrix_v9_normalized.csv'
     if not trie_pkl.exists() or not parquet.exists():
         pytest.skip('corrector artifacts missing')
-    from sphinx_corrector import load_corrector
+    from vision.sphinx_corrector import load_corrector
     return load_corrector(
         trie_pkl, parquet,
         confusion_csv=confusion if confusion.exists() else None,
@@ -51,7 +51,7 @@ def sphinx_pipeline():
     from app.core.config import settings
     if not settings.onnx_path.exists():
         pytest.skip('ONNX model missing')
-    from pipeline import SphinxPipeline
+    from vision.pipeline import SphinxPipeline
     return SphinxPipeline()
 
 
@@ -142,7 +142,7 @@ def client(stub_pipeline):
 @pytest.fixture()
 def no_api_key(monkeypatch):
     from app.core.config import settings
-    monkeypatch.setattr(settings, 'openai_api_key', '')
+    monkeypatch.setattr(settings, 'anthropic_api_key', '')
 
 
 # ---------------------------------------------------------------------------
@@ -171,3 +171,28 @@ def tiny_jpeg() -> bytes:
     ok, buf = cv2.imencode('.jpg', np.full((64, 64, 3), 128, dtype=np.uint8))
     assert ok
     return bytes(buf)
+
+
+@pytest.fixture(autouse=True)
+def fresh_reread_limit(monkeypatch):
+    """Each test starts with an empty re-read cooldown, whatever ran before it."""
+    from app.core.ratelimit import Cooldown
+    from app.routers import transliterate
+    monkeypatch.setattr(transliterate, 'REREAD_LIMIT', Cooldown(3600))
+
+
+@pytest.fixture(autouse=True)
+def no_semantic_translation(monkeypatch):
+    """The second translation is off unless a test turns it on: it adds an LLM call and a search."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, 'semantic_translation', False)
+
+
+@pytest.fixture(autouse=True)
+def fresh_guards(monkeypatch):
+    """Each test starts with empty request windows, daily quotas and spend."""
+    from app.core import ratelimit
+    monkeypatch.setattr(ratelimit, 'REQUESTS', ratelimit.SlidingWindow())
+    monkeypatch.setattr(ratelimit, 'TRANSLIT_DAILY', ratelimit.DailyQuota())
+    monkeypatch.setattr(ratelimit, 'SPEND', ratelimit.SpendCap())
+    monkeypatch.setattr(ratelimit, 'CARTOUCHE_DAILY', ratelimit.DailyQuota())

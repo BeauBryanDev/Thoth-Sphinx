@@ -1,0 +1,186 @@
+{
+  "coverage": {
+    "eligible": 19416,
+    "examined": 959,
+    "with_parallels": 300,
+    "coverage": 0.31282586027111575
+  },
+  "modes": {
+    "hybrid_noisy": {
+      "queries": 300,
+      "hit@1": 0.61,
+      "hit@5": 0.787,
+      "hit@10": 0.813,
+      "recall@10": 0.665,
+      "mrr@10": 0.683,
+      "median_ms": 423
+    },
+    "embedding_de": {
+      "queries": 300,
+      "hit@1": 0.123,
+      "hit@5": 0.213,
+      "hit@10": 0.257,
+      "recall@10": 0.15,
+      "mrr@10": 0.163,
+      "median_ms": 11
+    },
+    "hybrid_de": {
+      "queries": 300,
+      "hit@1": 0.59,
+      "hit@5": 0.767,
+      "hit@10": 0.813,
+      "recall@10": 0.651,
+      "mrr@10": 0.662,
+      "median_ms": 441
+    },
+    "embedding_en": {
+      "queries": 300,
+      "hit@1": 0.143,
+      "hit@5": 0.237,
+      "hit@10": 0.28,
+      "recall@10": 0.185,
+      "mrr@10": 0.182,
+      "median_ms": 8
+    },
+    "hybrid_en": {
+      "queries": 300,
+      "hit@1": 0.603,
+      "hit@5": 0.77,
+      "hit@10": 0.823,
+      "recall@10": 0.671,
+      "mrr@10": 0.676,
+      "median_ms": 438
+    },
+    "embedding_de_context": {
+      "queries": 300,
+      "hit@1": 0.13,
+      "hit@5": 0.253,
+      "hit@10": 0.297,
+      "recall@10": 0.191,
+      "mrr@10": 0.183,
+      "median_ms": 8
+    },
+    "hybrid_de_context": {
+      "queries": 300,
+      "hit@1": 0.593,
+      "hit@5": 0.773,
+      "hit@10": 0.84,
+      "recall@10": 0.672,
+      "mrr@10": 0.672,
+      "median_ms": 440
+    }
+  },
+  "loose_coverage": {
+    "examined": 3597,
+    "with_loose_parallels": 200,
+    "coverage": 0.055601890464275786
+  },
+  "loose_modes": {
+    "hybrid_noisy": {
+      "queries": 200,
+      "hit@1": 0.54,
+      "hit@5": 0.755,
+      "hit@10": 0.8,
+      "recall@10": 0.722,
+      "mrr@10": 0.633,
+      "median_ms": 433
+    },
+    "embedding_de": {
+      "queries": 200,
+      "hit@1": 0.085,
+      "hit@5": 0.195,
+      "hit@10": 0.225,
+      "recall@10": 0.168,
+      "mrr@10": 0.127,
+      "median_ms": 9
+    },
+    "hybrid_de": {
+      "queries": 200,
+      "hit@1": 0.525,
+      "hit@5": 0.745,
+      "hit@10": 0.8,
+      "recall@10": 0.719,
+      "mrr@10": 0.614,
+      "median_ms": 443
+    },
+    "embedding_en": {
+      "queries": 200,
+      "hit@1": 0.085,
+      "hit@5": 0.175,
+      "hit@10": 0.2,
+      "recall@10": 0.131,
+      "mrr@10": 0.124,
+      "median_ms": 7
+    },
+    "hybrid_en": {
+      "queries": 200,
+      "hit@1": 0.545,
+      "hit@5": 0.76,
+      "hit@10": 0.815,
+      "recall@10": 0.725,
+      "mrr@10": 0.629,
+      "median_ms": 432
+    },
+    "embedding_de_context": {
+      "queries": 200,
+      "hit@1": 0.085,
+      "hit@5": 0.18,
+      "hit@10": 0.2,
+      "recall@10": 0.151,
+      "mrr@10": 0.121,
+      "median_ms": 7
+    },
+    "hybrid_de_context": {
+      "queries": 200,
+      "hit@1": 0.525,
+      "hit@5": 0.745,
+      "hit@10": 0.815,
+      "recall@10": 0.73,
+      "mrr@10": 0.622,
+      "median_ms": 438
+    }
+  },
+  "haiku_usage": {
+    "calls": 1500,
+    "blank": 0,
+    "input_tokens": 543622,
+    "output_tokens": 106735
+  },
+  "draft_samples": [
+    {
+      "clean": "di\u032f =f n =k \u0161n,w nb n jtn",
+      "noisy": "d\ua725\u032f ff =k \u0161n,w n\u1e2b n jtn",
+      "de": "Gib dir deine Nahrung, der Sonnenkreis ist der Schutz des Aton.",
+      "en": "Your hair (?) ... the sun-disk's ... you shall eat bread of the Aten",
+      "de_context": "Du sollst die Schlinge(n) des Nil-Gottes... (w\u00f6rtlich: Du sollst sie zerschneiden/ergreifen) die Schlingen des Lebens der Sonnenscheibe"
+    },
+    {
+      "clean": "j\ua725i\u032f-\u1e25r pw t\u0161\u3008\ua723\u3009 wp,t.pl n \ua725\u1e25\ua725.n =tw m-h\ua723w =f",
+      "noisy": "j\ua725i\u032f \u1e25r pw t\u0161\u3008\ua723\u3009 wp,thpl n s\u1e25\ua725.n =tw bf",
+      "de": "Ich bin der H\u00fcter des Landes, des Bereichs... wenn man ihn ausruft, f\u00fcrchtet man sich vor ihm.",
+      "en": "Oh, this is the land where the wp-flower of the doorstep... (lit. 'the district of ...') was called upon, when one was driven away by fear.",
+      "de_context": "Die Gabe der Seele des Ersten, der Stille, ist es, die (ihr) gegeben wird; was die Hand des Gebeurs des Heilrer zu bringen hat."
+    },
+    {
+      "clean": "wnm jn z r hrw 4",
+      "noisy": "jn z r hrw",
+      "de": "Die Person kommt zu dem Tag.",
+      "en": "A man came to the day.",
+      "de_context": "Von einem Mann zu einem anderen Tag."
+    },
+    {
+      "clean": "jw mk,t wnjs m-\u1e25\ua723,t s\ua725\u1e25.w nb.w jm,j.w \ua723\u1e2b,t",
+      "noisy": "mk,t wnjs m \u1e25\ua723,t s\ua725\u1e25.w nb.w jm,j.w \ua723\u1e2b,t",
+      "de": "Siehe, Wenis ist vorn bei allen Hofbeamten, die im Horizont sind.",
+      "en": "Behold, the wnjs-tomb is in front of the ... all the nobles who are in the horizon.",
+      "de_context": "Die Ruhe der Ufer, die in der Ernte aller Ackerfelder sind, ist gewaltig, (wenn) man sie ..."
+    },
+    {
+      "clean": "r\ua725w-\u1e25r,w-\ua723\u1e2b,tj-\u1e25\ua725i\u032f-m-\ua723\u1e2b,t m-rn\u2261f-m-\u0161w-n,tj-m-jtn \u1e0fi\u032f \ua725n\u1e2b \u1e0f,t n\u1e25\u1e25 jtn \ua725n\u1e2b wr jm,j-\u1e25\ua723b-sd nb-\u0161nn,t-nb-jtn nb-p,t nb-t\ua723 m pr-jtn m \ua723\u1e2b,t-jtn",
+      "noisy": "r\ua725w \u1e25r,w \ua723\u1e2b,tj \u1e25\ua725i\u032f m \ua723\u1e2b,t m rn\u2261f m \u0161w n,tj m jtn \u1e0fi\u1e96 \ua725n\u1e2b \u1e0f,t n\u1e25\u1e25 jtn \ua725n\u1e2b wr jm,j-\u1e25\ua723b-sd nb \u0161nn,t nb jtn nb p,t n\u1e2b-t\ua723 m pr-jtn m \ua723\u1e2b,t-jtn",
+      "de": "Re-Harachte, der in seinem Horizont aufgeht, der im Licht ist, dessen Name Schu ist, der im Sonnenscheibe lebt, der ewiglich lebt, Aton, der lebende Gro\u00dfe, Herr des Sedfests, Herr der Sonnenscheibe, Herr des Himmels, der Land beherrscht, im Haus des Aton, im Horizont des Aton.",
+      "en": "Ra-Horakhty, who rises in the horizon, who shines as the sun disk, the living Aten, eternal and everlasting, the great Aten who is in the Jubilee, lord of the sun disk, lord of the Aten, lord of heaven, lord of earth, in the temple of the Aten in the horizon of the Aten.",
+      "de_context": "R\u00ea, der Horus der beiden Horizonte, der im Horizont erscheint, in seinem Namen 'Schu, der die Sonnenscheibe ist', lebendig f\u00fcr immer und ewig; die Sonnenscheibe, gro\u00df an Leben, der Herr des Jubil\u00e4umsfestes, der Herr der Sonnenscheibe, der Herr des Himmels, der Nechta-Ta im Tempel des Aton in Achet-Aton."
+    }
+  ]
+}

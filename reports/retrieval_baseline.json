@@ -1,0 +1,64 @@
+{
+  "coverage": {
+    "eligible": 19416,
+    "examined": 959,
+    "with_parallels": 300,
+    "coverage": 0.31282586027111575
+  },
+  "modes": {
+    "signs_clean": {
+      "queries": 276,
+      "hit@1": 0.598,
+      "hit@5": 0.79,
+      "hit@10": 0.851,
+      "recall@10": 0.685,
+      "mrr@10": 0.677,
+      "median_ms": 258
+    },
+    "signs_noisy": {
+      "queries": 276,
+      "hit@1": 0.533,
+      "hit@5": 0.71,
+      "hit@10": 0.775,
+      "recall@10": 0.599,
+      "mrr@10": 0.614,
+      "median_ms": 220
+    },
+    "translit_clean": {
+      "queries": 300,
+      "hit@1": 0.697,
+      "hit@5": 0.853,
+      "hit@10": 0.88,
+      "recall@10": 0.765,
+      "mrr@10": 0.764,
+      "median_ms": 414
+    },
+    "translit_noisy": {
+      "queries": 300,
+      "hit@1": 0.547,
+      "hit@5": 0.72,
+      "hit@10": 0.773,
+      "recall@10": 0.654,
+      "mrr@10": 0.624,
+      "median_ms": 375
+    },
+    "trigram_noisy": {
+      "queries": 300,
+      "hit@1": 0.54,
+      "hit@5": 0.673,
+      "hit@10": 0.763,
+      "recall@10": 0.608,
+      "mrr@10": 0.606,
+      "median_ms": 1578
+    },
+    "hybrid_noisy": {
+      "queries": 300,
+      "hit@1": 0.61,
+      "hit@5": 0.787,
+      "hit@10": 0.813,
+      "recall@10": 0.665,
+      "mrr@10": 0.683,
+      "median_ms": 569
+    }
+  }
+}

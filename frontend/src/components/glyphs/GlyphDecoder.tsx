@@ -5,6 +5,7 @@
 import {
   useCallback,
   useRef,
+  useState,
   type DragEvent,
   type ChangeEvent,
 } from "react";
@@ -15,6 +16,16 @@ import {
 } from "@/hooks/useGlyphDecoder";
 import { formatConfidence } from "@/utils/formatters";
 import { SignFrequencyChart } from "./SignFrequencyChart";
+import { ReadingProvenanceCard } from "./ReadingProvenanceCard";
+import { CorpusEvidenceCard } from "./CorpusEvidenceCard";
+import { AgentTrace } from "./AgentTrace";
+import { Entities } from "./Entities";
+import { SemanticTranslation } from "./SemanticTranslation";
+import { ReadingChatDrawer } from "@/components/chat/ReadingChatDrawer";
+import { useReadingChatStore } from "@/stores";
+import { HintButton, HintModal, LayoutHint, DirectionHint } from "./DecoderHints";
+import queenIcon from "@/assets/qeen.svg";
+import pharaohIcon from "@/assets/pharaoh.svg";
 
 // Controlled vocabularies — must match app/schemas/transliterations.py.
 // "unknown" first = default, for the tourist who knows nothing.
@@ -64,8 +75,11 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
     reset,
     decode,
   } = controller ?? internal;
+  const openReadingChat = useReadingChatStore((s) => s.openFor);
   const inputRef = useRef<HTMLInputElement>(null);
   const dragActiveRef = useRef(false);
+  const [hint, setHint] = useState<"layout" | "direction" | null>(null);
+  const closeHint = useCallback(() => setHint(null), []);
 
   const onFile = useCallback(
     (file: File | undefined | null) => {
@@ -101,7 +115,52 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
       subtitle="Upload an image to transliterate hieroglyphs"
       icon="𓂀"
       className="flex h-full flex-col"
+      headerStart={
+        <HintButton
+          icon={queenIcon}
+          caption="Layout"
+          label="How to choose the layout (rows or columns)"
+          onClick={() => setHint("layout")}
+        />
+      }
+      headerEnd={
+        <HintButton
+          icon={pharaohIcon}
+          caption="Direction"
+          label="How to choose the reading direction"
+          onClick={() => setHint("direction")}
+        />
+      }
     >
+      <HintModal
+        open={hint === "layout"}
+        onClose={closeHint}
+        icon={queenIcon}
+        title="Image layout"
+      >
+        <LayoutHint
+          layout={layout}
+          onPick={(l) => {
+            setLayout(l);
+            closeHint();
+          }}
+        />
+      </HintModal>
+      <HintModal
+        open={hint === "direction"}
+        onClose={closeHint}
+        icon={pharaohIcon}
+        title="Reading direction"
+      >
+        <DirectionHint
+          direction={direction}
+          onPick={(d) => {
+            selectDirection(d);
+            closeHint();
+          }}
+        />
+      </HintModal>
+
       {/* Dropzone */}
       <div
         onClick={() => inputRef.current?.click()}
@@ -340,10 +399,47 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
               <p className="mb-1.5 text-[10px] uppercase tracking-[0.25em] text-amber-500/80">
                 English translation · gloss
               </p>
-              <p className="text-sm leading-relaxed text-amber-100/90">
+              {/* The translation is always italic; Claude's notes below stay roman, so the
+                  reader can tell the ancient text from the commentary. */}
+              <p className="font-serif text-base italic leading-relaxed text-amber-100/90">
                 “{result.translation}”
               </p>
             </div>
+
+            {/* 4b. Second translation: the raw one above, smoothed against published passages. */}
+            <SemanticTranslation semantic={result.semantic} />
+
+            {/* 4·. The kings of the matched cartouches (knowledge graph). */}
+            <Entities entities={result.entities} />
+
+            {/* 4a. Claude's notes on the photograph. */}
+            {result.imageNotes.length > 0 && (
+              <div className="mt-3 rounded border border-amber-700/40 bg-stone-950/60 p-3">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-amber-500/80">
+                  𓏞 Notes from Claude
+                </p>
+                <ul className="space-y-2">
+                  {result.imageNotes.map((note, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-2 text-sm leading-relaxed text-amber-100/90"
+                    >
+                      <span aria-hidden className="mt-0.5 text-amber-500/80">𓋹</span>
+                      <span>{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 4b. Who read it: first reader, router decision, second opinion. */}
+            {result.reading && <ReadingProvenanceCard reading={result.reading} />}
+
+            {/* 4c. What the corpus said, line by line (TLA). */}
+            {result.evidence.length > 0 && <CorpusEvidenceCard evidence={result.evidence} />}
+
+            {/* 4d. The agent's full trace: turns, tool calls, router, escalation. */}
+            {result.trace.length > 0 && <AgentTrace trace={result.trace} />}
 
             {/* 5. YOLO-annotated detection image + download. */}
             {result.annotatedImage && (
@@ -368,6 +464,18 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
 
             {/* 6. Sign-frequency bar chart — basic detection stats. */}
             <SignFrequencyChart result={result} />
+
+            {/* 6b. Talk about this reading: opens the chat drawer with the reading as context. */}
+            <Button
+              type="button"
+              size="lg"
+              onClick={() => openReadingChat(result)}
+              leftIcon={<span aria-hidden>𓂀</span>}
+              className="mt-4 w-full rounded-xl border-2 text-sm font-bold uppercase tracking-[0.2em]"
+            >
+              Ask Thot-Sphinx about this reading
+            </Button>
+            <ReadingChatDrawer />
 
             {/* 7. Cross-check invitation. Lives here rather than under the
                 sign-confidence table, which grows unbounded on dense walls and

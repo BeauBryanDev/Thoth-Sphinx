@@ -25,7 +25,7 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
-from spatial_logic import letterbox, CONF_THRESHOLD
+from vision.spatial_logic import letterbox, CONF_THRESHOLD
 
 ROOT            = Path(__file__).parent
 ONNX_PATH       = ROOT / 'artifacts' / 'best_model_v4.onnx'

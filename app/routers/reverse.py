@@ -1,8 +1,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core import guards
 from app.schemas.reverse_translation import (
     ReverseTranslateRequest,
     ReverseTranslationOut,
@@ -13,24 +14,25 @@ router = APIRouter(prefix='/reverse', tags=['reverse'])
 
 # POST /reverse/ — retro-translation: modern English -> Middle Egyptian.
 
-# Pure LLM feature (GPT-4o composes the Egyptian; the CV pipeline is not
-# involved). Stateless like the rest of the API.
+# Pure LLM feature (Claude Sonnet composes the Egyptian; the CV pipeline is
+# not involved). Stateless like the rest of the API.
 
 @router.post('/', response_model=ReverseTranslationOut)
-async def reverse_translate(body: ReverseTranslateRequest) -> ReverseTranslationOut:
+async def reverse_translate(body: ReverseTranslateRequest,
+                            _: str = Depends(guards.check_llm)) -> ReverseTranslationOut:
 
     service = ReverseTranslationService()
 
     if not service.enabled:
         raise HTTPException(
             status_code=503,
-            detail='Reverse translation unavailable: OPENAI_API_KEY not configured.',
+            detail='Reverse translation unavailable: ANTHROPIC_API_KEY not configured.',
         )
 
     result = service.translate(body.text, body.register)
 
     if result.error:
         raise HTTPException(status_code=502,
-                            detail=f'Reverse translation failed: {result.error}')
+                            detail=f'Reverse translation failed: {result.error}')   # already public_message()
 
     return result

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { Card, Button, Input } from "@/components/common";
+import { SeekerMemory } from "@/components/profile/SeekerMemory";
 
 export const ProfilePage = () => {
   return (
@@ -40,6 +41,8 @@ export const ProfilePage = () => {
           <Button>Save changes</Button>
         </div>
       </Card>
+
+      <SeekerMemory />
     </div>
   );
 };

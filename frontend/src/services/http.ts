@@ -48,7 +48,12 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    // Centralised error logging — replace with a proper reporter in prod.
+    // Show the server's own explanation (guardrails: daily quota, rate window, budget, 502 error_id)
+    // instead of axios's "Request failed with status code 429". 422 details are lists; keep those as is.
+    const detail = error?.response?.data?.detail;
+    if (typeof detail === "string" && detail) {
+      error.message = detail;
+    }
     // eslint-disable-next-line no-console
     console.error("[SphinxEyes API error]", error?.message ?? error);
     return Promise.reject(error);

@@ -1,0 +1,345 @@
+{
+  "title": "Major Deities of Ancient Egypt",
+  "notes": "Egyptian mythology varied by location and historical period. Relationships, roles, and symbols could differ between traditions.",
+  "deities": [
+    {
+      "name": "Ra",
+      "description": "A major sun god associated with creation and kingship.",
+      "notes": "Also spelled Re. Often merged with other deities, including Amun and Horus.",
+      "relationships": [
+        {"deity": "Shu", "relationship": "Often described as his son"},
+        {"deity": "Tefnut", "relationship": "Often described as his daughter"},
+        {"deity": "Hathor", "relationship": "Sometimes described as his daughter or the Eye of Ra"}
+      ],
+      "powers": ["Solar power", "Creation", "Protection against chaos"],
+      "duty": "Travel across the sky by day and through the underworld by night.",
+      "strength": "A supreme divine power in many traditions, especially through his association with the sun.",
+      "symbols": ["Sun disk", "Falcon", "Solar boat"]
+    },
+    {
+      "name": "Amun",
+      "description": "A creator and king of the gods, particularly important at Thebes.",
+      "notes": "His name is often interpreted as 'the hidden one.' He was commonly combined with Ra as Amun-Ra.",
+      "relationships": [
+        {"deity": "Mut", "relationship": "Consort in the Theban triad"},
+        {"deity": "Khonsu", "relationship": "Son in the Theban triad"}
+      ],
+      "powers": ["Creation", "Divine kingship", "Protection"],
+      "duty": "Support the king and maintain divine order.",
+      "strength": "One of Egypt's most influential gods, especially during the New Kingdom.",
+      "symbols": ["Double-plumed crown", "Ram", "Goose"]
+    },
+    {
+      "name": "Osiris",
+      "description": "God of the dead, resurrection, and the afterlife.",
+      "notes": "His death and restoration are central themes in Egyptian mythology.",
+      "relationships": [
+        {"deity": "Isis", "relationship": "Sister and wife"},
+        {"deity": "Horus", "relationship": "Son"},
+        {"deity": "Set", "relationship": "Brother and adversary"},
+        {"deity": "Nephthys", "relationship": "Sister"}
+      ],
+      "powers": ["Resurrection", "Renewal", "Authority over the dead"],
+      "duty": "Rule the realm of the dead and preside over the afterlife.",
+      "strength": "A central authority over death, rebirth, and the fate of the deceased.",
+      "symbols": ["Crook and flail", "Atef crown", "Djed pillar"]
+    },
+    {
+      "name": "Isis",
+      "description": "A goddess of magic, healing, motherhood, and royal protection.",
+      "notes": "Her worship spread beyond Egypt into the wider Mediterranean world.",
+      "relationships": [
+        {"deity": "Osiris", "relationship": "Brother and husband"},
+        {"deity": "Horus", "relationship": "Mother"},
+        {"deity": "Nephthys", "relationship": "Sister"},
+        {"deity": "Set", "relationship": "Brother"}
+      ],
+      "powers": ["Magic", "Healing", "Protection", "Restoration"],
+      "duty": "Protect her family, assist the dead, and safeguard kingship.",
+      "strength": "Especially powerful in magic and protective spells.",
+      "symbols": ["Throne hieroglyph", "Knot of Isis", "Kite bird"]
+    },
+    {
+      "name": "Horus",
+      "description": "A falcon god associated with the sky and divine kingship.",
+      "notes": "Several forms of Horus existed. Horus the Younger is commonly described as the son of Isis and Osiris.",
+      "relationships": [
+        {"deity": "Isis", "relationship": "Mother, in the Horus the Younger tradition"},
+        {"deity": "Osiris", "relationship": "Father, in the Horus the Younger tradition"},
+        {"deity": "Set", "relationship": "Uncle and adversary in the struggle for kingship"}
+      ],
+      "powers": ["Sky power", "Royal protection", "Victory"],
+      "duty": "Protect the king and uphold legitimate rule.",
+      "strength": "A powerful defender of kingship and order.",
+      "symbols": ["Falcon", "Eye of Horus", "Double crown"]
+    },
+    {
+      "name": "Set",
+      "description": "A god associated with deserts, storms, strength, and disorder.",
+      "notes": "Set could be both a dangerous adversary and a protector. In some traditions, he defended Ra's solar boat.",
+      "relationships": [
+        {"deity": "Osiris", "relationship": "Brother and adversary"},
+        {"deity": "Isis", "relationship": "Sister"},
+        {"deity": "Nephthys", "relationship": "Sister and often consort"},
+        {"deity": "Horus", "relationship": "Uncle and rival"}
+      ],
+      "powers": ["Storms", "Combat", "Protection against hostile forces"],
+      "duty": "Defend the solar boat in some traditions and embody dangerous forces beyond ordered life.",
+      "strength": "Known for exceptional physical power and combat ability.",
+      "symbols": ["Set animal", "Was scepter", "Desert"]
+    },
+    {
+      "name": "Anubis",
+      "description": "A funerary god associated with embalming and the protection of graves.",
+      "notes": "Often represented as a black jackal or as a jackal-headed man.",
+      "relationships": [
+        {"deity": "Nephthys", "relationship": "Mother in some traditions"},
+        {"deity": "Osiris", "relationship": "Father in some traditions"}
+      ],
+      "powers": ["Embalming", "Protection of the dead", "Guidance of souls"],
+      "duty": "Oversee mummification and assist in the judgment of the deceased.",
+      "strength": "A leading protector of tombs and funerary rites.",
+      "symbols": ["Jackal", "Black canine", "Embalming tools"]
+    },
+    {
+      "name": "Thoth",
+      "description": "A god of writing, wisdom, calculation, and the moon.",
+      "notes": "Traditionally credited with knowledge of writing and sacred texts.",
+      "relationships": [
+        {"deity": "Maat", "relationship": "Associated with truth and cosmic order; sometimes described as his consort"},
+        {"deity": "Ra", "relationship": "Served as a divine adviser and scribe in some traditions"}
+      ],
+      "powers": ["Writing", "Wisdom", "Magic", "Measurement of time"],
+      "duty": "Record divine decisions and the results of the judgment of the dead.",
+      "strength": "Highly powerful through knowledge, speech, and magical expertise.",
+      "symbols": ["Ibis", "Baboon", "Scribal palette", "Moon"]
+    },
+    {
+      "name": "Hathor",
+      "description": "A goddess of love, music, joy, motherhood, and the sky.",
+      "notes": "She had both nurturing and fierce aspects and was sometimes identified with the Eye of Ra.",
+      "relationships": [
+        {"deity": "Ra", "relationship": "Sometimes described as his daughter or the Eye of Ra"},
+        {"deity": "Horus", "relationship": "Associated as consort in some local traditions"}
+      ],
+      "powers": ["Nurturing", "Joy", "Protection", "Renewal"],
+      "duty": "Nurture gods and people, welcome the dead, and support celebration and kingship.",
+      "strength": "A broad and influential goddess with both protective and destructive manifestations.",
+      "symbols": ["Cow", "Cow horns and sun disk", "Sistrum"]
+    },
+    {
+      "name": "Bastet",
+      "description": "A goddess associated with protection, the household, and cats.",
+      "notes": "Earlier forms could be lioness-headed; later depictions commonly show her as a cat or cat-headed woman.",
+      "relationships": [
+        {"deity": "Ra", "relationship": "Often described as his daughter"},
+        {"deity": "Sekhmet", "relationship": "Another fierce solar goddess with overlapping roles"}
+      ],
+      "powers": ["Protection", "Defense against danger", "Nurturing"],
+      "duty": "Protect households and temples and defend against harmful forces.",
+      "strength": "A protective goddess capable of fierce defense.",
+      "symbols": ["Cat", "Sistrum", "Aegis"]
+    },
+    {
+      "name": "Sekhmet",
+      "description": "A lioness goddess associated with warfare, destructive heat, and healing.",
+      "notes": "Her name means 'the powerful one.' She could bring disease as well as protect against it.",
+      "relationships": [
+        {"deity": "Ra", "relationship": "Often described as his daughter and an Eye of Ra"},
+        {"deity": "Ptah", "relationship": "Consort in the Memphite tradition"},
+        {"deity": "Nefertem", "relationship": "Son in the Memphite triad"}
+      ],
+      "powers": ["War", "Destruction", "Disease", "Healing"],
+      "duty": "Defend Ra and the king, punish enemies, and protect against illness.",
+      "strength": "Among the fiercest and most destructive Egyptian deities.",
+      "symbols": ["Lioness", "Sun disk", "Uraeus"]
+    },
+    {
+      "name": "Maat",
+      "description": "The goddess and personification of truth, justice, and cosmic order.",
+      "notes": "Maat also refers to the principle of proper order in the universe and society.",
+      "relationships": [
+        {"deity": "Ra", "relationship": "Sometimes described as his daughter"},
+        {"deity": "Thoth", "relationship": "Associated with him through truth and order"}
+      ],
+      "powers": ["Truth", "Justice", "Cosmic balance"],
+      "duty": "Maintain order and provide the standard used in judging the dead.",
+      "strength": "Represents a foundational principle on which Egyptian cosmic and social order depended.",
+      "symbols": ["Ostrich feather", "Scales"]
+    },
+    {
+      "name": "Ptah",
+      "description": "A creator god and patron of craftspeople, especially important at Memphis.",
+      "notes": "In Memphite theology, he creates through thought and speech.",
+      "relationships": [
+        {"deity": "Sekhmet", "relationship": "Consort in the Memphite tradition"},
+        {"deity": "Nefertem", "relationship": "Son in the Memphite triad"}
+      ],
+      "powers": ["Creation", "Craftsmanship", "Creative speech"],
+      "duty": "Create and sustain the world and protect artisans.",
+      "strength": "A major creator deity whose divine thought and speech bring things into being.",
+      "symbols": ["Composite scepter", "Mummiform body", "Skullcap"]
+    },
+    {
+      "name": "Nut",
+      "description": "The sky goddess, often depicted arching over the earth.",
+      "notes": "She was believed to swallow the sun at evening and give birth to it again at dawn.",
+      "relationships": [
+        {"deity": "Geb", "relationship": "Brother and partner"},
+        {"deity": "Shu", "relationship": "Father"},
+        {"deity": "Tefnut", "relationship": "Mother"},
+        {"deity": "Osiris", "relationship": "Mother"},
+        {"deity": "Isis", "relationship": "Mother"},
+        {"deity": "Set", "relationship": "Mother"},
+        {"deity": "Nephthys", "relationship": "Mother"}
+      ],
+      "powers": ["Sky", "Renewal", "Protection of the dead"],
+      "duty": "Form the heavens and participate in the daily rebirth of the sun.",
+      "strength": "A cosmic deity whose body represents the sky itself.",
+      "symbols": ["Star-covered body", "Sky", "Sarcophagus lid"]
+    },
+    {
+      "name": "Geb",
+      "description": "The god of the earth.",
+      "notes": "He was sometimes depicted lying beneath Nut, separated from her by Shu.",
+      "relationships": [
+        {"deity": "Nut", "relationship": "Sister and partner"},
+        {"deity": "Shu", "relationship": "Father"},
+        {"deity": "Tefnut", "relationship": "Mother"},
+        {"deity": "Osiris", "relationship": "Father"},
+        {"deity": "Isis", "relationship": "Father"},
+        {"deity": "Set", "relationship": "Father"},
+        {"deity": "Nephthys", "relationship": "Father"}
+      ],
+      "powers": ["Earth", "Fertility", "Authority over the land"],
+      "duty": "Embody and sustain the earth.",
+      "strength": "A foundational cosmic deity associated with the land and royal inheritance.",
+      "symbols": ["Earth", "Goose", "Vegetation"]
+    },
+    {
+      "name": "Nephthys",
+      "description": "A protective goddess associated with mourning, funerary rites, and the dead.",
+      "notes": "Often shown with Isis as a protector and mourner of Osiris.",
+      "relationships": [
+        {"deity": "Isis", "relationship": "Sister"},
+        {"deity": "Osiris", "relationship": "Brother"},
+        {"deity": "Set", "relationship": "Brother and often consort"},
+        {"deity": "Anubis", "relationship": "Mother in some traditions"}
+      ],
+      "powers": ["Protection", "Mourning", "Funerary magic"],
+      "duty": "Protect the deceased and assist in funerary rituals.",
+      "strength": "Especially important as a protective and funerary deity.",
+      "symbols": ["House and basket hieroglyphs", "Kite bird", "Protective wings"]
+    },
+    {
+      "name": "Khnum",
+      "description": "A ram-headed creator god associated with the Nile and the formation of living beings.",
+      "notes": "In some traditions, he shaped bodies on a potter's wheel.",
+      "relationships": [
+        {"deity": "Satet", "relationship": "Consort in the Elephantine triad"},
+        {"deity": "Anuket", "relationship": "Associated as a daughter in the Elephantine triad"}
+      ],
+      "powers": ["Creation", "Fertility", "Control of Nile waters"],
+      "duty": "Form living beings and watch over the Nile's waters.",
+      "strength": "A powerful creator and guardian of a life-giving water source.",
+      "symbols": ["Ram", "Potter's wheel", "Water"]
+    },
+    {
+      "name": "Sobek",
+      "description": "A crocodile god associated with water, fertility, strength, and royal protection.",
+      "notes": "His character combined the danger of crocodiles with their perceived strength and protective power.",
+      "relationships": [
+        {"deity": "Neith", "relationship": "Mother in some traditions"},
+        {"deity": "Ra", "relationship": "Combined with him as Sobek-Ra in some traditions"}
+      ],
+      "powers": ["Strength", "Water", "Fertility", "Protection"],
+      "duty": "Protect the king and sacred places and support fertility.",
+      "strength": "A formidable protective deity associated with the power of the crocodile.",
+      "symbols": ["Crocodile", "Water", "Plumed crown"]
+    },
+    {
+      "name": "Neith",
+      "description": "An ancient goddess associated with warfare, weaving, and creation.",
+      "notes": "Her importance and roles varied across Egyptian history, with a major cult center at Sais.",
+      "relationships": [
+        {"deity": "Sobek", "relationship": "Mother in some traditions"},
+        {"deity": "Ra", "relationship": "Associated with creation and the early gods in some traditions"}
+      ],
+      "powers": ["Creation", "War", "Protection", "Weaving"],
+      "duty": "Protect the dead and the divine order; serve as a creator in some traditions.",
+      "strength": "An ancient and powerful goddess with both creative and martial roles.",
+      "symbols": ["Crossed arrows", "Shield", "Weaving tools", "Red crown"]
+    },
+    {
+      "name": "Shu",
+      "description": "A god of air and the space between earth and sky.",
+      "notes": "He is often depicted holding Nut above Geb.",
+      "relationships": [
+        {"deity": "Tefnut", "relationship": "Sister and consort"},
+        {"deity": "Geb", "relationship": "Father"},
+        {"deity": "Nut", "relationship": "Father"},
+        {"deity": "Ra", "relationship": "Son in some creation traditions"}
+      ],
+      "powers": ["Air", "Separation of earth and sky", "Support of the heavens"],
+      "duty": "Hold up the sky and maintain the space needed for life.",
+      "strength": "A foundational cosmic deity whose support sustains the heavens.",
+      "symbols": ["Ostrich feather", "Raised arms", "Air"]
+    },
+    {
+      "name": "Tefnut",
+      "description": "A goddess commonly associated with moisture and a member of the Heliopolitan creation tradition.",
+      "notes": "Her exact characteristics and interpretations vary in surviving sources.",
+      "relationships": [
+        {"deity": "Shu", "relationship": "Brother and consort"},
+        {"deity": "Geb", "relationship": "Mother"},
+        {"deity": "Nut", "relationship": "Mother"},
+        {"deity": "Ra", "relationship": "Daughter in some creation traditions"}
+      ],
+      "powers": ["Moisture", "Protection", "Cosmic order"],
+      "duty": "Participate in creation and help sustain the natural and divine order.",
+      "strength": "An early cosmic goddess with protective and sometimes fierce aspects.",
+      "symbols": ["Lioness", "Sun disk", "Uraeus"]
+    },
+    {
+      "name": "Khonsu",
+      "description": "A moon god associated with time, healing, and protection.",
+      "notes": "His name is often understood as 'the traveler,' referring to the moon's movement.",
+      "relationships": [
+        {"deity": "Amun", "relationship": "Father in the Theban triad"},
+        {"deity": "Mut", "relationship": "Mother in the Theban triad"}
+      ],
+      "powers": ["Lunar power", "Healing", "Protection"],
+      "duty": "Travel across the sky as the moon and protect those in need.",
+      "strength": "A prominent lunar deity with significant healing and protective roles.",
+      "symbols": ["Crescent moon", "Lunar disk", "Falcon"]
+    },
+    {
+      "name": "Mut",
+      "description": "A mother goddess and queenly deity especially important at Thebes.",
+      "notes": "Her name means 'mother.' She could be represented as a woman or as a lioness-headed goddess.",
+      "relationships": [
+        {"deity": "Amun", "relationship": "Consort in the Theban triad"},
+        {"deity": "Khonsu", "relationship": "Mother in the Theban triad"}
+      ],
+      "powers": ["Motherhood", "Protection", "Royal authority"],
+      "duty": "Protect the king and act as a divine mother and consort.",
+      "strength": "A major royal and protective goddess, especially at Thebes.",
+      "symbols": ["Vulture headdress", "Double crown", "Lioness"]
+    },
+    {
+      "name": "Atum",
+      "description": "A creator and sun god prominent in the theology of Heliopolis.",
+      "notes": "Often associated with the setting sun and with the completion of creation.",
+      "relationships": [
+        {"deity": "Shu", "relationship": "Father in Heliopolitan creation traditions"},
+        {"deity": "Tefnut", "relationship": "Father in Heliopolitan creation traditions"},
+        {"deity": "Ra", "relationship": "Combined with him in the form Ra-Atum"}
+      ],
+      "powers": ["Creation", "Solar power", "Completion"],
+      "duty": "Bring the first gods into being and participate in the solar cycle.",
+      "strength": "A primeval creator deity and source of the Heliopolitan divine family.",
+      "symbols": ["Double crown", "Setting sun", "Benben stone"]
+    }
+  ]
+}
+

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from sphinx_corrector import (
+from vision.sphinx_corrector import (
     EDIT_PENALTY,
     _compute_edit_penalty,
     correct,

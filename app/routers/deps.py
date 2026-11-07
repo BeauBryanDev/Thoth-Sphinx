@@ -1,5 +1,5 @@
 from fastapi import Request
-from pipeline import SphinxPipeline
+from vision.pipeline import SphinxPipeline
 
 
 def get_pipeline(request: Request) -> SphinxPipeline:

@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from tokenize import Single
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
  
 
@@ -30,7 +31,10 @@ class Settings(BaseSettings):
     # Pipeline parameters
     default_dir      : str   = 'rtl'    # 'rtl' or 'ltr'
     default_preset   : str   = 'default'
- 
+    # A/B 2026-11-06: off sends YOLO's top-1 codes in reading order straight to the LLM, skipping
+    # vision/sphinx_corrector.py (trie + Viterbi). Cartouche matching is unaffected. True restores it.
+    use_corrector    : bool  = False
+
 
     # Request limits
  
@@ -42,18 +46,71 @@ class Settings(BaseSettings):
  
     cors_origins     : list[str] = ['*']
  
-    # OpenAI transliteration (Phase 6)
-    # openai_api_key reads OPENAI_API_KEY from .env; empty = feature disabled
-    openai_api_key      : str   = ''
-    openai_model        : str   = 'gpt-4o'
+    # LLM transliteration (Phase 6)
+    translit_whole_max_signs : int = 120 # up to this many codes: one call reads the whole wall
     translit_max_signs  : int   = 40     # max Gardiner codes per LLM chunk
                                          #   (raised from 20 2026-09-08: longer
                                          #    segments = more grammar per call)
-    translit_temperature: float = 0.25   # low, but not flat — 0.1 froze the prose
 
-    # Debug: dump the exact system + per-chunk user prompts + raw LLM
-    # replies to debug_prompts/ (SPHINX_DEBUG_PROMPTS=1 in .env). Payload
-    # only — never the API key. Read per-request, so no restart needed.
+    # Anthropic (app/llm/). anthropic_api_key reads ANTHROPIC_API_KEY; empty = disabled.
+    # No temperature: current Claude models reject non-default sampling values.
+    anthropic_api_key   : str   = ''
+    haiku_model         : str   = 'claude-haiku-5-5'
+    sonnet_model        : str   = 'claude-sonnet-5-5'
+    translit_model      : str   = 'claude-haiku-5-5'   # first reader it was best LLM for this task
+    # Escalation to a Sonnet second opinion by deterministically calling the router. Thresholds are
+    # provisional hand-set defaults until Phase 3 calibration replaces them.
+    translit_escalation : bool  = True
+    review_model        : str   = 'claude-sonnet-5-5'
+    review_effort       : str   = 'medium'
+    router_max_low_line_share     : float = 0.5
+    router_max_detector_low_share : float = 0.35
+    # Corpus tools for the whole-wall read (app/llm/agent_tools.py); off = no tool loop
+    translit_tools      : bool  = True
+    # Tool budgets count TURNS (model round trips); calls within a turn run in parallel.
+    haiku_tool_budget   : int   = 3      # was 5 calls
+    sonnet_tool_budget  : int   = 2      # was 3 calls
+    chat_effort         : str   = 'low'
+    chat_tool_budget    : int   = 2        # /chat/: lookup_entity turns
+    # Riddle trials in /chat/ (app/services/riddle_sessions.py): in memory, per process.
+    riddle_session_ttl_s     : int = 3600   # an idle game is dropped after this
+    riddle_max_sessions      : int = 2000   # oldest games are dropped beyond this
+    # Cartouche gift (app/services/cartouche_image.py), unlocked by a passed riddle trial: the name is
+    # carved on assets/cartouche_frame.webp; the OpenAI image settings make frames (scripts/generate_cartouche_frame.py).
+    cartouche_model          : str   = 'gpt-image-1.5'   # gpt-image-1 retired by OpenAI 2026-10-23
+    cartouche_size           : str   = '1024x1536'   # vertical
+    cartouche_quality        : str   = 'low'
+    cartouche_compression    : int   = 80            # WebP
+    cartouche_timeout_s      : float = 120.0
+    cartouche_images_per_day : int   = Field(3, ge=1)   # per client IP per UTC day; always on, never 0
+    reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
+    reading_chat_tool_budget : int = 3
+    reading_chat_history     : int = 12    # messages of the conversation sent each turn
+    # Agent state (app/services/reading_sessions.py): the reading kept on the server, in memory, per process.
+    reading_session_ttl_s    : int = 3600  # an idle reading is dropped after this
+    reading_max_sessions     : int = 1000  # oldest readings are dropped beyond this
+    # Apply & re-read (a /transliterate/ call with human_corrections): once per client IP per
+    # window. 0 disables the limit (local testing). In-memory, per process.
+    reread_cooldown_s        : int = 3600
+    # Guardrails (app/core/guards.py), in memory and per process like the re-read limit.
+    # 0 disables each one (local testing).
+    llm_requests_per_window  : int   = 20     # any LLM route, per client IP...
+    llm_window_s             : int   = 600    # ...per 10 minutes
+    translit_runs_per_day    : int   = 5      # transliterations (re-reads included) per client IP per UTC day
+    daily_budget_usd         : float = 3.0    # whole agent, all clients; checked before every LLM call
+    translit_effort     : str   = 'medium'
+    # Second translation (app/services/refine_translation.py): search the published spell
+    # translations with the LLM's English, then smooth it against them. The raw translation is kept.
+    semantic_translation : bool = True
+    semantic_model      : str   = 'claude-haiku-5-5'
+    semantic_effort     : str   = 'low'
+    semantic_top_k      : int   = 3
+    reverse_effort      : str   = 'medium'
+    llm_timeout         : float = 120.0  # seconds per request, SDK retries on top
+
+    # Debug: app/llm/ dumps each request's system prompt, messages and reply
+    # to debug_prompts/ (SPHINX_DEBUG_PROMPTS=1 in .env). Payload only, never
+    # the API key; image data is redacted. Read per call, so no restart needed.
     debug_prompts       : bool  = False
 
     # Metadata
@@ -70,3 +127,5 @@ class Settings(BaseSettings):
  
 # Single instance imported everywhere
 settings = Settings()
+
+

@@ -18,7 +18,7 @@ export const FOOTER_LINES = [
 export const NAV_ITEMS: NavItem[] = [
   { key: "home", label: "Home", icon: "🏠" },
   { key: "chat", label: "SphinxChat", icon: "💬" },
-  { key: "glyphs", label: "Glyphs", icon: "👁" },
+  { key: "glyphs", label: "Transliterate", icon: "👁" },
   { key: "transliteration", label: "Reverse", icon: "𓆓" },
   { key: "learn", label: "Learn More", icon: "☥" },
   { key: "profile", label: "Profile", icon: "👤" },

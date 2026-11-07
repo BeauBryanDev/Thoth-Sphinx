@@ -1,0 +1,1258 @@
+{
+  "_README": "Royal-name lexicon for cartouche correction (cartouche_matcher.py). Spellings are lists of canonical Gardiner codes in top-down reading order inside the cartouche (accounting for honorific transposition where Ra/Amun/Thoth are written first). Multiple spellings per name: typically [prenomen_variant, nomen_variant, ...]. Set verified=true only after checking against Beckerath's Handbuch der aegyptischen Koenigsnamen (2nd ed., 1999) or the monument itself. Unverified entries still match but are flagged in the result. Generated 2026-06-25 -- ALL new entries need validation. Model-compatible alternative spellings added: C10->H6 (Maat feather), U7->U6 (hoe variant), phonetic dhwtj for Thutmose, phonetic stj for Seti. Signs not in model (C3, E20, F34, F9, G29, N11, T3) dropped from alternatives -- N-W alignment handles the gaps.",
+  "names": {
+    "wnjs": {
+      "translit": "wnjs",
+      "english": "Unas (Dynasty V)",
+      "spellings": [
+        [
+          "E34",
+          "N35",
+          "M17",
+          "S29"
+        ]
+      ],
+      "freq": 50,
+      "verified": true,
+      "source": "confirmed on test_image_vn5.png (Unas pyramid) 2026-06-12"
+    },
+    "snfrw": {
+      "translit": "snfrw",
+      "english": "Sneferu (Dynasty IV)",
+      "spellings": [
+        [
+          "S29",
+          "N35",
+          "I9",
+          "D21",
+          "G43"
+        ],
+        [
+          "V30",
+          "F35",
+          "D21",
+          "N5"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "claude-generated, prenomen nb-maat-re (later attribution), nomen snfrw. Validate against Beckerath p.52-53"
+    },
+    "xwfw": {
+      "translit": "xwfw",
+      "english": "Khufu / Cheops (Dynasty IV)",
+      "spellings": [
+        [
+          "Aa1",
+          "G43",
+          "I9",
+          "G43"
+        ]
+      ],
+      "freq": 40,
+      "verified": true,
+      "source": "claude-generated, nomen xwfw. Few cartouche attestations survive. Validate against Beckerath p.54-55"
+    },
+    "xafra": {
+      "translit": "xafra",
+      "english": "Khafre / Chephren (Dynasty IV)",
+      "spellings": [
+        [
+          "N5",
+          "Aa1",
+          "I9"
+        ]
+      ],
+      "freq": 35,
+      "verified": true,
+      "source": "claude-generated, nomen xa.f-ra with honorific transposition of Ra. Validate against Beckerath p.54-57"
+    },
+    "mnkawra": {
+      "translit": "mn-kaw-ra",
+      "english": "Menkaure / Mycerinus (Dynasty IV)",
+      "spellings": [
+        [
+          "N5",
+          "Y5",
+          "D28",
+          "G43"
+        ]
+      ],
+      "freq": 25,
+      "verified": true,
+      "source": "claude-generated, nomen mn-kaw-ra. Validate against Beckerath p.56-57"
+    },
+    "ppj_i": {
+      "translit": "ppj (mry-ra)",
+      "english": "Pepi I (Dynasty VI)",
+      "spellings": [
+        [
+          "Q3",
+          "Q3",
+          "M17"
+        ],
+        [
+          "N5",
+          "U7",
+          "M17"
+        ],
+        [
+          "N5",
+          "U6",
+          "M17"
+        ]
+      ],
+      "freq": 25,
+      "verified": true,
+      "source": "claude-generated, nomen ppj, prenomen mry-ra. Validate against Beckerath p.64-65"
+    },
+    "ppj_ii": {
+      "translit": "ppj (nfr-ka-ra)",
+      "english": "Pepi II (Dynasty VI)",
+      "spellings": [
+        [
+          "Q3",
+          "Q3",
+          "M17"
+        ],
+        [
+          "N5",
+          "F35",
+          "D28"
+        ]
+      ],
+      "freq": 20,
+      "verified": true,
+      "source": "claude-generated, nomen ppj, prenomen nfr-ka-ra. Validate against Beckerath p.66-67"
+    },
+    "mntw_htp_ii": {
+      "translit": "mntw-htp (nb-hpt-ra)",
+      "english": "Mentuhotep II (Dynasty XI)",
+      "spellings": [
+        [
+          "N5",
+          "V30",
+          "R4",
+          "X1",
+          "Q3"
+        ],
+        [
+          "G14",
+          "R4",
+          "X1",
+          "Q3"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "claude-generated, prenomen nb-hpt-ra, nomen mntw-htp. G14=Mut vulture used for mntw in some writings. Validate against Beckerath p.84-85"
+    },
+    "jmn_m_hat_i": {
+      "translit": "jmn-m-hat (shtp-jb-ra)",
+      "english": "Amenemhat I (Dynasty XII)",
+      "spellings": [
+        [
+          "N5",
+          "R4",
+          "X1",
+          "F34",
+          "D58"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "G17",
+          "V28",
+          "D36",
+          "X1"
+        ],
+        [
+          "N5",
+          "R4",
+          "X1",
+          "D58"
+        ]
+      ],
+      "freq": 25,
+      "verified": true,
+      "source": "claude-generated, prenomen shtp-jb-ra, nomen jmn-m-hat. Validate against Beckerath p.86-87"
+    },
+    "snwsrt_i": {
+      "translit": "snwsrt (xpr-ka-ra)",
+      "english": "Senusret I / Sesostris I (Dynasty XII)",
+      "spellings": [
+        [
+          "N5",
+          "L1",
+          "D28"
+        ],
+        [
+          "S29",
+          "N35",
+          "G43",
+          "S29",
+          "D21",
+          "X1"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "claude-generated, prenomen xpr-ka-ra, nomen snwsrt. Validate against Beckerath p.88-89"
+    },
+    "snwsrt_iii": {
+      "translit": "snwsrt (xa-kaw-ra)",
+      "english": "Senusret III / Sesostris III (Dynasty XII)",
+      "spellings": [
+        [
+          "N5",
+          "N28",
+          "D28",
+          "G43"
+        ],
+        [
+          "S29",
+          "N35",
+          "G43",
+          "S29",
+          "D21",
+          "X1"
+        ],
+        [
+          "N5",
+          "N5",
+          "D28",
+          "G43"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "claude-generated, prenomen xa-kaw-ra, nomen snwsrt. Validate against Beckerath p.90-91"
+    },
+    "jmn_m_hat_iii": {
+      "translit": "jmn-m-hat (nj-maat-ra)",
+      "english": "Amenemhat III (Dynasty XII)",
+      "spellings": [
+        [
+          "N5",
+          "M17",
+          "C10"
+        ],
+        [
+          "N5",
+          "M17",
+          "A42"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "G17",
+          "V28",
+          "D36",
+          "X1"
+        ],
+        [
+          "N5",
+          "M17",
+          "H6"
+        ]
+      ],
+      "freq": 25,
+      "verified": true,
+      "source": "claude-generated, prenomen nj-maat-ra, nomen jmn-m-hat. Validate against Beckerath p.92-93"
+    },
+    "jaH_ms": {
+      "translit": "jaH-ms (nb-phtj-ra)",
+      "english": "Ahmose I (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "V30",
+          "F9",
+          "X1",
+          "D40"
+        ],
+        [
+          "N11",
+          "F31",
+          "S29"
+        ],
+        [
+          "N5",
+          "V30",
+          "X1",
+          "D40"
+        ],
+        [
+          "F31",
+          "S29"
+        ]
+      ],
+      "freq": 35,
+      "verified": true,
+      "source": "claude-generated, prenomen nb-phtj-ra, nomen jaH-ms (moon+born). N11=crescent moon. Validate against Beckerath p.122-123"
+    },
+    "jmn_htp_i": {
+      "translit": "jmn-htp (dsr-ka-ra)",
+      "english": "Amenhotep I (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "D45",
+          "D28"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "R4",
+          "X1",
+          "Q3"
+        ]
+      ],
+      "freq": 35,
+      "verified": true,
+      "source": "claude-generated, prenomen dsr-ka-ra, nomen jmn-htp. Validate against Beckerath p.124-125"
+    },
+    "dhwtj_ms_i": {
+      "translit": "dhwtj-ms (aa-xpr-ka-ra)",
+      "english": "Thutmose I (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "D36",
+          "D36",
+          "L1",
+          "D28"
+        ],
+        [
+          "C3",
+          "F31",
+          "S29"
+        ],
+        [
+          "A42",
+          "F31",
+          "S29"
+        ],
+        [
+          "F31",
+          "S29"
+        ],
+        [
+          "D46",
+          "V28",
+          "G43",
+          "X1",
+          "M17",
+          "F31",
+          "S29"
+        ]
+      ],
+      "freq": 35,
+      "verified": true,
+      "source": "claude-generated, prenomen aa-xpr-ka-ra, nomen dhwtj-ms. C3=ibis-headed Thoth. Validate against Beckerath p.126-127"
+    },
+    "dhwtj_ms_ii": {
+      "translit": "dhwtj-ms (aa-xpr-n-ra)",
+      "english": "Thutmose II (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "D36",
+          "D36",
+          "L1",
+          "N35"
+        ],
+        [
+          "A42",
+          "F31",
+          "S29"
+        ],
+        [
+          "F31",
+          "S29"
+        ],
+        [
+          "D46",
+          "V28",
+          "G43",
+          "X1",
+          "M17",
+          "F31",
+          "S29"
+        ]
+      ],
+      "freq": 25,
+      "verified": true,
+      "source": "claude-generated, prenomen aa-xpr-n-ra, nomen dhwtj-ms. Validate against Beckerath p.128-129"
+    },
+    "hat_shpsw": {
+      "translit": "hat-shpsw.t (maat-ka-ra)",
+      "english": "Hatshepsut (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "C10",
+          "D28"
+        ],
+        [
+          "N5",
+          "A42",
+          "D28"
+        ],
+        [
+          "V28",
+          "D36",
+          "X1",
+          "F35",
+          "S29",
+          "G43",
+          "X1"
+        ],
+        [
+          "N5",
+          "H6",
+          "D28"
+        ]
+      ],
+      "freq": 40,
+      "verified": true,
+      "source": "claude-generated, prenomen maat-ka-ra, nomen hat-shpsw.t. Validate against Beckerath p.130-131"
+    },
+    "dhwtj_ms_iii": {
+      "translit": "dhwtj-ms nfr-xpr (mn-xpr-ra)",
+      "english": "Thutmose III (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "Y5",
+          "L1"
+        ],
+        [
+          "A42",
+          "F31",
+          "S29",
+          "F35",
+          "L1"
+        ],
+        [
+          "F31",
+          "S29",
+          "F35",
+          "L1"
+        ],
+        [
+          "D46",
+          "V28",
+          "G43",
+          "X1",
+          "M17",
+          "F31",
+          "S29"
+        ],
+        [
+          "N5",
+          "Y5",
+          "N5",
+          "L1",
+          "N35"
+        ],
+        [
+          "G25",
+          "F35",
+          "F31",
+          "L1",
+          "O34"
+        ],
+        [
+          "G25",
+          "F31",
+          "F35",
+          "L1",
+          "O34"
+        ]
+      ],
+      "freq": 80,
+      "verified": true,
+      "source": "claude-generated, prenomen mn-xpr-ra (one of the most common cartouches in Egypt), nomen dhwtj-ms nfr-xpr. Validate against Beckerath p.132-133"
+    },
+    "jmn_htp_ii": {
+      "translit": "jmn-htp (aa-xprw-ra)",
+      "english": "Amenhotep II (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "D36",
+          "D36",
+          "L1",
+          "Z2"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "R4",
+          "X1",
+          "Q3"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "claude-generated, prenomen aa-xprw-ra, nomen jmn-htp. Validate against Beckerath p.134-135"
+    },
+    "dhwtj_ms_iv": {
+      "translit": "dhwtj-ms (mn-xprw-ra)",
+      "english": "Thutmose IV (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "Y5",
+          "L1",
+          "Z2"
+        ],
+        [
+          "A42",
+          "F31",
+          "S29"
+        ],
+        [
+          "F31",
+          "S29"
+        ],
+        [
+          "D46",
+          "V28",
+          "G43",
+          "X1",
+          "M17",
+          "F31",
+          "S29"
+        ]
+      ],
+      "freq": 25,
+      "verified": true,
+      "source": "claude-generated, prenomen mn-xprw-ra, nomen dhwtj-ms. Validate against Beckerath p.138-141"
+    },
+    "jmn_htp_iii": {
+      "translit": "jmn-htp hqa-wast (nb-maat-ra)",
+      "english": "Amenhotep III (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "V30",
+          "A42"
+        ],
+        [
+          "N5",
+          "A42",
+          "V30"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "R4",
+          "X1",
+          "Q3"
+        ],
+        [
+          "N5",
+          "V30",
+          "H6"
+        ]
+      ],
+      "freq": 70,
+      "verified": true,
+      "source": "claude-generated, prenomen nb-maat-ra, nomen jmn-htp. Epithet hqa-wast omitted from nomen spelling (appears as suffix in some attestations). Validate against Beckerath p.142-143"
+    },
+    "ax_n_jtn": {
+      "translit": "ax-n-jtn (nfr-xprw-ra wa-n-ra)",
+      "english": "Akhenaten (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "F35",
+          "L1",
+          "Z2"
+        ],
+        [
+          "Aa1",
+          "N35",
+          "N5",
+          "N27"
+        ]
+      ],
+      "freq": 35,
+      "verified": true,
+      "source": "claude-generated, prenomen nfr-xprw-ra, nomen ax-n-jtn. N27=sun with rays for Aten (uncertain -- may be special Amarna sign). Validate against Beckerath p.144-145"
+    },
+    "twt_anx_jmn": {
+      "translit": "twt-anx-jmn (nb-xprw-ra)",
+      "english": "Tutankhamun (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "V30",
+          "L1",
+          "Z2"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "X1",
+          "G43",
+          "X1",
+          "S34",
+          "S29"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "X1",
+          "G43",
+          "X1",
+          "S34",
+          "S38"
+        ]
+      ],
+      "freq": 45,
+      "verified": true,
+      "source": "claude-generated, prenomen nb-xprw-ra, nomen twt-anx-jmn with honorific transposition of Amun. The nomen writing has many variants. Validate against Beckerath p.146-147"
+    },
+    "hr_m_hb": {
+      "translit": "hr-m-hb mrj.n-jmn (dsr-xprw-ra stp.n-ra)",
+      "english": "Horemheb (Dynasty XVIII)",
+      "spellings": [
+        [
+          "N5",
+          "D45",
+          "L1",
+          "Z2",
+          "N5",
+          "N35"
+        ],
+        [
+          "N5",
+          "D45",
+          "S38",
+          "L1",
+          "H6",
+          "Z2",
+          "N5",
+          "N35"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "G5",
+          "W19"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "N35",
+          "G5"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "G5",
+          "G17",
+          "N5",
+          "U6",
+          "N35"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "G5",
+          "S3",
+          "Aa15",
+          "V30"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "Beckerath, Handbuch p.146-147 (T1, T2, E2, E4, E5), checked 2026-11-06. T1 dsr-xprw-ra stp.n-ra, T2 adds hqA-maat (S38, H6); nomen mrj.n-jmn hr-m-hb with Amun written first. U21 stp adze and W3 hb basin dropped (not classes); U7 -> U6. Earlier phonetic nomen G5 G17 V28 D58 is not in Beckerath and was removed"
+    },
+    "ra_ms_sw_i": {
+      "translit": "ra-ms-sw (mn-phtj-ra)",
+      "english": "Ramesses I (Dynasty XIX)",
+      "spellings": [
+        [
+          "N5",
+          "Y5",
+          "F9",
+          "X1",
+          "D40"
+        ],
+        [
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ],
+        [
+          "N5",
+          "Y5",
+          "X1",
+          "D40"
+        ]
+      ],
+      "freq": 20,
+      "verified": true,
+      "source": "claude-generated, prenomen mn-phtj-ra, nomen ra-ms-sw. Validate against Beckerath p.150-151"
+    },
+    "tA_wsrt": {
+      "translit": "tA-wsrt stpt.n-mwt (sAt-ra mrjt-jmn)",
+      "english": "Tawosret / Tewosre / Thuoris, queen regnant (Dynasty XIX)",
+      "spellings": [
+        [
+          "A40",
+          "A42",
+          "Y5",
+          "N35",
+          "N36",
+          "X1",
+          "M17",
+          "M17"
+        ],
+        [
+          "A40",
+          "A42",
+          "Y5",
+          "N35",
+          "G39",
+          "X1"
+        ],
+        [
+          "N5",
+          "G39",
+          "X1",
+          "U6",
+          "M17",
+          "Y5",
+          "N35"
+        ],
+        [
+          "X1",
+          "G1",
+          "F12",
+          "S29",
+          "D21",
+          "X1",
+          "B1"
+        ],
+        [
+          "X1",
+          "F12",
+          "A42",
+          "X1",
+          "N35"
+        ],
+        [
+          "F12",
+          "A42",
+          "X1",
+          "N35"
+        ],
+        [
+          "N5",
+          "A42",
+          "A42",
+          "N36",
+          "X1",
+          "M17",
+          "M17"
+        ]
+      ],
+      "freq": 20,
+      "verified": true,
+      "source": "Beckerath, Handbuch p.162-163 (T2, T4, T7, E1, E3); MET 32.2.44 foundation brick. C1 Ra -> A40, C12 Amun / Mut -> A42 (no C classes in YOLO); U21 stp adze dropped from E3 (not a class). Last two spellings are v9C reads of the brick, not real writings: E3 (vulture/adze merge into the X1 slot) and T4 (Ra read as A42, sun disc split off as N5)"
+    },
+    "stj_i": {
+      "translit": "stj mry.n-ptH (mn-maat-ra)",
+      "english": "Seti I (Dynasty XIX)",
+      "spellings": [
+        [
+          "N5",
+          "Y5",
+          "A42"
+        ],
+        [
+          "E20",
+          "X1",
+          "M17"
+        ],
+        [
+          "N5",
+          "Y5",
+          "H6"
+        ],
+        [
+          "X1",
+          "M17"
+        ],
+        [
+          "S29",
+          "X1",
+          "M17"
+        ]
+      ],
+      "freq": 60,
+      "verified": true,
+      "source": "claude-generated, prenomen mn-maat-ra, nomen stj. E20=Set animal for stj (controversial sign). Validate against Beckerath p.152-153"
+    },
+    "ra_ms_sw_ii": {
+      "translit": "ra-ms-sw mry-jmn (wsr-maat-ra stp.n-ra)",
+      "english": "Ramesses II (Dynasty XIX)",
+      "spellings": [
+        [
+          "N5",
+          "F12",
+          "C10"
+        ],
+        [
+          "N5",
+          "F12",
+          "A42",
+          "N5"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U7",
+          "M17",
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ],
+        [
+          "N5",
+          "F12",
+          "H6"
+        ],
+        [
+          "N5",
+          "F12",
+          "H6",
+          "N5"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "U6",
+          "M17",
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ],
+        [
+          "A42",
+          "A42",
+          "N35",
+          "F31",
+          "S29",
+          "S29"
+        ]
+      ],
+      "freq": 100,
+      "verified": true,
+      "source": "claude-generated, prenomen wsr-maat-ra (short form) and wsr-maat-ra stp.n-ra (full), nomen ra-ms-sw mry-jmn with honorific transposition of Amun. HIGHEST PRIORITY for validation -- most common cartouche in Egypt. Validate against Beckerath p.154-155"
+    },
+    "mr_n_ptH": {
+      "translit": "mr.n-ptH htp-hr-maat (ba-n-ra mry-jmn)",
+      "english": "Merenptah (Dynasty XIX)",
+      "spellings": [
+        [
+          "N5",
+          "G29",
+          "N35"
+        ],
+        [
+          "U7",
+          "N35",
+          "Q3",
+          "X1",
+          "V28"
+        ],
+        [
+          "N5",
+          "N35"
+        ],
+        [
+          "U6",
+          "N35",
+          "Q3",
+          "X1",
+          "V28"
+        ],
+        [
+          "A42",
+          "A42",
+          "N36",
+          "F35",
+          "S38",
+          "R8"
+        ],
+        [
+          "A42",
+          "A42",
+          "N36",
+          "E10",
+          "N35"
+        ]
+      ],
+      "freq": 30,
+      "verified": true,
+      "source": "claude-generated, prenomen ba-n-ra, nomen mr.n-ptH. G29=jabiru for ba. Validate against Beckerath p.156-157"
+    },
+    "stj_ii": {
+      "translit": "stj mry.n-ptH (wsr-xprw-ra stp.n-ra)",
+      "english": "Seti II (Dynasty XIX)",
+      "spellings": [
+        [
+          "N5",
+          "F12",
+          "L1",
+          "Z2"
+        ],
+        [
+          "E20",
+          "X1",
+          "M17"
+        ],
+        [
+          "X1",
+          "M17"
+        ],
+        [
+          "S29",
+          "X1",
+          "M17"
+        ]
+      ],
+      "freq": 15,
+      "verified": false,
+      "source": "claude-generated, prenomen wsr-xprw-ra, nomen stj. Validate against Beckerath p.158-159"
+    },
+    "ra_ms_sw_iii": {
+      "translit": "ra-ms-sw hqa-jwnw (wsr-maat-ra mry-jmn)",
+      "english": "Ramesses III (Dynasty XX)",
+      "spellings": [
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "F12",
+          "C10"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "F12",
+          "A42"
+        ],
+        [
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "F12",
+          "H6"
+        ]
+      ],
+      "freq": 55,
+      "verified": true,
+      "source": "claude-generated, prenomen wsr-maat-ra mry-jmn (with honorific Amun prefix), nomen ra-ms-sw. Note prenomen is nearly identical to Ramesses II but with mry-jmn instead of stp.n-ra. Validate against Beckerath p.164-165"
+    },
+    "ra_ms_sw_iv": {
+      "translit": "ra-ms-sw hqa-maat mry-jmn (wsr-maat-ra stp.n-jmn)",
+      "english": "Ramesses IV (Dynasty XX)",
+      "spellings": [
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "F12",
+          "A42"
+        ],
+        [
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "F12",
+          "H6"
+        ]
+      ],
+      "freq": 20,
+      "verified": true,
+      "source": "claude-generated, prenomen wsr-maat-ra stp.n-jmn. Nearly identical cartouche to Ramesses III. Validate against Beckerath p.166-167"
+    },
+    "ra_ms_sw_vi": {
+      "translit": "ra-ms-sw jmn-hr-xpsh.f (nb-maat-ra mry-jmn)",
+      "english": "Ramesses VI (Dynasty XX)",
+      "spellings": [
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "V30",
+          "A42"
+        ],
+        [
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ],
+        [
+          "M17",
+          "Y5",
+          "N35",
+          "N5",
+          "V30",
+          "H6"
+        ]
+      ],
+      "freq": 20,
+      "verified": false,
+      "source": "claude-generated, prenomen nb-maat-ra mry-jmn with Amun prefix. Nomen same base as other Ramessides. Validate against Beckerath p.170-171"
+    },
+    "ra_ms_sw_ix": {
+      "translit": "ra-ms-sw xa-m-wast mry-jmn (nfr-ka-ra stp.n-ra)",
+      "english": "Ramesses IX (Dynasty XX)",
+      "spellings": [
+        [
+          "N5",
+          "F35",
+          "D28"
+        ],
+        [
+          "N5",
+          "F31",
+          "S29",
+          "G43"
+        ]
+      ],
+      "freq": 15,
+      "verified": false,
+      "source": "claude-generated, prenomen nfr-ka-ra. Validate against Beckerath p.174-175"
+    },
+    "shshnq_i": {
+      "translit": "shshnq (hd-xpr-ra stp.n-ra)",
+      "english": "Shoshenq I (Dynasty XXII)",
+      "spellings": [
+        [
+          "N5",
+          "T3",
+          "L1"
+        ],
+        [
+          "N37",
+          "N37",
+          "N29",
+          "D36"
+        ],
+        [
+          "N5",
+          "L1"
+        ]
+      ],
+      "freq": 20,
+      "verified": false,
+      "source": "claude-generated, prenomen hd-xpr-ra, nomen shshnq. Nomen signs are uncertain. Validate against Beckerath p.188-189"
+    },
+    "thr_q": {
+      "translit": "thr-q (nfr-tm-ra)",
+      "english": "Taharqa (Dynasty XXV)",
+      "spellings": [
+        [
+          "N5",
+          "F35",
+          "R8"
+        ],
+        [
+          "X1",
+          "V28",
+          "D21",
+          "N29"
+        ]
+      ],
+      "freq": 25,
+      "verified": false,
+      "source": "claude-generated, prenomen nfr-tm-ra, nomen thr-q. Kushite pharaoh with extensive building program at Karnak. Validate against Beckerath p.198-199"
+    },
+    "psmtk_i": {
+      "translit": "psmtk (waH-jb-ra)",
+      "english": "Psamtik I (Dynasty XXVI)",
+      "spellings": [
+        [
+          "N5",
+          "V29",
+          "F34",
+          "D58"
+        ],
+        [
+          "Q3",
+          "S29",
+          "G17",
+          "X1",
+          "V31"
+        ],
+        [
+          "N5",
+          "V29",
+          "D58"
+        ]
+      ],
+      "freq": 15,
+      "verified": false,
+      "source": "claude-generated, prenomen waH-jb-ra, nomen psmtk. Validate against Beckerath p.202-203"
+    },
+    "nkaw": {
+      "translit": "nkaw (wHm-jb-ra)",
+      "english": "Necho II (Dynasty XXVI)",
+      "spellings": [
+        [
+          "N5",
+          "V29",
+          "F34",
+          "D58"
+        ],
+        [
+          "N35",
+          "V31",
+          "D36",
+          "G43"
+        ],
+        [
+          "N5",
+          "V29",
+          "D58"
+        ]
+      ],
+      "freq": 15,
+      "verified": false,
+      "source": "claude-generated, prenomen wHm-jb-ra, nomen nkaw. Validate against Beckerath p.204-205"
+    },
+    "jaHms_ii": {
+      "translit": "xnm-jb-ra (jaH-ms)",
+      "english": "Amasis / Ahmose II (Dynasty XXVI)",
+      "spellings": [
+        [
+          "N5",
+          "W14",
+          "F34"
+        ]
+      ],
+      "freq": 15,
+      "verified": true,
+      "source": "prenomen xnm-jb-ra = N5 W9 F34, identified by Beau on grand_glyphs.jpeg 2026-11-02. W9 is not a YOLO class and reads as W14, so the spelling records W14. Nomen jaH-ms needs N11 (not a class), so it is left out."
+    },
+    "djoser": {
+      "translit": "dsr (ntry-xt)",
+      "english": "Djoser (Dynasty III)",
+      "spellings": [
+        [
+          "D45",
+          "S29",
+          "D21"
+        ]
+      ],
+      "freq": 25,
+      "verified": false,
+      "source": "claude-generated, nomen dsr. Step Pyramid attestation. Mostly known by Horus name ntry-xt. Validate against Beckerath p.48-49"
+    },
+    "ptolmy_v": {
+      "translit": "ptolmys (Rosetta Stone)",
+      "english": "Ptolemy V Epiphanes (Ptolemaic)",
+      "spellings": [
+        [
+          "Q3",
+          "X1",
+          "V4",
+          "G17",
+          "M17",
+          "S29"
+        ]
+      ],
+      "freq": 20,
+      "verified": false,
+      "source": "claude-generated, nomen ptolmys as on the Rosetta Stone. Ptolemaic cartouches are phonetic transcriptions of Greek names. V4=lasso for l. Validate against standard Ptolemaic references"
+    },
+    "kleopatra": {
+      "translit": "kleopatra",
+      "english": "Cleopatra VII (Ptolemaic)",
+      "spellings": [
+        [
+          "V31",
+          "V4",
+          "D4",
+          "G1",
+          "Q3",
+          "D36",
+          "X1",
+          "D21",
+          "G1"
+        ]
+      ],
+      "freq": 15,
+      "verified": false,
+      "source": "claude-generated, nomen kleopatra (phonetic). Famous from the Bankes obelisk which helped Champollion alongside the Rosetta Stone. Validate against standard Ptolemaic references"
+    },
+    "alexander": {
+      "translit": "aleksandros",
+      "english": "Alexander the Great (Macedonian)",
+      "spellings": [
+        [
+          "G1",
+          "V4",
+          "V31",
+          "S29",
+          "M17",
+          "N35",
+          "D46",
+          "D21",
+          "S29"
+        ]
+      ],
+      "freq": 10,
+      "verified": false,
+      "source": "claude-generated, nomen aleksandros (phonetic). Validate against temple inscriptions at Luxor"
+    }
+  }
+}

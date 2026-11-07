@@ -1,0 +1,664 @@
+{
+  "runs": [
+    {
+      "run": "baseline",
+      "date": "2026-10-31",
+      "status": "valid",
+      "note": "Search channels without embeddings, 300 strict queries.",
+      "file": "retrieval_baseline.json",
+      "strict_coverage": {
+        "eligible": 19416,
+        "examined": 959,
+        "with_parallels": 300,
+        "coverage": 0.31282586027111575
+      },
+      "loose_coverage": null,
+      "haiku_usage": null,
+      "strict": {
+        "signs_clean": {
+          "queries": 276,
+          "hit@1": 0.598,
+          "hit@5": 0.79,
+          "hit@10": 0.851,
+          "recall@10": 0.685,
+          "mrr@10": 0.677,
+          "median_ms": 258
+        },
+        "signs_noisy": {
+          "queries": 276,
+          "hit@1": 0.533,
+          "hit@5": 0.71,
+          "hit@10": 0.775,
+          "recall@10": 0.599,
+          "mrr@10": 0.614,
+          "median_ms": 220
+        },
+        "translit_clean": {
+          "queries": 300,
+          "hit@1": 0.697,
+          "hit@5": 0.853,
+          "hit@10": 0.88,
+          "recall@10": 0.765,
+          "mrr@10": 0.764,
+          "median_ms": 414
+        },
+        "translit_noisy": {
+          "queries": 300,
+          "hit@1": 0.547,
+          "hit@5": 0.72,
+          "hit@10": 0.773,
+          "recall@10": 0.654,
+          "mrr@10": 0.624,
+          "median_ms": 375
+        },
+        "trigram_noisy": {
+          "queries": 300,
+          "hit@1": 0.54,
+          "hit@5": 0.673,
+          "hit@10": 0.763,
+          "recall@10": 0.608,
+          "mrr@10": 0.606,
+          "median_ms": 1578
+        },
+        "hybrid_noisy": {
+          "queries": 300,
+          "hit@1": 0.61,
+          "hit@5": 0.787,
+          "hit@10": 0.813,
+          "recall@10": 0.665,
+          "mrr@10": 0.683,
+          "median_ms": 569
+        }
+      },
+      "loose": {}
+    },
+    {
+      "run": "embeddings",
+      "date": "2026-10-31",
+      "status": "valid",
+      "note": "Adds embeddings of English gloss queries. Measured before the vector speed fix, so embedding and three-channel median_ms are out of date.",
+      "file": "retrieval_embeddings.json",
+      "strict_coverage": {
+        "eligible": 19416,
+        "examined": 959,
+        "with_parallels": 300,
+        "coverage": 0.31282586027111575
+      },
+      "loose_coverage": {
+        "examined": 3597,
+        "with_loose_parallels": 200,
+        "coverage": 0.055601890464275786
+      },
+      "haiku_usage": null,
+      "strict": {
+        "signs_clean": {
+          "queries": 276,
+          "hit@1": 0.598,
+          "hit@5": 0.79,
+          "hit@10": 0.851,
+          "recall@10": 0.685,
+          "mrr@10": 0.677,
+          "median_ms": 226
+        },
+        "signs_noisy": {
+          "queries": 276,
+          "hit@1": 0.533,
+          "hit@5": 0.71,
+          "hit@10": 0.775,
+          "recall@10": 0.599,
+          "mrr@10": 0.614,
+          "median_ms": 180
+        },
+        "translit_clean": {
+          "queries": 300,
+          "hit@1": 0.697,
+          "hit@5": 0.853,
+          "hit@10": 0.88,
+          "recall@10": 0.765,
+          "mrr@10": 0.764,
+          "median_ms": 607
+        },
+        "translit_noisy": {
+          "queries": 300,
+          "hit@1": 0.547,
+          "hit@5": 0.72,
+          "hit@10": 0.773,
+          "recall@10": 0.654,
+          "mrr@10": 0.624,
+          "median_ms": 548
+        },
+        "trigram_noisy": {
+          "queries": 300,
+          "hit@1": 0.54,
+          "hit@5": 0.673,
+          "hit@10": 0.763,
+          "recall@10": 0.608,
+          "mrr@10": 0.606,
+          "median_ms": 1588
+        },
+        "embedding_noisy": {
+          "queries": 300,
+          "hit@1": 0.193,
+          "hit@5": 0.353,
+          "hit@10": 0.43,
+          "recall@10": 0.276,
+          "mrr@10": 0.264,
+          "median_ms": 479
+        },
+        "hybrid_noisy": {
+          "queries": 300,
+          "hit@1": 0.61,
+          "hit@5": 0.787,
+          "hit@10": 0.813,
+          "recall@10": 0.665,
+          "mrr@10": 0.683,
+          "median_ms": 543
+        },
+        "hybrid_embedding_noisy": {
+          "queries": 300,
+          "hit@1": 0.603,
+          "hit@5": 0.777,
+          "hit@10": 0.843,
+          "recall@10": 0.683,
+          "mrr@10": 0.677,
+          "median_ms": 988
+        }
+      },
+      "loose": {
+        "signs_clean": {
+          "queries": 182,
+          "hit@1": 0.588,
+          "hit@5": 0.769,
+          "hit@10": 0.83,
+          "recall@10": 0.74,
+          "mrr@10": 0.677,
+          "median_ms": 201
+        },
+        "signs_noisy": {
+          "queries": 182,
+          "hit@1": 0.5,
+          "hit@5": 0.72,
+          "hit@10": 0.747,
+          "recall@10": 0.637,
+          "mrr@10": 0.59,
+          "median_ms": 177
+        },
+        "translit_clean": {
+          "queries": 200,
+          "hit@1": 0.735,
+          "hit@5": 0.87,
+          "hit@10": 0.9,
+          "recall@10": 0.839,
+          "mrr@10": 0.786,
+          "median_ms": 556
+        },
+        "translit_noisy": {
+          "queries": 200,
+          "hit@1": 0.52,
+          "hit@5": 0.72,
+          "hit@10": 0.775,
+          "recall@10": 0.689,
+          "mrr@10": 0.606,
+          "median_ms": 559
+        },
+        "trigram_noisy": {
+          "queries": 200,
+          "hit@1": 0.665,
+          "hit@5": 0.825,
+          "hit@10": 0.87,
+          "recall@10": 0.821,
+          "mrr@10": 0.74,
+          "median_ms": 2102
+        },
+        "embedding_noisy": {
+          "queries": 200,
+          "hit@1": 0.195,
+          "hit@5": 0.375,
+          "hit@10": 0.415,
+          "recall@10": 0.349,
+          "mrr@10": 0.267,
+          "median_ms": 471
+        },
+        "hybrid_noisy": {
+          "queries": 200,
+          "hit@1": 0.54,
+          "hit@5": 0.755,
+          "hit@10": 0.8,
+          "recall@10": 0.722,
+          "mrr@10": 0.633,
+          "median_ms": 563
+        },
+        "hybrid_embedding_noisy": {
+          "queries": 200,
+          "hit@1": 0.62,
+          "hit@5": 0.77,
+          "hit@10": 0.845,
+          "recall@10": 0.764,
+          "mrr@10": 0.689,
+          "median_ms": 996
+        }
+      }
+    },
+    {
+      "run": "reranker",
+      "date": "2026-11-01",
+      "status": "valid",
+      "note": "Cohere rerank-v5.0-fast on a smaller sample, 150 strict and 100 loose queries.",
+      "file": "retrieval_reranked.json",
+      "strict_coverage": {
+        "eligible": 19416,
+        "examined": 478,
+        "with_parallels": 150,
+        "coverage": 0.3138075313807531
+      },
+      "loose_coverage": {
+        "examined": 1908,
+        "with_loose_parallels": 100,
+        "coverage": 0.05241090146750524
+      },
+      "haiku_usage": null,
+      "strict": {
+        "hybrid_embedding_noisy": {
+          "queries": 150,
+          "hit@1": 0.547,
+          "hit@5": 0.753,
+          "hit@10": 0.827,
+          "recall@10": 0.646,
+          "mrr@10": 0.633,
+          "median_ms": 560
+        },
+        "hybrid_rerank_translit": {
+          "queries": 150,
+          "hit@1": 0.52,
+          "hit@5": 0.78,
+          "hit@10": 0.853,
+          "recall@10": 0.676,
+          "mrr@10": 0.636,
+          "median_ms": 813
+        },
+        "hybrid_rerank_gloss": {
+          "queries": 150,
+          "hit@1": 0.553,
+          "hit@5": 0.74,
+          "hit@10": 0.827,
+          "recall@10": 0.672,
+          "mrr@10": 0.638,
+          "median_ms": 820
+        }
+      },
+      "loose": {
+        "hybrid_embedding_noisy": {
+          "queries": 100,
+          "hit@1": 0.58,
+          "hit@5": 0.81,
+          "hit@10": 0.85,
+          "recall@10": 0.773,
+          "mrr@10": 0.674,
+          "median_ms": 432
+        },
+        "hybrid_rerank_translit": {
+          "queries": 100,
+          "hit@1": 0.58,
+          "hit@5": 0.85,
+          "hit@10": 0.9,
+          "recall@10": 0.805,
+          "mrr@10": 0.687,
+          "median_ms": 858
+        },
+        "hybrid_rerank_gloss": {
+          "queries": 100,
+          "hit@1": 0.58,
+          "hit@5": 0.81,
+          "hit@10": 0.85,
+          "recall@10": 0.776,
+          "mrr@10": 0.671,
+          "median_ms": 879
+        }
+      }
+    },
+    {
+      "run": "haiku_unclean",
+      "date": "2026-11-01",
+      "status": "invalid",
+      "note": "Do not use the Haiku modes: many drafts contained Haiku's working notes. Baselines are fine.",
+      "file": "retrieval_haiku_unclean_drafts.json",
+      "strict_coverage": {
+        "eligible": 19416,
+        "examined": 959,
+        "with_parallels": 300,
+        "coverage": 0.31282586027111575
+      },
+      "loose_coverage": {
+        "examined": 3597,
+        "with_loose_parallels": 200,
+        "coverage": 0.055601890464275786
+      },
+      "haiku_usage": {
+        "calls": 1500,
+        "blank": 0,
+        "input_tokens": 278122,
+        "output_tokens": 293837
+      },
+      "strict": {
+        "embedding_noisy": {
+          "queries": 300,
+          "hit@1": 0.193,
+          "hit@5": 0.353,
+          "hit@10": 0.433,
+          "recall@10": 0.28,
+          "mrr@10": 0.265,
+          "median_ms": 14
+        },
+        "hybrid_noisy": {
+          "queries": 300,
+          "hit@1": 0.61,
+          "hit@5": 0.787,
+          "hit@10": 0.813,
+          "recall@10": 0.665,
+          "mrr@10": 0.683,
+          "median_ms": 505
+        },
+        "hybrid_embedding_noisy": {
+          "queries": 300,
+          "hit@1": 0.603,
+          "hit@5": 0.777,
+          "hit@10": 0.843,
+          "recall@10": 0.681,
+          "mrr@10": 0.677,
+          "median_ms": 523
+        },
+        "embedding_de": {
+          "queries": 300,
+          "hit@1": 0.13,
+          "hit@5": 0.23,
+          "hit@10": 0.28,
+          "recall@10": 0.162,
+          "mrr@10": 0.174,
+          "median_ms": 13
+        },
+        "hybrid_de": {
+          "queries": 300,
+          "hit@1": 0.593,
+          "hit@5": 0.777,
+          "hit@10": 0.83,
+          "recall@10": 0.672,
+          "mrr@10": 0.672,
+          "median_ms": 507
+        },
+        "embedding_en": {
+          "queries": 300,
+          "hit@1": 0.133,
+          "hit@5": 0.207,
+          "hit@10": 0.237,
+          "recall@10": 0.148,
+          "mrr@10": 0.164,
+          "median_ms": 10
+        },
+        "hybrid_en": {
+          "queries": 300,
+          "hit@1": 0.577,
+          "hit@5": 0.767,
+          "hit@10": 0.833,
+          "recall@10": 0.672,
+          "mrr@10": 0.66,
+          "median_ms": 506
+        },
+        "embedding_de_context": {
+          "queries": 300,
+          "hit@1": 0.16,
+          "hit@5": 0.247,
+          "hit@10": 0.27,
+          "recall@10": 0.182,
+          "mrr@10": 0.195,
+          "median_ms": 11
+        },
+        "hybrid_de_context": {
+          "queries": 300,
+          "hit@1": 0.577,
+          "hit@5": 0.757,
+          "hit@10": 0.827,
+          "recall@10": 0.662,
+          "mrr@10": 0.656,
+          "median_ms": 508
+        }
+      },
+      "loose": {
+        "embedding_noisy": {
+          "queries": 200,
+          "hit@1": 0.195,
+          "hit@5": 0.365,
+          "hit@10": 0.4,
+          "recall@10": 0.334,
+          "mrr@10": 0.264,
+          "median_ms": 11
+        },
+        "hybrid_noisy": {
+          "queries": 200,
+          "hit@1": 0.54,
+          "hit@5": 0.755,
+          "hit@10": 0.8,
+          "recall@10": 0.722,
+          "mrr@10": 0.633,
+          "median_ms": 494
+        },
+        "hybrid_embedding_noisy": {
+          "queries": 200,
+          "hit@1": 0.61,
+          "hit@5": 0.76,
+          "hit@10": 0.84,
+          "recall@10": 0.759,
+          "mrr@10": 0.683,
+          "median_ms": 505
+        },
+        "embedding_de": {
+          "queries": 200,
+          "hit@1": 0.07,
+          "hit@5": 0.185,
+          "hit@10": 0.23,
+          "recall@10": 0.16,
+          "mrr@10": 0.119,
+          "median_ms": 10
+        },
+        "hybrid_de": {
+          "queries": 200,
+          "hit@1": 0.52,
+          "hit@5": 0.75,
+          "hit@10": 0.815,
+          "recall@10": 0.732,
+          "mrr@10": 0.613,
+          "median_ms": 492
+        },
+        "embedding_en": {
+          "queries": 200,
+          "hit@1": 0.06,
+          "hit@5": 0.125,
+          "hit@10": 0.16,
+          "recall@10": 0.106,
+          "mrr@10": 0.086,
+          "median_ms": 8
+        },
+        "hybrid_en": {
+          "queries": 200,
+          "hit@1": 0.525,
+          "hit@5": 0.735,
+          "hit@10": 0.78,
+          "recall@10": 0.693,
+          "mrr@10": 0.615,
+          "median_ms": 497
+        },
+        "embedding_de_context": {
+          "queries": 200,
+          "hit@1": 0.115,
+          "hit@5": 0.2,
+          "hit@10": 0.215,
+          "recall@10": 0.159,
+          "mrr@10": 0.146,
+          "median_ms": 8
+        },
+        "hybrid_de_context": {
+          "queries": 200,
+          "hit@1": 0.57,
+          "hit@5": 0.72,
+          "hit@10": 0.785,
+          "recall@10": 0.705,
+          "mrr@10": 0.637,
+          "median_ms": 499
+        }
+      }
+    },
+    {
+      "run": "haiku",
+      "date": "2026-11-01",
+      "status": "valid",
+      "note": "Clean Haiku drafts from structured output, on the same queries as the embeddings run.",
+      "file": "retrieval_haiku.json",
+      "strict_coverage": {
+        "eligible": 19416,
+        "examined": 959,
+        "with_parallels": 300,
+        "coverage": 0.31282586027111575
+      },
+      "loose_coverage": {
+        "examined": 3597,
+        "with_loose_parallels": 200,
+        "coverage": 0.055601890464275786
+      },
+      "haiku_usage": {
+        "calls": 1500,
+        "blank": 0,
+        "input_tokens": 543622,
+        "output_tokens": 106735
+      },
+      "strict": {
+        "hybrid_noisy": {
+          "queries": 300,
+          "hit@1": 0.61,
+          "hit@5": 0.787,
+          "hit@10": 0.813,
+          "recall@10": 0.665,
+          "mrr@10": 0.683,
+          "median_ms": 423
+        },
+        "embedding_de": {
+          "queries": 300,
+          "hit@1": 0.123,
+          "hit@5": 0.213,
+          "hit@10": 0.257,
+          "recall@10": 0.15,
+          "mrr@10": 0.163,
+          "median_ms": 11
+        },
+        "hybrid_de": {
+          "queries": 300,
+          "hit@1": 0.59,
+          "hit@5": 0.767,
+          "hit@10": 0.813,
+          "recall@10": 0.651,
+          "mrr@10": 0.662,
+          "median_ms": 441
+        },
+        "embedding_en": {
+          "queries": 300,
+          "hit@1": 0.143,
+          "hit@5": 0.237,
+          "hit@10": 0.28,
+          "recall@10": 0.185,
+          "mrr@10": 0.182,
+          "median_ms": 8
+        },
+        "hybrid_en": {
+          "queries": 300,
+          "hit@1": 0.603,
+          "hit@5": 0.77,
+          "hit@10": 0.823,
+          "recall@10": 0.671,
+          "mrr@10": 0.676,
+          "median_ms": 438
+        },
+        "embedding_de_context": {
+          "queries": 300,
+          "hit@1": 0.13,
+          "hit@5": 0.253,
+          "hit@10": 0.297,
+          "recall@10": 0.191,
+          "mrr@10": 0.183,
+          "median_ms": 8
+        },
+        "hybrid_de_context": {
+          "queries": 300,
+          "hit@1": 0.593,
+          "hit@5": 0.773,
+          "hit@10": 0.84,
+          "recall@10": 0.672,
+          "mrr@10": 0.672,
+          "median_ms": 440
+        }
+      },
+      "loose": {
+        "hybrid_noisy": {
+          "queries": 200,
+          "hit@1": 0.54,
+          "hit@5": 0.755,
+          "hit@10": 0.8,
+          "recall@10": 0.722,
+          "mrr@10": 0.633,
+          "median_ms": 433
+        },
+        "embedding_de": {
+          "queries": 200,
+          "hit@1": 0.085,
+          "hit@5": 0.195,
+          "hit@10": 0.225,
+          "recall@10": 0.168,
+          "mrr@10": 0.127,
+          "median_ms": 9
+        },
+        "hybrid_de": {
+          "queries": 200,
+          "hit@1": 0.525,
+          "hit@5": 0.745,
+          "hit@10": 0.8,
+          "recall@10": 0.719,
+          "mrr@10": 0.614,
+          "median_ms": 443
+        },
+        "embedding_en": {
+          "queries": 200,
+          "hit@1": 0.085,
+          "hit@5": 0.175,
+          "hit@10": 0.2,
+          "recall@10": 0.131,
+          "mrr@10": 0.124,
+          "median_ms": 7
+        },
+        "hybrid_en": {
+          "queries": 200,
+          "hit@1": 0.545,
+          "hit@5": 0.76,
+          "hit@10": 0.815,
+          "recall@10": 0.725,
+          "mrr@10": 0.629,
+          "median_ms": 432
+        },
+        "embedding_de_context": {
+          "queries": 200,
+          "hit@1": 0.085,
+          "hit@5": 0.18,
+          "hit@10": 0.2,
+          "recall@10": 0.151,
+          "mrr@10": 0.121,
+          "median_ms": 7
+        },
+        "hybrid_de_context": {
+          "queries": 200,
+          "hit@1": 0.525,
+          "hit@5": 0.745,
+          "hit@10": 0.815,
+          "recall@10": 0.73,
+          "mrr@10": 0.622,
+          "median_ms": 438
+        }
+      }
+    }
+  ]
+}

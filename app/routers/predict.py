@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 
 from pydantic import ValidationError
 
+from app.core import guards
 from app.core.config import settings
 from app.routers.deps import get_pipeline
 from app.schemas.predict import PredictResponse
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/predict", tags=["predict"])
 
 @router.post("/", response_model=PredictResponse)
 async def predict(
+    request   : Request,
     file      : UploadFile      = File(..., description="Raw hieroglyph image (JPEG/PNG/WebP)"),
     direction : str             = Form("rtl", description="Reading direction: rtl or ltr"),
     layout    : str             = Form(...,  description="rows | columns (required — auto-detect is unreliable)"),
@@ -75,11 +77,25 @@ async def predict(
 
         raise HTTPException(status_code=422, detail=str(e))
 
-    return InferenceService(pipeline).run(
-        bgr,
-        direction = direction,
-        layout    = layout,
-        preset    = preset,
-        translate = translate,
-        context   = context,
-    )
+    # Detection alone costs no tokens; one-shot transliteration counts like /transliterate/.
+    key = None
+    if translate:
+        key = guards.check_llm(request)
+        guards.reserve_translit(key)
+
+    try:
+        response = InferenceService(pipeline).run(
+            bgr,
+            direction = direction,
+            layout    = layout,
+            preset    = preset,
+            translate = translate,
+            context   = context,
+        )
+    except Exception:
+        if key:
+            guards.release_translit(key)
+        raise
+    if key and (response.transliteration is None or response.transliteration.error):
+        guards.release_translit(key)
+    return response
