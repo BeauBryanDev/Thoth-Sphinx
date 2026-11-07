@@ -22,6 +22,8 @@ import { AgentTrace } from "./AgentTrace";
 import { Entities } from "./Entities";
 import { SemanticTranslation } from "./SemanticTranslation";
 import { ReadingChatDrawer } from "@/components/chat/ReadingChatDrawer";
+import { ReadingChatBubble } from "@/components/chat/ReadingChatBubble";
+import { ScarabFlight } from "./ScarabFlight";
 import { useReadingChatStore } from "@/stores";
 import { HintButton, HintModal, LayoutHint, DirectionHint } from "./DecoderHints";
 import queenIcon from "@/assets/qeen.svg";
@@ -476,6 +478,7 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
               Ask Thot-Sphinx about this reading
             </Button>
             <ReadingChatDrawer />
+            <ReadingChatBubble />
 
             {/* 7. Cross-check invitation. Lives here rather than under the
                 sign-confidence table, which grows unbounded on dense walls and
@@ -589,6 +592,7 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
           </button>
         )}
       </div>
+      <ScarabFlight active={isDetecting || isTranslating} />
     </Card>
   );
 };

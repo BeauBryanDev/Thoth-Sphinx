@@ -12,6 +12,18 @@ import { Card, Button } from "@/components/common";
 import { useReverseStore, MAX_REVERSE_CHARS } from "@/stores";
 import { toHieroglyph } from "@/utils/gardinerUnicode";
 import type { ReverseRegister } from "@/types";
+import horusIcon from "@/assets/horus.svg";
+
+/** Horus at one side of a card title; the right one is mirrored so the pair faces the title. */
+const Horus = ({ mirrored = false }: { mirrored?: boolean }) => (
+  <img
+    src={horusIcon}
+    alt=""
+    aria-hidden="true"
+    className={`mx-auto h-9 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-12 ${mirrored ? "-scale-x-100" : ""}`}
+    draggable={false}
+  />
+);
 
 const REGISTERS: { value: ReverseRegister; label: string }[] = [
   { value: "unknown", label: "Unknown — let the scribe decide" },
@@ -70,6 +82,9 @@ export const ReversePage = () => {
         title="Input · English"
         subtitle="Write a short phrase to render into Middle Egyptian"
         icon="𓍯"
+        headerBalance
+        headerStart={<Horus />}
+        headerEnd={<Horus mirrored />}
       >
         <textarea
           value={text}
@@ -129,6 +144,9 @@ export const ReversePage = () => {
         title="Output · Middle Egyptian"
         subtitle="How a scribe would carve your words"
         icon="𓊹"
+        headerBalance
+        headerStart={<Horus />}
+        headerEnd={<Horus mirrored />}
       >
         {result ? (
           <div className="space-y-4">

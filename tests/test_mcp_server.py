@@ -12,7 +12,8 @@ from mcp.client.stdio import stdio_client
 from corpus import retrieve
 
 ROOT = Path(__file__).resolve().parent.parent
-TOOLS = {'search_parallels', 'lookup_lemma', 'get_context', 'list_periods', 'lookup_entity'}
+TOOLS = {'search_parallels', 'lookup_lemma', 'lookup_signs', 'get_context', 'list_periods',
+         'lookup_entity'}
 
 
 @pytest.fixture(scope='module', autouse=True)

@@ -28,6 +28,8 @@ interface ChatPanelProps {
   suggestions?: readonly string[];
   placeholder?: string;
   className?: string;
+  /** Decoration shown on both sides of the title, midway to the card edges (mirrored on the right). */
+  headerOrnament?: ReactNode;
   /** Extra content under an assistant message (tool calls, proposed corrections). */
   renderExtras?: (message: ChatMessage) => ReactNode;
 }
@@ -40,6 +42,7 @@ export const ChatPanel = ({
   suggestions = CHAT_SUGGESTIONS.slice(0, 2),
   placeholder = "Ask Sphinx…",
   className,
+  headerOrnament,
   renderExtras,
 }: ChatPanelProps = {}) => {
   // Hooks must run unconditionally; the internal instance is simply
@@ -69,6 +72,9 @@ export const ChatPanel = ({
       subtitle={subtitle}
       icon={icon}
       className={cn("flex h-full flex-col", className)}
+      headerBalance={Boolean(headerOrnament)}
+      headerStart={headerOrnament ? <div className="mx-auto">{headerOrnament}</div> : undefined}
+      headerEnd={headerOrnament ? <div className="mx-auto -scale-x-100">{headerOrnament}</div> : undefined}
       bodyClassName="flex min-h-0 flex-1 flex-col"
     >
       <div

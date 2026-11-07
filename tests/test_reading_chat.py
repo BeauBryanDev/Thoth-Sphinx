@@ -62,7 +62,8 @@ def test_turn_sends_snapshot_first_and_keeps_the_prefix_stable(stub: StubMessage
     first, second = calls[0], calls[1]
     assert first['model'] == 'claude-haiku-5-5' and first['output_config'] == {'effort': 'low'}
     assert first['system'][0]['text'].startswith(SPHINX_PERSONA)       # persona kept word for word
-    assert [t['name'] for t in first['tools']] == ['search_parallels', 'lookup_lemma', 'lookup_entity', 'search_books']
+    assert [t['name'] for t in first['tools']] == ['search_parallels', 'lookup_lemma', 'lookup_signs',
+                                                   'lookup_entity', 'search_books']
     image, snap = first['messages'][0]['content']
     assert image['type'] == 'image' and snap['cache_control'] == {'type': 'ephemeral'}
     # Turn 2 repeats the same cached prefix, then the conversation, then the new question.

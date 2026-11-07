@@ -16,6 +16,8 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** Optional content at the left / right edge of the header (e.g. hint buttons). */
   headerStart?: ReactNode;
   headerEnd?: ReactNode;
+  /** Equal side columns: the title is centred and each side slot sits midway between edge and title. */
+  headerBalance?: boolean;
 }
 
 export const Card = ({
@@ -27,6 +29,7 @@ export const Card = ({
   bodyClassName,
   headerStart,
   headerEnd,
+  headerBalance = false,
   className,
   children,
   ...rest
@@ -49,6 +52,7 @@ export const Card = ({
           className={cn(
             "border-b border-amber-700/40 px-6 pt-5 pb-3 text-center",
             sided && "grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 sm:px-6",
+            sided && headerBalance && "grid-cols-[1fr_auto_1fr]",
           )}
         >
           {sided && <div className="flex justify-start">{headerStart}</div>}

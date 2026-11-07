@@ -8,7 +8,18 @@ import { cn } from "@/utils/cn";
 import type { PageKey } from "@/types";
 import sphinxMaster from "@/assets/pharaoh_mask.webp";
 import scarab from "@/assets/golden_scarab.webp";
+import horus from "@/assets/horus.svg";
+import lotus from "@/assets/lotus.svg";
+import amphora from "@/assets/amphora.svg";
 import leg from "@/assets/leg.svg";
+import snake from "@/assets/snake.svg";
+import owl from "@/assets/owl.svg";
+import n26 from "@/assets/n26.svg";
+import v8 from "@/assets/v8.svg";
+import chatEye from "@/assets/chat_eye_icon.svg";
+
+// Sidebar footer frieze, left to right.
+const FRIEZE = [horus, lotus, amphora, leg, snake, owl, n26, v8];
 
 interface SidebarProps {
   onNavigate?: (page: PageKey) => void;
@@ -58,7 +69,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       </div>
 
       {/* Nav items */}
-      <nav className="relative z-10 flex-1 space-y-1 px-4">
+      <nav className="relative z-10 space-y-1 px-4">
         {NAV_ITEMS.map((item) => {
           const isActive = item.key === activePage;
           return (
@@ -91,6 +102,16 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
         })}
       </nav>
 
+      {/* The eye fills whatever height is left between the nav and the footer; it shrinks away on short screens. */}
+      <div className="relative z-10 min-h-0 flex-1" aria-hidden="true">
+        <img
+          src={chatEye}
+          alt=""
+          className="absolute inset-0 h-full w-full object-contain px-8 py-4 opacity-80 drop-shadow-[0_0_18px_rgba(251,191,36,0.35)] select-none"
+          draggable={false}
+        />
+      </div>
+
       {/* Footer emblem */}
       <div className="relative z-10 flex flex-col items-center px-6 py-6 text-center text-amber-500/80">
         <img
@@ -103,13 +124,17 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
         <div className="mt-2 text-[10px] uppercase tracking-[0.3em]">
           Pro AI Vision
         </div>
-        <img
-          src={leg}
-          alt=""
-          aria-hidden="true"
-          className="mt-3 h-8 w-auto opacity-70 select-none"
-          draggable={false}
-        />
+        <div className="mt-3 flex w-full items-end justify-between gap-1" aria-hidden="true">
+          {FRIEZE.map((src, i) => (
+            <img
+              key={i}
+              src={src}
+              alt=""
+              className="h-5 w-5 object-contain opacity-75 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] select-none"
+              draggable={false}
+            />
+          ))}
+        </div>
       </div>
     </aside>
   );

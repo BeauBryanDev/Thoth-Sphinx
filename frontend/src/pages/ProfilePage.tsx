@@ -4,6 +4,18 @@
 
 import { Card, Button, Input } from "@/components/common";
 import { SeekerMemory } from "@/components/profile/SeekerMemory";
+import egyptKing from "@/assets/egypt_king.svg";
+
+/** The king beside the Account title; the right one is mirrored so the pair faces the title. */
+const King = ({ mirrored = false }: { mirrored?: boolean }) => (
+  <img
+    src={egyptKing}
+    alt=""
+    aria-hidden="true"
+    className={`mx-auto h-10 w-auto select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] sm:h-14 ${mirrored ? "-scale-x-100" : ""}`}
+    draggable={false}
+  />
+);
 
 export const ProfilePage = () => {
   return (
@@ -21,7 +33,14 @@ export const ProfilePage = () => {
         </div>
       </Card>
 
-      <Card className="lg:col-span-2" title="Account" icon="⚙">
+      <Card
+        className="lg:col-span-2"
+        title="Account"
+        icon="⚙"
+        headerBalance
+        headerStart={<King />}
+        headerEnd={<King mirrored />}
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="mb-1 block text-amber-300/80">Display name</span>

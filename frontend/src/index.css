@@ -184,3 +184,192 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .reading-drawer { animation: none; }
 }
+
+/* ============================================================
+   Carved-stone look — Chat page only (ChatPage passes these classes;
+   the reading-chat drawer reuses ChatPanel without them, so it is untouched).
+   Plain CSS after @tailwind utilities, so it wins over the Card's border-2/shadow.
+   ============================================================ */
+
+/* Card frame: wide bevelled border (lit top-left, shadowed bottom-right), deep drop shadow, inner groove. */
+.stone-frame {
+  border-width: 4px;
+  border-color: rgba(251, 191, 36, 0.8) rgba(120, 53, 15, 0.95) rgba(69, 26, 3, 0.95) rgba(217, 119, 6, 0.85);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.6),
+    0 4px 10px rgba(0, 0, 0, 0.45),
+    inset 0 2px 0 rgba(253, 230, 138, 0.25),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
+    inset 0 0 0 3px rgba(28, 25, 23, 0.55),
+    inset 0 0 26px rgba(0, 0, 0, 0.5);
+}
+
+/* Header rule chiselled into the stone: dark cut with a gold catch-light under it. */
+.stone-frame > header {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 rgba(251, 191, 36, 0.2);
+}
+
+/* Relief: stands out of the surface; pressing sinks it into the rock. */
+.stone-relief {
+  border-width: 2px;
+  border-color: rgba(253, 230, 138, 0.45) rgba(69, 26, 3, 0.9) rgba(41, 15, 2, 0.95) rgba(217, 119, 6, 0.5);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(253, 230, 138, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.stone-relief:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.6),
+    inset -2px -2px 4px rgba(251, 191, 36, 0.08);
+}
+
+/* ChatPanel internals, scoped to .carved-chat (selectors follow ChatPanel's markup:
+   Card > body div > [message list, suggestion chips, form]). */
+
+/* Message list: a basin cut into the wall. */
+.carved-chat > div > div:first-child {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid;
+  border-color: rgba(0, 0, 0, 0.6) rgba(251, 191, 36, 0.18) rgba(251, 191, 36, 0.22) rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow:
+    inset 6px 6px 14px rgba(0, 0, 0, 0.6),
+    inset -3px -3px 8px rgba(251, 191, 36, 0.07);
+}
+
+/* Sphinx (and loading) bubbles: incised into the stone. */
+.carved-chat > div > div:first-child > div > div:last-child {
+  border-width: 2px;
+  border-color: rgba(0, 0, 0, 0.55) rgba(251, 191, 36, 0.25) rgba(251, 191, 36, 0.28) rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 5px rgba(251, 191, 36, 0.08);
+}
+
+/* Seeker bubbles: raised relief. */
+.carved-chat > div > div:first-child > .flex-row-reverse > div:last-child {
+  border-color: rgba(253, 230, 138, 0.45) rgba(69, 26, 3, 0.9) rgba(41, 15, 2, 0.95) rgba(217, 119, 6, 0.5);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(253, 230, 138, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Avatars: round seals pressed onto the wall. */
+.carved-chat > div > div:first-child > div > div:first-child {
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Suggestion chips and Send button: relief. */
+.carved-chat > div > div:nth-child(2) > button,
+.carved-chat > div > form > button {
+  border: 2px solid;
+  border-color: rgba(253, 230, 138, 0.45) rgba(69, 26, 3, 0.9) rgba(41, 15, 2, 0.95) rgba(217, 119, 6, 0.5);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(253, 230, 138, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.carved-chat > div > div:nth-child(2) > button:active:not(:disabled),
+.carved-chat > div > form > button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.6),
+    inset -2px -2px 4px rgba(251, 191, 36, 0.08);
+}
+
+/* Input: a slot carved into the stone; keeps a gold ring on focus. */
+.carved-chat > div > form > div:first-child {
+  border-width: 2px;
+  border-color: rgba(0, 0, 0, 0.6) rgba(251, 191, 36, 0.22) rgba(251, 191, 36, 0.25) rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset 4px 4px 9px rgba(0, 0, 0, 0.6),
+    inset -2px -2px 5px rgba(251, 191, 36, 0.07);
+}
+.carved-chat > div > form > div:first-child:focus-within {
+  box-shadow:
+    inset 4px 4px 9px rgba(0, 0, 0, 0.6),
+    inset -2px -2px 5px rgba(251, 191, 36, 0.07),
+    0 0 0 2px rgba(251, 191, 36, 0.45);
+}
+
+/* ============================================================
+   Scarab flight — shown while detection / transliteration run (<ScarabFlight />).
+   X (7 s) and Y (4.3 s) have unrelated periods, so the bounce path drifts and covers the screen.
+   ============================================================ */
+.scarab-sky {
+  --scarab: 72px;
+  position: fixed;
+  inset: 0;
+  z-index: 50;               /* above the page, below the reading-chat drawer (z-60) */
+  pointer-events: none;
+  overflow: hidden;
+  animation: scarab-arrive 0.6s ease-out;
+}
+@media (min-width: 640px) {
+  .scarab-sky { --scarab: 92px; }
+}
+.scarab-x {
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: scarab-x 7s linear infinite alternate;
+}
+.scarab-y {
+  animation: scarab-y 4.3s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+/* Tilts into its direction of travel: 14 s = one round trip of .scarab-x. */
+.scarab-heading {
+  animation: scarab-heading 14s linear infinite;
+}
+.scarab-body {
+  display: block;
+  width: var(--scarab);
+  height: var(--scarab);
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.75)) drop-shadow(0 6px 8px rgba(0, 0, 0, 0.55));
+  animation:
+    scarab-flap 0.22s ease-in-out infinite alternate,
+    scarab-zig 0.9s ease-in-out infinite;
+}
+
+@keyframes scarab-arrive {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scarab-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(100vw - var(--scarab))); }
+}
+@keyframes scarab-y {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(100dvh - var(--scarab))); }
+}
+@keyframes scarab-heading {
+  0%, 48%   { transform: rotate(70deg); }   /* flying right */
+  52%, 96%  { transform: rotate(-70deg); }  /* flying left */
+  100%      { transform: rotate(70deg); }
+}
+/* Wing beat: the wings squeeze in and spread out. */
+@keyframes scarab-flap {
+  from { scale: 1 1; }
+  to   { scale: 0.78 1.04; }
+}
+/* Small zigzag on top of the big bounce. */
+@keyframes scarab-zig {
+  0%, 100% { translate: 0 0; }
+  25%      { translate: 10px -14px; }
+  75%      { translate: -10px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scarab-sky { display: none; }
+}
