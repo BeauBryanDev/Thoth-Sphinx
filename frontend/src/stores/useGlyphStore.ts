@@ -9,6 +9,7 @@
 // ============================================================
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   decodeGlyphsRaw,
   mergeDecodingResult,
@@ -16,6 +17,8 @@ import {
 } from "@/api/glyphApi";
 import { buildReadingSnapshot } from "@/api/readingChatApi";
 import { saveReadingSession } from "@/utils/readingSession";
+import { recordReading } from "@/utils/seekerMemory";
+import { memoryStorage } from "@/utils/storage";
 import type {
   GlyphDecodingResult,
   PredictResponse,
@@ -95,7 +98,7 @@ const flatIndex = (result: GlyphDecodingResult, line: number, position: number):
   return offset + position - 1;
 };
 
-export const useGlyphStore = create<GlyphStore>((set, get) => {
+export const useGlyphStore = create<GlyphStore>()(persist((set, get) => {
   /** Fire (or reuse) the background detection for the current settings. */
   const ensureDetection = (
     file: File,
@@ -188,6 +191,7 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
         const translit = await transliterateGlyphs(detection, context, image.preview);
         const decoded = mergeDecodingResult(detection, translit, image.preview);
         rememberSession(decoded, context);
+        if (!translit.error) recordReading(decoded, false);
         set({
           result: decoded,
           detection,
@@ -205,6 +209,10 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
 
     applyCorrections: async (cs) => {
       const { image, result, detection, context, appliedCorrections, isTranslating } = get();
+      if (!image && result) {
+        // Restored from memory after a reload: the photo is not stored, so it must come back first.
+        throw new Error("Upload the photo again to re-read it with your corrections.");
+      }
       if (!image || !result || !detection) throw new Error("There is no reading to correct.");
       if (isTranslating) throw new Error("A reading is already in progress.");
       if (!cs.length || cs.length > MAX_CORRECTIONS) {
@@ -232,6 +240,7 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
         if (translit.error) throw new Error(translit.error);
         const updated = mergeDecodingResult(next, translit, image.preview);
         rememberSession(updated, context);
+        recordReading(updated, true);
         set({ result: updated, detection: next, appliedCorrections: corrections });
         return updated;
       } finally {
@@ -239,4 +248,17 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
       }
     },
   };
-});
+}, {
+  // Agent memory: the last reading survives a reload. Images stay out (too big for localStorage):
+  // the photo must be uploaded again to re-read, but the reading, the wall and the chat come back.
+  name: "sphinx.glyph",
+  version: 1,
+  storage: memoryStorage,
+  partialize: (s) => ({
+    result: s.result ? { ...s.result, originalImage: "", annotatedImage: null } : null,
+    detection: s.detection ? { ...s.detection, annotated_image: null } : null,
+    appliedCorrections: s.appliedCorrections,
+    layout: s.layout,
+    context: s.context,
+  }),
+}));

@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     prompt  : str = Field(..., min_length=1, max_length=4000)
     history : list[ChatTurn] = Field(default_factory=list, max_length=MAX_HISTORY_TURNS)
     riddle_session : str | None = Field(None, pattern=r'^[0-9a-f]{32}$')   # echoed from the last reply
+    seeker_memory  : str | None = Field(None, max_length=400)   # agent memory from the browser; cleaned and fenced
 
 
 class ChatResponse(BaseModel):
@@ -54,6 +55,7 @@ async def chat(body: ChatRequest, client_key: str = Depends(guards.check_llm)) -
             [t.model_dump() for t in body.history],
             body.riddle_session,
             client_key,
+            body.seeker_memory,
         )
     except Exception as e:
 

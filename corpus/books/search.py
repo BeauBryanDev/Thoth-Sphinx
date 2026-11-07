@@ -24,7 +24,10 @@ def search_text(query: str, variant: str = 'plain', limit: int = TOP_K) -> list[
     )
 
 
-def search_vector(embedding: list[float], variant: str = 'plain', limit: int = TOP_K) -> list[dict[str, Any]]:
+def search_vector(embedding: list[float], 
+variant: str = 'plain',
+ limit: int = TOP_K
+ )  -> list[dict[str, Any]]:
     """Nearest chunks by cosine similarity; HNSW with an iterative scan so the variant filter cannot starve it."""
     conn = retrieve.connection()
     conn.execute(f'SET hnsw.ef_search = {EF_SEARCH}')

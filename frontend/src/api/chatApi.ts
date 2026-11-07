@@ -10,6 +10,8 @@ export interface SendMessagePayload {
   history?: Pick<ChatMessage, "role" | "content">[];
   /** Server-side riddle game ID from the last reply; null when no trial has begun. */
   riddleSession?: string | null;
+  /** One short line of what the Sphinx remembers of this seeker; '' for a first visit. */
+  seekerMemory?: string;
 }
 
 export interface SendMessageResponse {
@@ -41,6 +43,7 @@ export const sendChatMessage = async (
       prompt: payload.prompt,
       history: payload.history ?? [],
       riddle_session: payload.riddleSession ?? null,
+      seeker_memory: payload.seekerMemory || undefined,
     },
     { timeout: CHAT_TIMEOUT_MS },
   );

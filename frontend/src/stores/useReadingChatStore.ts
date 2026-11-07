@@ -10,9 +10,11 @@
 // ============================================================
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { RereadLimitError } from "@/api/glyphApi";
 import { buildReadingSnapshot, sendReadingChat } from "@/api/readingChatApi";
 import { loadReadingSession } from "@/utils/readingSession";
+import { memoryStorage } from "@/utils/storage";
 import { useGlyphStore } from "@/stores/useGlyphStore";
 import { generateId } from "@/utils/formatters";
 import type { GlyphDecodingResult, ReadingChatMessage, SignCorrection } from "@/types";
@@ -24,6 +26,7 @@ export const REREAD_COOLDOWN_MS = 60 * 60 * 1000;
 // Longer than the general chat's 4: the user is working through one reading.
 const MEMORY_WINDOW = 12;
 const GREETING_ID = "reading-greeting";
+const STORED_MESSAGES = 40;   // kept in localStorage
 
 const modelName = (id: string): string =>
   id.includes("sonnet") ? "Claude Sonnet" : id.includes("haiku") ? "Claude Haiku" : id;
@@ -74,7 +77,7 @@ export interface ReadingChatStore {
   reset: () => void;
 }
 
-export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
+export const useReadingChatStore = create<ReadingChatStore>()(persist((set, get) => ({
   readingId: null,
   open: false,
   messages: [],
@@ -239,4 +242,15 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
       set({ isLoading: false });
     }
   },
+}), {
+  // Agent memory: the conversation about the current reading survives a reload (no seeker memory here).
+  name: "sphinx.readingChat",
+  version: 1,
+  storage: memoryStorage,
+  partialize: (s) => ({
+    readingId: s.readingId,
+    messages: s.messages.slice(-STORED_MESSAGES),
+    correctionStatus: s.correctionStatus,
+    rereadAvailableAt: s.rereadAvailableAt,
+  }),
 }));

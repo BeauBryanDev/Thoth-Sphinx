@@ -38,7 +38,7 @@ _INVISIBLE = re.compile(
     '\U000e0000-\U000e007f]'
 )
 _FAKE_TAGS = re.compile(
-    r'</?\s*(?:user_message|system|assistant|instructions?|trial_state)\b[^>]*>',
+    r'</?\s*(?:user_message|system|assistant|instructions?|trial_state|seeker_memory)\b[^>]*>',
     re.IGNORECASE,
 )
 
