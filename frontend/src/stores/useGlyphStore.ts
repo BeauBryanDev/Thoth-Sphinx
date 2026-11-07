@@ -14,6 +14,8 @@ import {
   mergeDecodingResult,
   transliterateGlyphs,
 } from "@/api/glyphApi";
+import { buildReadingSnapshot } from "@/api/readingChatApi";
+import { saveReadingSession } from "@/utils/readingSession";
 import type {
   GlyphDecodingResult,
   PredictResponse,
@@ -23,6 +25,17 @@ import type {
   UploadedImage,
   WallLayout,
 } from "@/types";
+
+/** Keep the reading's server session and its snapshot in localStorage (the chat's fallback). */
+const rememberSession = (result: GlyphDecodingResult, context: TextContext): void => {
+  if (!result.sessionId) return;
+  saveReadingSession({
+    sessionId: result.sessionId,
+    version: result.readingVersion,
+    snapshot: buildReadingSnapshot(result, context),
+    savedAt: Date.now(),
+  });
+};
 
 const readAsDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -173,8 +186,10 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
         // Usually already resolved — the user spent ~10 s on the form.
         const detection = await ensureDetection(image.file, direction, layout);
         const translit = await transliterateGlyphs(detection, context, image.preview);
+        const decoded = mergeDecodingResult(detection, translit, image.preview);
+        rememberSession(decoded, context);
         set({
-          result: mergeDecodingResult(detection, translit, image.preview),
+          result: decoded,
           detection,
           appliedCorrections: [], // a fresh decode starts from the detector again
           error: translit.error ?? null,
@@ -213,9 +228,10 @@ export const useGlyphStore = create<GlyphStore>((set, get) => {
 
       set({ isTranslating: true, error: null });
       try {
-        const translit = await transliterateGlyphs(next, context, image.preview, corrections);
+        const translit = await transliterateGlyphs(next, context, image.preview, corrections, result.sessionId);
         if (translit.error) throw new Error(translit.error);
         const updated = mergeDecodingResult(next, translit, image.preview);
+        rememberSession(updated, context);
         set({ result: updated, detection: next, appliedCorrections: corrections });
         return updated;
       } finally {

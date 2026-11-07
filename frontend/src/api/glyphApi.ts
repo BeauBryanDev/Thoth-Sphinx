@@ -112,6 +112,8 @@ const toDecodingResult = (
     secondOpinionReason: llmOk
       ? String(llm.trace?.find((e) => e.kind === "router")?.detail?.haiku_reason ?? "")
       : "",
+    sessionId: llmOk ? llm.reading_id ?? null : null,
+    readingVersion: llmOk ? llm.reading_version ?? null : null,
   };
 };
 
@@ -190,6 +192,8 @@ export const transliterateGlyphs = async (
   image?: string,
   // Signs the user corrected in the reading chat (human in the loop); already applied in the codes.
   humanCorrections: Omit<SignCorrection, "reason">[] = [],
+  // The server session of the reading being re-read, so it keeps its ID (agent state).
+  sessionId: string | null = null,
 ): Promise<TransliterationOut> => {
   const { correction } = detection.outer;
   const body = {
@@ -215,6 +219,7 @@ export const transliterateGlyphs = async (
     human_corrections: humanCorrections.map(({ line, position, from_code, to_code }) => ({
       line, position, from_code, to_code,
     })),
+    reading_id: sessionId ?? undefined,
   };
   try {
     const { data } = await http.post<TransliterationOut>(

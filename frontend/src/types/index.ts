@@ -90,6 +90,8 @@ export interface TransliterationOut {
   trace?: TraceEvent[];             // the whole read, step by step
   entities?: EntityCard[];          // kings of the matched cartouches (knowledge graph)
   semantic?: SemanticTranslation | null; // second translation; full_translation stays the raw LLM one
+  reading_id?: string | null;       // server session for the reading chat (agent state)
+  reading_version?: number | null;  // 1 = first read, +1 per correction re-read
 }
 
 /** A published translation passage — mirrors app/schemas/transliterations.py TranslationPassage. */
@@ -301,6 +303,10 @@ export interface GlyphDecodingResult {
   readingLines: ReadingLineView[];
   /** The first reader's own words when it asked for a second opinion ('' otherwise). */
   secondOpinionReason: string;
+  /** Server-side session of this reading (agent state); null when the server did not keep it. */
+  sessionId: string | null;
+  /** 1 = first read, +1 per correction re-read. */
+  readingVersion: number | null;
 }
 
 export interface ReadingLineView {

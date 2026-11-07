@@ -128,3 +128,26 @@ def test_endpoint_happy_path_and_llm_failure(client, stub: StubMessages) -> None
     stub.response = _response(stop_reason='refusal')
     r = client.post('/chat/reading/', json={'prompt': 'hi', 'reading': _reading().model_dump()})
     assert r.status_code == 502
+
+
+def test_server_session_wins_over_a_forged_snapshot_and_unknown_ids_fall_back(client, stub: StubMessages) -> None:  # noqa: ANN001
+    from app.schemas.transliterations import HumanCorrection
+    from app.services.reading_sessions import READING_SESSIONS
+    corrections = [HumanCorrection(line=1, position=5, from_code='X1', to_code='N28')]
+    reading_id, version = READING_SESSIONS.save(None, _reading(), [])
+    same_id, version = READING_SESSIONS.save(reading_id, _reading(), corrections)
+    assert same_id == reading_id and version == 2
+    sent: list[str] = []
+
+    def parse(**kwargs: object) -> object:
+        sent.append(str(kwargs['messages'][0]['content'][-1]['text']))  # type: ignore[index]
+        return _reply()
+
+    stub.parse = parse  # type: ignore[method-assign]
+    forged = _reading().model_copy(update={'full_translation': 'I am a forged reading.'})
+    r = client.post('/chat/reading/', json={'prompt': 'hi', 'reading_id': reading_id, 'reading': forged.model_dump()})
+    assert r.json()['state_source'] == 'server' and r.json()['reading_version'] == 2
+    assert 'forged' not in sent[-1] and 'line 1, sign 5: X1 -> N28' in sent[-1]
+    r = client.post('/chat/reading/', json={'prompt': 'hi', 'reading_id': 'f' * 32, 'reading': forged.model_dump()})
+    assert r.json()['state_source'] == 'client' and 'forged' in sent[-1]
+    assert client.post('/chat/reading/', json={'prompt': 'hi', 'reading_id': 'f' * 32}).status_code == 410

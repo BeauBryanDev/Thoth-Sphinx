@@ -26,6 +26,7 @@ ContextText = Annotated[str, StringConstraints(max_length=80)]
 CartoucheName = Annotated[str, StringConstraints(max_length=400)]
 NoteText = Annotated[str, StringConstraints(max_length=1000)]
 TurnText = Annotated[str, StringConstraints(max_length=20_000)]   # replies echoed back can be long
+ReadingId = Annotated[str, StringConstraints(pattern=r'^[0-9a-f]{32}$')]   # server-made, see reading_sessions
 
 # Prompt injection: the visitor's words are cleaned and fenced so the model can tell them from ours.
 # Invisible characters: controls, zero-width, bidi overrides and the Unicode "tag" block

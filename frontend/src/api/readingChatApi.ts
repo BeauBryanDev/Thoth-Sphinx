@@ -1,10 +1,12 @@
 // ============================================================
 // Reading chat API — POST /chat/reading/
 // ============================================================
-// Stateless like /transliterate/: every turn sends a snapshot of the
-// reading on screen, so Thot-Sphinx never starts from scratch. Keep the
-// snapshot shape in sync with ReadingSnapshot in app/schemas/reading_chat.py.
+// Agent state: the server keeps the reading by its reading_id, so a turn
+// sends only the id. The snapshot goes along only when the server has lost
+// the reading (410), as a fallback. Keep the snapshot shape in sync with
+// ReadingSnapshot in app/schemas/reading_chat.py.
 
+import axios from "axios";
 import http from "@/services/http";
 import type {
   BookPassage,
@@ -42,6 +44,9 @@ export interface ReadingChatReply {
   bookPassages: BookPassage[];
   model: string;
   costUsd: number | null;
+  /** Whose copy of the reading the agent read: the server session or the client snapshot. */
+  stateSource: "server" | "client";
+  readingVersion: number | null;
 }
 
 /** The reading on screen, in the shape the backend expects. */
@@ -64,21 +69,43 @@ export const buildReadingSnapshot = (
   context,
 });
 
+type ReadingChatWire = {
+  reply: string;
+  message_id: string;
+  corrections: SignCorrection[];
+  tool_calls: ToolCallOut[];
+  book_passages?: BookPassage[];
+  model: string;
+  cost_usd: number | null;
+  state_source?: "server" | "client";
+  reading_version?: number | null;
+};
+
 export const sendReadingChat = async (payload: {
   prompt: string;
   history: Pick<ChatMessage, "role" | "content">[];
-  reading: ReadingSnapshot;
+  /** The server session of the reading; null when the server did not keep it. */
+  readingId: string | null;
+  /** Built only when needed: no session, or the server answered 410. */
+  snapshot: () => ReadingSnapshot;
   image?: string;
 }): Promise<ReadingChatReply> => {
-  const { data } = await http.post<{
-    reply: string;
-    message_id: string;
-    corrections: SignCorrection[];
-    tool_calls: ToolCallOut[];
-    book_passages?: BookPassage[];
-    model: string;
-    cost_usd: number | null;
-  }>("/chat/reading/", payload, { timeout: READING_CHAT_TIMEOUT_MS });
+  const { prompt, history, readingId, snapshot, image } = payload;
+  const post = (body: Record<string, unknown>) =>
+    http.post<ReadingChatWire>("/chat/reading/", body, { timeout: READING_CHAT_TIMEOUT_MS });
+
+  let data: ReadingChatWire;
+  try {
+    ({ data } = await post(
+      readingId
+        ? { prompt, history, reading_id: readingId, image }
+        : { prompt, history, reading: snapshot(), image },
+    ));
+  } catch (err) {
+    // 410: the server forgot the reading (restart or idle timeout); send our copy once.
+    if (!readingId || !(axios.isAxiosError(err) && err.response?.status === 410)) throw err;
+    ({ data } = await post({ prompt, history, reading: snapshot(), image }));
+  }
   return {
     reply: data.reply,
     messageId: data.message_id,
@@ -87,5 +114,7 @@ export const sendReadingChat = async (payload: {
     bookPassages: data.book_passages ?? [],
     model: data.model,
     costUsd: data.cost_usd ?? null,
+    stateSource: data.state_source ?? "client",
+    readingVersion: data.reading_version ?? null,
   };
 };

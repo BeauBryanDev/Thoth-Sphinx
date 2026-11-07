@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.core.ratelimit import Cooldown
 from app.llm import images
 from app.schemas.transliterations import TransliterateRequest, TransliterationOut
+from app.services.reading_sessions import READING_SESSIONS, snapshot_from
 from app.services.transliteration_services import TransliterationService
 
 router = APIRouter(prefix="/transliterate", tags=["transliterate"])
@@ -81,4 +82,10 @@ async def transliterate(body: TransliterateRequest,
         raise
     if result.error:
         refund()
+        return result
+    # Agent state: the chat reads the server's copy; a re-read keeps the reading's ID.
+    snapshot = snapshot_from(result, body)
+    if snapshot is not None:
+        result.reading_id, result.reading_version = READING_SESSIONS.save(
+            body.reading_id, snapshot, body.human_corrections)
     return result

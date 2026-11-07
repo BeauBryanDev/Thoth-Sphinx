@@ -5,7 +5,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from app.core.guards import MAX_CARTOUCHES, MAX_CODES, CartoucheName, ContextText, GardinerCode
+from app.core.guards import MAX_CARTOUCHES, MAX_CODES, CartoucheName, ContextText, GardinerCode, ReadingId
 
 
 # Controlled vocabularies. 'unknown' is always first = default.
@@ -83,6 +83,7 @@ class TransliterateRequest(BaseModel):
     context         : TextContext = TextContext()
     image           : Optional[str] = None   # raw upload as a data URL; the LLM sees it at 640 px
     human_corrections : list[HumanCorrection] = Field(default_factory=list, max_length=50)
+    reading_id      : Optional[ReadingId] = None   # the reading being re-read; keeps its server session
 
 
 class CorpusMatch(BaseModel):
@@ -199,3 +200,5 @@ class TransliterationOut(BaseModel):
     trace                : list[TraceEvent] = []     # the whole read, step by step
     entities             : list[EntityCard] = []     # kings of the matched cartouches (knowledge graph)
     semantic             : Optional[SemanticTranslation] = None  # second translation; full_translation stays the raw LLM one
+    reading_id           : Optional[str] = None      # server session for the reading chat (app/services/reading_sessions.py)
+    reading_version      : Optional[int] = None      # 1 = first read, +1 per correction re-read

@@ -9,6 +9,7 @@ from app.core.guards import (
     MAX_CODES,
     MAX_HISTORY_TURNS,
     CartoucheName,
+    ReadingId,
     GardinerCode,
     NoteText,
     TurnText,
@@ -17,8 +18,8 @@ from app.schemas.books import BookPassage
 from app.schemas.transliterations import LineEvidence, TextContext, ToolCallOut
 
 # Schemas for POST /chat/reading/ — chat with Thot-Sphinx about the reading on screen.
-# Stateless like /transliterate/: the client echoes the reading back every turn, so every
-# field is client-controlled and reaches the prompt: all of it is capped.
+# The server keeps the reading by reading_id (app/services/reading_sessions.py). The client's
+# snapshot is only a fallback for a reading the server has lost, and it is capped field by field.
 
 MAX_LINES = 60
 MAX_CODES_PER_LINE = 200
@@ -70,7 +71,8 @@ class ReadingChatTurn(BaseModel):
 class ReadingChatRequest(BaseModel):
     prompt  : str = Field(..., min_length=1, max_length=4000)
     history : list[ReadingChatTurn] = Field(default_factory=list, max_length=MAX_HISTORY_TURNS)
-    reading : ReadingSnapshot
+    reading_id : Optional[ReadingId] = None        # the server's copy wins when it is still alive
+    reading : Optional[ReadingSnapshot] = None     # fallback after a restart or expiry
     image   : Optional[str] = None   # raw upload as a data URL; the model sees it at 640 px
 
 
@@ -91,3 +93,6 @@ class ReadingChatResponse(BaseModel):
     book_passages : list[BookPassage] = []     # top book passages search_books retrieved
     model       : str = ''
     cost_usd    : Optional[float] = None
+    reading_id  : Optional[str] = None             # set when the server's copy of the reading was used
+    reading_version : Optional[int] = None
+    state_source : Literal['server', 'client'] = 'client'   # whose copy of the reading the agent read

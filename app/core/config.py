@@ -86,6 +86,9 @@ class Settings(BaseSettings):
     reading_chat_effort : str   = 'low'    # /chat/reading/: Haiku discussing the reading on screen
     reading_chat_tool_budget : int = 3
     reading_chat_history     : int = 12    # messages of the conversation sent each turn
+    # Agent state (app/services/reading_sessions.py): the reading kept on the server, in memory, per process.
+    reading_session_ttl_s    : int = 3600  # an idle reading is dropped after this
+    reading_max_sessions     : int = 1000  # oldest readings are dropped beyond this
     # Apply & re-read (a /transliterate/ call with human_corrections): once per client IP per
     # window. 0 disables the limit (local testing). In-memory, per process.
     reread_cooldown_s        : int = 3600

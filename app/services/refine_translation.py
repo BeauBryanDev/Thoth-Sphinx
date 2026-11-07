@@ -109,5 +109,7 @@ def refine(translation: str, cartouche_names: list[str]) -> tuple[SemanticTransl
     except Exception as e:  # the raw LLM translation still ships
         logger.warning('semantic translation failed: %s', e)
         out.error = public_message(e)
+        
     out.latency_ms = int((time.monotonic() - started) * 1000)
+
     return out, call

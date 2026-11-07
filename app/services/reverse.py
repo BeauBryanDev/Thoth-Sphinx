@@ -55,7 +55,7 @@ class _WordReply(BaseModel):
 
 
 class _ReverseReply(BaseModel):
-    """The Middle Egyptian composition."""  # sent as the schema description; fields mirror SYSTEM_PROMPT's OUTPUT
+    """The Middle Egyptian composition."""  # sent as the schema description; fields looks SYSTEM_PROMPT's OUTPUT
     normalized_english : str
     transliteration    : str
     gardiner_codes     : list[str]

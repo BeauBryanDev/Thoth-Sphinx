@@ -12,6 +12,7 @@
 import { create } from "zustand";
 import { RereadLimitError } from "@/api/glyphApi";
 import { buildReadingSnapshot, sendReadingChat } from "@/api/readingChatApi";
+import { loadReadingSession } from "@/utils/readingSession";
 import { useGlyphStore } from "@/stores/useGlyphStore";
 import { generateId } from "@/utils/formatters";
 import type { GlyphDecodingResult, ReadingChatMessage, SignCorrection } from "@/types";
@@ -118,7 +119,9 @@ export const useReadingChatStore = create<ReadingChatStore>((set, get) => ({
       const reply = await sendReadingChat({
         prompt: trimmed,
         history,
-        reading: buildReadingSnapshot(result, context),
+        readingId: result.sessionId,
+        // Fallback when the server lost the reading: the stored copy, else one built from the screen.
+        snapshot: () => loadReadingSession(result.sessionId)?.snapshot ?? buildReadingSnapshot(result, context),
         image: image?.preview,
       });
       // The user may have decoded another image meanwhile; drop a stale reply.
