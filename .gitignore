@@ -267,6 +267,10 @@ _mosaic_test_2/
 !reports/*.csv
 !knowledge/*.json
 !frontend/src/assets/*.svg
+!frontend/src/assets/*.jpg
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig*.json
 # Inogre all .pt files
 
 *.pt
@@ -345,7 +349,7 @@ manifest.sh
 
 scripts/generate_cartouche_frame.py
 scripts/image_generator.py
-assets
+/assets/
 wsedrfgtyhuji
 notes.md
 memory.md
