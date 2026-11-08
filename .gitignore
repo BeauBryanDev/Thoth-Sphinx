@@ -266,7 +266,7 @@ _mosaic_test_2/
 !reports/*.json
 !reports/*.csv
 !knowledge/*.json
-
+!frontend/src/assets/*.svg
 # Inogre all .pt files
 
 *.pt
@@ -296,7 +296,7 @@ rock_wall5.jpeg
 
 CLAUDE.md 
 agent_token.txt
-assets/
+# wassets/
 artifacts/
 Backups/
 Glyphs/

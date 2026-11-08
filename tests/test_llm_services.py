@@ -608,3 +608,11 @@ def test_chat_seeker_memory_is_cleaned_and_fenced_and_absent_for_new_visitors(st
     assert '<system>' not in memory['text'] and state['text'].startswith('<trial_state>')
     ChatService().chat('Hello', [])
     assert len(calls[1]['messages'][-1]['content']) == 2   # a first visit adds nothing
+
+
+def test_grammar_skill_rides_in_the_transliteration_prompt():
+    """The reader's system prompt carries the grammar, with the vision/ lists filled in."""
+    assert 'GRAMMAR SKILL' in SYSTEM_PROMPT
+    assert '<<' not in SYSTEM_PROMPT
+    assert '- jw (M17 G43):' in SYSTEM_PROMPT
+    assert '- man: A2 A1' in SYSTEM_PROMPT
