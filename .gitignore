@@ -228,7 +228,7 @@ SphinxEyes_Final/
 SphinxProjectV2/
 SphinxProjectV3/
 notes/
-assets/
+#assets/
 _mosaic_test/
 _mosaic_test_2/
 
