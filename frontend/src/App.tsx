@@ -11,6 +11,7 @@ import {
   LearnPage,
   ProfilePage,
   ReversePage,
+  RosettaStonePage,
 } from "@/pages";
 import LandingHero from "@/pages/LandingHero";
 import type { PageKey } from "@/types";
@@ -22,6 +23,7 @@ const PAGE_REGISTRY: Record<PageKey, React.ComponentType> = {
   glyphs: GlyphsPage,
   transliteration: ReversePage,
   learn: LearnPage,
+  rosetta: RosettaStonePage,
   profile: ProfilePage,
 };
 

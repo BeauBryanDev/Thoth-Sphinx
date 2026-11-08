@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "chat", label: "SphinxChat", icon: "💬" },
   { key: "glyphs", label: "Transliterate", icon: "👁" },
   { key: "transliteration", label: "Reverse", icon: "𓆓" },
+  { key: "rosetta", label: "Rosetta Stone", icon: "𓉴" },
   { key: "learn", label: "Learn More", icon: "☥" },
   { key: "profile", label: "Profile", icon: "👤" },
 ];

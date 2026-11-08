@@ -369,6 +369,7 @@ export type PageKey =
   | "glyphs"
   | "transliteration"
   | "learn"
+  | "rosetta"
   | "profile";
 
 export interface NavItem {
