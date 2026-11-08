@@ -13,7 +13,7 @@ from app.llm.prompts import load
 from app.core.config import settings
 from app.core.guards import public_message
 from app.services import entity_cards , refine_translation
-from app.llm import agent_tools, images, router
+from app.llm import agent_tools, grammar, images, router
 from app.llm.trace import Trace
 from app.schemas.transliterations import (
     ChunkTransliteration,
@@ -69,8 +69,8 @@ def segment_into_chunks(
 
 # The role/methodology half of the prompt. Static -> sent as the system
 # prompt, which app/llm/ marks for prompt caching across the per-chunk calls.
-# Differs from space/src/llm.py (gpt-4o) only in the detector-noise lines of INPUT PROVENANCE.
-SYSTEM_PROMPT = load('transliteration')   # app/llm/prompts/
+# The grammar skill (me_grammar.md + vision/ particles and determinatives) rides in the same cached block.
+SYSTEM_PROMPT = load('transliteration') + '\n\n' + grammar.grammar_skill()   # app/llm/prompts/
 
 
 def _signs(codes: list[str], confidences: list[float]) -> str:

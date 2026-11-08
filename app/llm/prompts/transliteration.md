@@ -65,7 +65,7 @@ you can trust on either side of the gap, the formula or phrase they belong to, a
 
 OUTPUT — JSON only, no preamble, exactly these keys:
 {
-  "transliteration": "Leiden conventions (aA, j, D, x, X, S, q; '.' before suffix pronouns, '=' for clitics, [...] lacuna, ( ) restored, (?) doubtful). Word-divided; never emit Gardiner codes here.",
+  "transliteration": "Leiden conventions (aA, j, D, x, X, S, q; '=' before suffix pronouns, '.' for endings such as sDm.n=f, [...] lacuna, ( ) restored, (?) doubtful). Word-divided; never emit Gardiner codes here.",
   "english_gloss": "The translation of the segment, as many sentences as it needs, for an intelligent reader who knows nothing about ancient Egypt: the register of a fine published translation, never a chain of glosses. Formulae are rendered by what they MEAN. No Egyptian words, Gardiner codes, commentary or persona here; (?) and ( ) are allowed.",
   "linguistic_notes": "Up to 5 sentences in your voice: how the signs build the words (sound signs, silent classifier signs, name-rings), the signs read with high confidence and how the lines connect, any emendation that changed the meaning, a genuine alternative translation, and — where the text calls for it — the myth or ritual behind it.",
   "confidence": "HIGH|MEDIUM|LOW",

@@ -1,804 +1,542 @@
-# SphinxEyes
+# Thoth Sphinx
 
-End-to-end computer-vision and NLP pipeline for the detection, reading-order
-assembly, semantic correction, and transliteration of Middle Egyptian
-hieroglyphs from raw photographic input.
+**An agentic, multimodal RAG system that reads Egyptian hieroglyphs from a photograph.**
 
----
+A vision pipeline turns a photo of a carved wall into a query. A Claude agent then searches four hybrid indexes (full text + pgvector, fused by RRF, Cohere rerank), a sign-spelling lexicon that proposes one-edit corrections to the detector's reading, and a curated knowledge graph. A deterministic router escalates weak readings to a stronger model, an evidence check makes sure every line is backed by the corpus, the visitor can correct a sign and have the wall re-read, and a final generate-then-retrieve step grounds the translation in published scholarship. Every retrieval decision was measured against a golden set.
 
-## Table of Contents
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![YOLO11](https://img.shields.io/badge/YOLO11l-v9C-111111)
+![Claude](https://img.shields.io/badge/Claude-Haiku%205.5%20·%20Sonnet%205.5-D97757)
+![pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-amber)
 
-1. [Project Overview](#1-project-overview)
-2. [System Architecture](#2-system-architecture)
-3. [Detection Model — V4](#3-detection-model--v4)
-4. [Spatial Layer](#4-spatial-layer)
-5. [NLP Correction Layer](#5-nlp-correction-layer)
-6. [Cartouche Matching](#6-cartouche-matching)
-7. [FastAPI Backend](#7-fastapi-backend)
-8. [Frontend](#8-frontend)
-9. [Repository Structure](#9-repository-structure)
-10. [Artifacts](#10-artifacts)
-11. [Running the Pipeline](#11-running-the-pipeline)
-12. [Docker Deployment](#12-docker-deployment)
-13. [Training — V4 Summary](#13-training--v4-summary)
-14. [Roadmap](#14-roadmap)
+<img src="horus_eyes.webp" alt="Thoth Sphinx" width="300" />
 
----
+Six months of work, from a 224 × 224 classifier of single signs to a reading agent. The project combines:
 
-## 1. Project Overview
-
-SphinxEyes addresses the automated reading of Middle Egyptian hieroglyphic
-inscriptions. The problem is non-trivial: glyphs appear in dense, multi-row
-or multi-column layouts carved or painted on stone; individual signs are
-visually similar across dozens of Gardiner classes; reading direction
-(left-to-right vs right-to-left, horizontal vs vertical) is determined by
-the orientation of figurative signs rather than by a fixed convention; and a
-significant proportion of signs occur inside cartouches — oval enclosures used
-to frame royal names — whose interior layout must be treated as an independent
-reading unit.
-
-The pipeline covers the full chain from raw image bytes to a structured,
-corrected, transliterated output:
-
-```
-raw image
-  -> optional image enhancement (CLAHE + denoising + unsharp mask; OFF by default)
-  -> YOLOv11-Large ONNX detection (150 Gardiner classes, letterbox resize @1024)
-  -> layout (rows vs columns) — user-supplied; geometric auto-detect as fallback only
-  -> reading-order assembly (quadrat clustering)
-  -> semantic correction (Viterbi over lexicon trie + bigram LM)
-  -> cartouche interior reading (Needleman-Wunsch against royal-name database)
-  -> structured JSON output (FastAPI)
-  -> LLM stage (GPT-4o): scholarly transliteration + English gloss
-```
-
-Beyond the reading pipeline, the platform now includes three additional
-LLM-driven services: a two-stage web decode flow (detection and
-transliteration split across `/predict/` and `/transliterate/` for latency
-hiding), a domain-locked conversational agent (`/chat/`, Thot-Sphinx
-persona), and reverse translation from modern English into composed Middle
-Egyptian with Gardiner sign coding (`/reverse/`).
-
-The corpus used for the NLP layer is the BBAW Middle Egyptian corpus
-(`bbaw_clean.parquet`), which provides attested Gardiner code sequences for
-bigram probability estimation.
-
-<img src="horus_eyes.webp" alt="SphinxEyes — Horus Eyes" width="320" />
-
----
-
-## 2. System Architecture
-
-```
-+------------------------------------------------------------------+
-|  Client  (React 18 / Vite / Tailwind 3.4)                        |
-|    POST multipart/form-data  ->  /predict                        |
-+----------------------------+-------------------------------------+
-                             | HTTP
-+----------------------------v-------------------------------------+
-|  FastAPI  (uvicorn, single worker)                                |
-|  app/                                                             |
-|  +-- core/lifespan.py   -- SphinxPipeline loaded once at startup  |
-|  +-- routers/predict.py -- POST /predict                          |
-|  +-- routers/health.py  -- GET /health                            |
-|  +-- services/          -- InferenceService (pipeline -> schema)  |
-|  +-- schemas/           -- Pydantic I/O contracts                 |
-|  +-- utils/             -- image decoding, validation             |
-+----------------------------+-------------------------------------+
-                             | Python import
-+----------------------------v-------------------------------------+
-|  pipeline.py  (SphinxPipeline)                                    |
-|  +-- enhance_img.py        -- image preprocessing                 |
-|  +-- spatial_logic.py      -- ONNX post-processing, NMS, RO      |
-|  +-- layout_detector.py    -- geometry-driven layout vote         |
-|  +-- sphinx_corrector.py   -- Viterbi + bigram LM                 |
-|  +-- cartouche_matcher.py  -- Needleman-Wunsch royal-name match  |
-+----------------------------+-------------------------------------+
-                             |
-+----------------------------v-------------------------------------+
-|  artifacts/                                                       |
-|  +-- best_model_v4.onnx              (97.5 MB, opset 18)          |
-|  +-- class_map50_v4.json             (150 classes)                |
-|  +-- sphinx_trie_v4.pkl              (38,073 entries)             |
-|  +-- bbaw_clean.parquet              (BBAW corpus)                |
-|  +-- confusion_matrix_v4_normalized.csv                           |
-+------------------------------------------------------------------+
-```
-
-All heavy artifacts are loaded once at process startup via the FastAPI
-lifespan context manager and stored on `app.state.pipeline`. Request handlers
-receive the pipeline through FastAPI dependency injection (`routers/deps.py`).
-
----
-
-## 3. Detection Model — V4
-
-**Architecture:** YOLOv11-Large, fine-tuned from V3 best checkpoint.  
-**Export format:** ONNX opset 18, static shape `[1, 154, 21504]`,
-`nms=False` (NMS is handled in `spatial_logic.py` for full top-3 access).
-
-### Class definitions
-
-- 148 Gardiner sign classes (most-frequent signs in Middle Egyptian)
-- 1 `cartouche` class (the oval bracket enclosure)
-- 1 `unknown` class (signs outside the 148-class vocabulary)
-
-Class-index order is fixed: `Aa1=0, A1=1, ... Z11=148, Aa15=149`. This order
-is authoritative and must not change across model versions.
-
-### V4 training configuration
-
-| Parameter | Value |
+| Field | Where it lives |
 |---|---|
-| Base checkpoint | V3 `best.pt` (fine-tune, not from scratch) |
-| Training images | 1,253 |
-| Training instances | 53,706 |
-| Validation images | 151 |
-| Validation instances | 5,093 |
-| Best epoch | 44 / 50 |
-| Image size | 1024 px |
-| Optimizer | SGD, lr0=0.0015, momentum=0.92 |
-| Augmentation | mosaic=0.3, degrees=3.0, no flips |
-| Frozen layers | 5 |
-| Early stopping patience | 12 epochs |
+| **Computer vision** | YOLO11-Large detector trained in nine curriculum generations, from one sign per 224 px image to dense walls at 1024 px |
+| **Spatial logic** | quadrat clustering, line assembly, cartouche membership, reading direction |
+| **Classic NLP + data structures** | lexicon trie, bigram language model, Viterbi segmentation, Needleman-Wunsch alignment, symmetric-delete spelling index |
+| **Modular RAG** | six retrievers over PostgreSQL + pgvector, hybrid search, reciprocal rank fusion, reranking, a knowledge graph |
+| **Agentic LLM flow** | Claude tool loops, a deterministic router, model escalation, an editor, human-in-the-loop corrections, session state and memory |
+| **Product** | FastAPI + React app, the Thot-Sphinx persona, a riddle trial and a carved royal-cartouche reward |
 
-### V4 validation metrics
+Live site: [sphinx.tensorgeek.com](https://sphinx.tensorgeek.com) (the backend is offline between demos; ask for one).
 
-| Metric | Value |
+---
+
+## Contents
+
+1. [The problem](#1-the-problem)
+2. [Architecture](#2-architecture)
+3. [The RAG design](#3-the-rag-design)
+4. [The agent](#4-the-agent)
+5. [Decisions from measurements](#5-decisions-from-measurements)
+6. [Computer vision](#6-computer-vision)
+7. [Classic NLP and data structures](#7-classic-nlp-and-data-structures)
+8. [Thot-Sphinx: persona, riddles and the cartouche gift](#8-thot-sphinx-persona-riddles-and-the-cartouche-gift)
+9. [The app](#9-the-app)
+10. [Guardrails](#10-guardrails)
+11. [Stack](#11-stack)
+12. [Running it](#12-running-it)
+13. [Repository layout](#13-repository-layout)
+14. [Attribution and licence](#14-attribution-and-licence)
+15. [Roadmap](#15-roadmap)
+
+---
+
+## 1. The problem
+
+Automated reading of Middle Egyptian inscriptions is non-trivial. Glyphs appear in dense, multi-row or multi-column layouts carved or painted on stone; individual signs are visually similar across dozens of Gardiner classes; reading direction (left-to-right vs right-to-left, horizontal vs vertical) is set by the orientation of figurative signs rather than by a fixed convention; and many signs sit inside cartouches, oval enclosures that frame royal names, whose interior must be treated as an independent reading unit.
+
+Reading a hieroglyphic wall is hard at every layer:
+
+- **Seeing.** Hundreds of Gardiner sign classes, many nearly identical (G1 vulture / G5 falcon, N5 sun / N33 grain / Aa1 placenta), carved in low relief on weathered stone and photographed in bad light.
+- **Ordering.** Signs are grouped in *quadrats*, written in rows or columns, left-to-right or right-to-left, and the direction is given by which way the animals face, not by any fixed rule.
+- **Royal names.** Kings' names sit inside *cartouches*, ovals that must be read as their own unit and matched against known names.
+- **Meaning.** A transliteration is not a translation. A good reading needs attested parallels, a dictionary, knowledge of who the king was, and the published scholarship on the text.
+
+Thoth Sphinx answers with three outputs for every photo:
+
+1. a **Leiden transliteration** of every line,
+2. a **gloss translation** with notes in the voice of the Reader of Stones, marking doubt with `(?)`, `( )` and `[...]`,
+3. a **grounded translation**, rewritten against published translations of the same text, with citations, and the raw translation kept beside it.
+
+---
+
+## 2. Architecture
+
+```mermaid
+%%{init: {"theme": "dark", "themeVariables": {"fontFamily": "Georgia, serif", "fontSize": "14px", "lineColor": "#d4a017", "clusterBkg": "#14110a", "clusterBorder": "#b8860b"}, "flowchart": {"curve": "basis", "nodeSpacing": 22, "rankSpacing": 38}}}%%
+flowchart LR
+    classDef seeker fill:#3b2a10,stroke:#f59e0b,stroke-width:2px,color:#fde68a
+    classDef vision fill:#0f2533,stroke:#38bdf8,stroke-width:1.5px,color:#e0f2fe
+    classDef llm fill:#3f1d38,stroke:#f472b6,stroke-width:2.5px,color:#fce7f3
+    classDef code fill:#1e1b4b,stroke:#a78bfa,stroke-width:1.5px,color:#ede9fe
+    classDef store fill:#0f2e1f,stroke:#34d399,stroke-width:1.5px,color:#d1fae5
+    classDef guard fill:#3a0d0d,stroke:#f87171,stroke-width:1.5px,color:#fee2e2
+    classDef out fill:#4a3205,stroke:#fbbf24,stroke-width:3px,color:#fef3c7
+
+    subgraph S1["① QUERY"]
+        direction TB
+        IMG["📷 Wall photo"]:::seeker
+        OPT["🧭 Layout · direction"]:::seeker
+        CTX["𓊹 Context<br/>period · site · reign"]:::seeker
+    end
+
+    subgraph S2["② VISION · deterministic"]
+        direction TB
+        DET["👁️ YOLO11l v9C<br/>letterbox 1024 · 150 classes<br/>top-3 per sign"]:::vision
+        ORD["Reading order<br/>cartouche tagging · quadrats · lines"]:::vision
+        CM["Cartouche matcher<br/>Needleman-Wunsch · 41 kings"]:::vision
+    end
+
+    CARDS["③ 🪪 Entity cards<br/>cartouche → royal name<br/>→ pharaoh"]:::code
+
+    subgraph S4["④ AGENTIC READ"]
+        direction TB
+        WALL["🧠 Reader · Haiku 5.5<br/>photo + all lines + cartouches<br/>+ context + KG + corrections"]:::llm
+        CHUNK["Haiku per chunk<br/>long walls · ≤ 40 codes"]:::llm
+        HUB{{"🔁 Tool loop<br/>≤ 3 turns · ≤ 12 parallel calls"}}:::code
+        EVC["✅ Evidence check<br/>search every skipped line"]:::code
+        RT{"⚖️ Deterministic<br/>router"}:::code
+        SON["🔍 Reviewer · Sonnet 5.5<br/>2 tool turns · checks the draft"]:::llm
+        WALL <--> HUB
+        WALL --> EVC --> RT
+        RT -->|"escalate"| SON
+        SON <--> HUB
+    end
+
+    subgraph STORE["🗄️ EVIDENCE STORE · Postgres + pgvector · hybrid RRF"]
+        direction TB
+        TLA[("TLA · 104k sentences")]:::store
+        LEM[("Lemmas · AAEW")]:::store
+        VOC[("Vocabulary<br/>one-edit spellings")]:::store
+        KG[("Knowledge graph")]:::store
+        TRN[("Published translations<br/>Allen · Faulkner · Piankoff")]:::store
+        BK[("17 Egyptology books")]:::store
+    end
+
+    DRAFT["⑤ 📜 READING<br/>transliteration<br/>gloss translation · notes"]:::out
+
+    subgraph S6["⑥ SEMANTIC REFINEMENT · generate-then-retrieve"]
+        direction TB
+        STR["search_translations<br/>raw translation as query · king filter<br/>name variants · group by spell · Cohere rerank"]:::code
+        ED["✍️ Editor · Haiku 5.5<br/>same_text · related · none"]:::llm
+        STR --> ED
+    end
+
+    FINAL["🏛️ FINAL ANSWER<br/>transliteration · gloss<br/>+ grounded translation<br/>with citations"]:::out
+
+    subgraph S7["⑦ HUMAN IN THE LOOP"]
+        direction TB
+        RCH["💬 Reading chat · Haiku 5.5<br/>proposes corrections<br/>checked against the snapshot"]:::llm
+        APP["👤 Apply & re-read<br/>≤ 3 signs · 1 per hour"]:::seeker
+        SES[("Session ledger<br/>versions")]:::store
+        RCH --> APP
+        APP -.-> SES
+    end
+
+    GRD["🛡️ Guardrails<br/>input caps · rate limits<br/>$3 / day budget · injection fence"]:::guard
+
+    IMG --> DET --> ORD --> CM --> CARDS
+    OPT -.-> ORD
+    KG -.-> CARDS
+    CARDS -->|"KG block"| WALL
+    ORD -->|"≤ 120 codes"| WALL
+    ORD -->|"> 120"| CHUNK
+    IMG -.->|"photo"| WALL
+    CTX -.-> WALL
+    GRD -.- WALL
+
+    HUB <-->|"search_parallels"| TLA
+    HUB <-->|"lookup_lemma"| LEM
+    HUB <-->|"lookup_signs"| VOC
+    HUB <-->|"lookup_entity"| KG
+
+    RT -->|"confident"| DRAFT
+    SON --> DRAFT
+    CHUNK --> DRAFT
+    DRAFT --> STR
+    STR <--> TRN
+    ED --> FINAL
+
+    FINAL --> RCH
+    RCH <-->|"search_books"| BK
+    RCH <-->|"lookup_signs"| VOC
+    APP ==>|"HUMAN CORRECTIONS · re-read"| WALL
+```
+
+**Legend:** amber = seeker / input · blue = vision (deterministic) · pink = Claude call · violet = code (tools, router, checks) · green = data store · red = guardrail · gold = output. Solid arrows = data flow, dotted = side input, thick = the human-correction re-read.
+
+**The two-stage web flow.** The browser fires detection (`POST /predict/`) the moment the seeker picks a reading direction. While they fill in the archaeological context (about 10 s), the detector finishes, so "Decode" only waits on the agent read (`POST /transliterate/`).
+
+---
+
+## 3. The RAG design
+
+In the terms of the RAG survey by Gao et al. (2023), which runs from Naive to Advanced to **Modular** RAG, Thoth Sphinx is **Modular RAG**: search, fusion, rerank, routing, memory and verification are separate modules arranged into a custom flow. Its main pattern is **agentic RAG**.
+
+| Part of Thoth Sphinx | RAG pattern |
 |---|---|
-| mAP50 | 0.884 |
-| mAP50-95 | 0.654 |
-| Precision | 0.896 |
-| Recall | 0.827 |
+| The question is a **photo**: YOLO turns it into Gardiner codes, and Claude also sees the photo itself | **Multimodal RAG** (the query is built from an image) |
+| **Retrievers:** TLA sentences (sign + transliteration n-grams), lemmas, sign spellings, 17 Egyptology books, published spell translations (Allen, Faulkner, Piankoff / Brown), a knowledge graph | **Multi-source / federated RAG** |
+| TLA, books and translations each combine full-text search with pgvector, fused by **reciprocal rank fusion (RRF)** | **Hybrid RAG** |
+| Cohere rerank, grouping by spell, name-variant query fusion (Unas / Unis / Wenis), small-to-big | **Advanced RAG** post-retrieval steps |
+| **Vocabulary lookup** (`lookup_signs`): codes → attested words spelled with those signs, plus spellings one edit away (a misread, missing, extra or transposed sign) with attestation counts | **Lexicon-grounded retrieval as error correction**: the retriever checks and repairs the *query* (the detector's reading), not just the answer |
+| Haiku chooses its own tools, calls them in parallel, within a turn budget | **Agentic RAG** |
+| The router escalates to Sonnet; the evidence check searches lines the model skipped; a human correction triggers a re-read | **Corrective / self-reflective RAG + human in the loop** |
+| Second translation: generate → search with the generation → rewrite against published translations | **Generate-then-retrieve** (close to **HyDE** and **RARR**) |
+| Entity cards: cartouche → royal name → pharaoh, from a curated graph, given to the prompt before the read | **Knowledge-graph-augmented RAG** (entity linking and lookup) |
+| Server reading sessions, a corrections ledger, browser memory, seeker memory | **Stateful agent** around the RAG |
 
-Key improvement over V3: cartouche interiors were explicitly labeled in the
-V4 training set (+45 images with hand-labeled interior signs). Sign E34
-(hare, found in the royal name *Unas*) is now detected natively at mAP50
-0.468, surfacing as top-1 at confidence 0.84–0.92 on Unas pyramid-text
-fixtures. Cartouche re-entry inference (a V3 fallback) is eliminated.
+**What it is not.**
 
-Known low-recall classes: `d56` (mAP50 0.00, 1 val instance), `n23` (0.19),
-`i1` (0.27). Predictions on these classes should be treated with reduced
-confidence.
+- **Not Microsoft GraphRAG.** GraphRAG has an LLM extract a graph from the whole corpus, then answers broad questions from community summaries. Ours is a **curated** graph used for entity lookup, and it is treated as background, never as evidence.
+- **Not conventional RAG** (top-k → prompt → one generation). Retrieval happens before, during and after generation, and code, not the model, decides when to escalate.
 
-### Inference parameters (defaults)
+### The evidence store
 
-| Parameter | Value | Description |
+PostgreSQL 16 + pgvector, in Docker.
+
+| Store | Content | Search |
 |---|---|---|
-| `imgsz` | 1024 | Input resolution (letterbox) |
-| `conf_threshold` | 0.25 | Minimum confidence to retain a detection |
-| `iou_threshold` | 0.45 | NMS IoU threshold |
-| `max_detections` | 300 | Cap per image after NMS |
+| **TLA corpus** | Thesaurus Linguae Aegyptiae (AAEW): 32,336 documents, 104,285 sentences, about 792,000 tokens | sign n-grams + transliteration n-grams, hybrid RRF, optional Cohere rerank |
+| **Lemmas** | 38,775 dictionary entries | transliteration or English gloss |
+| **Vocabulary** | Middle Egyptian spellings (texts dated First Intermediate Period to Second Intermediate Period), `sign_spellings` + a one-sign-deleted index | exact and one-edit lookup |
+| **Knowledge graph** | gods, pharaohs, royal names, dynasties, temples, pyramids, with links into lemmas and dated texts | entity lookup |
+| **Published translations** | Allen's Pyramid Texts, Faulkner's Coffin Texts, Piankoff's *Pyramid of Unas* | hybrid RRF + Cohere rerank, grouped by spell |
+| **Egyptology books** | 17 books, 5,107 chunks of 224–640 tokens | hybrid RRF (full text + `text-embedding-3-small`) |
 
-Resize mode is **letterbox** throughout (2026-07-06 revision). V4 was trained
-at 1024 px through the Ultralytics loader, which letterboxes; A/B testing
-against raw Colab YOLO output proved letterbox reproduces it exactly (0
-missing / 0 extra detections) while stretch introduced spurious detections.
-The earlier stretch-everywhere rule dated from the V1-era 224x224 training
-distribution and is obsolete. For the same reason, `enhance()` preprocessing
-is disabled by default: on clean images it deletes real signs and
-hallucinates fakes; the presets remain available as an opt-in for genuinely
-degraded photographs.
+The same tools are also exposed as an **MCP server** (`corpus/mcp_server.py`).
 
 ---
 
-## 4. Spatial Layer
+## 4. The agent
 
-**File:** `spatial_logic.py`
+All LLM calls go through one wrapper, `app/llm/client.py` (Anthropic SDK). It caches the system prompt, sets effort per feature, returns typed pydantic replies, meters cost and latency on every call, and raises typed errors (`LLMRefusal`, `LLMTruncated`, `LLMUnavailable`, `LLMRequestError`).
 
-The spatial layer converts raw ONNX tensor output into an ordered reading
-sequence.
+### The read, step by step
 
-### Post-processing (`postprocess_onnx`)
+1. **Entity cards first.** Each matched cartouche is followed through the graph: cartouche label → `royal_name` entity → its `names` link → `pharaoh`. The cards become a KNOWLEDGE GRAPH block in the prompt. They are never looked up by transliteration, because `mn-xpr-ra` would match the god Ra.
+2. **One multimodal call.** A wall of up to 120 codes is read in a single call by **Claude Haiku 5.5**: the photo, every line, the cartouches (matched and unresolved), the archaeological context, the graph block and any human corrections. Longer walls are read in chunks of up to 40 codes, cut at line boundaries.
+3. **Tool loop.** A hand-written loop (`complete_parsed_with_tools`) gives Haiku 3 turns. Each turn may make up to 12 calls, run in parallel on 4 workers, each with its own database connection. The prompt asks for every line search in the first turn.
+4. **Evidence check.** Any line the model did not search gets one search from code, so every line in the answer has evidence.
+5. **Deterministic router** (`app/llm/router.py`). Code, not the model, decides. It escalates when Haiku asks for a second opinion, when most lines are rated LOW, when there is no corpus support, when a cartouche is unresolved, or when the detector was unsure of too many signs. Otherwise the answer stands as `haiku_confident`.
+6. **Sonnet review.** **Claude Sonnet 5.5** gets the draft, the evidence gathered so far and 2 tool turns. It checks the draft rather than redoing it.
+7. **Semantic refinement.** The raw translation becomes the query (cleaned, with a king filter from the cartouche) for `search_translations`. A Haiku **editor** compares it with the published passages and returns a verdict, `same_text`, `related` or `none`, and a rewritten translation with the passage it used. If anything fails, the raw translation still ships.
+8. **Response.** `TransliterationOut` carries the readings, `evidence`, `tool_calls`, a step-by-step `trace`, `entities`, `image_notes`, `escalated` and `cost_usd`. The UI renders them as cards: corpus evidence, agent trace, provenance and entities.
 
-The model output tensor `[1, 154, N]` contains N anchors, each with 4
-coordinate values and 150 class logits. Processing steps:
+**Measured cost:** about $0.003 and 35 s for a read without escalation; $0.02–0.06 and 45–70 s with Sonnet.
 
-1. Apply sigmoid to class logits.
-2. Filter anchors with `max_class_score < conf_threshold`.
-3. Run class-agnostic NMS on surviving anchors (IoU threshold 0.45).
-   Class-agnostic NMS is used deliberately: a single physical glyph
-   predicted under two confusable classes must collapse to one Detection;
-   the alternative classes are preserved in the top-3 slot.
-4. Extract top-3 `(class_name, score)` pairs per surviving anchor.
+### Tools
 
-Top-3 extraction runs only on NMS survivors (typically dozens), never on
-the full anchor set of ~21,504.
+| Tool | Used by | Does |
+|---|---|---|
+| `search_parallels` | reader, reviewer, reading chat | hybrid search of TLA sentences by signs and transliteration |
+| `lookup_lemma` | reader, reviewer, reading chat | dictionary lookup by transliteration or English gloss |
+| `lookup_signs` | reader, reviewer, reading chat | attested words spelled with given signs, plus one-edit corrections |
+| `lookup_entity` | reader, reviewer, both chats, pipeline | knowledge-graph lookup |
+| `search_books` | both chats | hybrid search over 17 Egyptology books, with citations ("Book › Section › p. N") |
+| `search_translations` | pipeline (semantic refinement) | published spell translations, reranked and grouped by spell |
+| `start_riddle_trial`, `submit_riddle_answer` | general chat | the riddle trial; answers are checked in code |
+| `create_royal_cartouche` | general chat | the reward (see section 8) |
 
-### Cartouche membership tagging (`tag_cartouche_members`)
+### Human in the loop
 
-Detections are tested for centroid containment within each cartouche bbox.
-Detections whose centroid falls inside a cartouche bbox are tagged
-`inside_cartouche=True` and assigned a `cartouche_id`.
+- **Ask Thot-Sphinx.** A drawer opens a chat about the reading (`POST /chat/reading/`). Every turn the client sends a `ReadingSnapshot` (codes per line, the reading, evidence, cartouches, notes, router reasons) and optionally the photo, as the first, cached message, so the prompt prefix is identical every turn.
+- **Corrections.** The chat proposes `corrections` (line, position, from, to, reason), checked against the snapshot by `valid_corrections`. The seeker can also enter up to 3 signs by hand.
+- **Apply & re-read.** The codes are swapped in the stored detection at confidence 1.0, and the wall is read again with a HUMAN CORRECTIONS block.
+- **Measured on the Hatshepsut wall:** one correction, X1 → N28, let Haiku alone read *xa-m-WAst* with no escalation, for $0.005 against $0.06.
 
-Edge-clipped cartouches are removed before the layout vote
-(`_filter_edge_cartouches`, margin = 1% of image dimension). A cartouche
-with any bbox edge within this margin is a photo-crop artifact with an
-incomplete interior and is discarded. This filter must run before the layout
-vote to prevent partial cartouche bboxes from corrupting the cartouche-aspect
-signal.
+### State and memory
 
-### Layout detection (`layout_detector.py`)
-
-Layout (rows vs columns) is **supplied by the caller** — the API makes it a
-required field. The geometric voter (cartouche aspect ratio, band count,
-sign aspect distribution) proved unreliable on real walls and survives only
-as a logged fallback when `pipeline.run(layout=None)` is called directly.
-The legacy pixel-level function `detect_layout(img)` is retained for callers
-that do not have detections available.
-
-Cross-line quadrat leakage is blocked by `QUADRAT_MAX_EXTENT=2.5`: a merged
-pair whose combined extent along the reading axis exceeds 2.5x the median
-sign size is rejected (a legitimate stacked pair measures ~2.2x; observed
-cross-line leaks ~2.9x). `CARTOUCHE_CONF` is 0.25 — real cartouches on
-weathered stone score as low as ~0.28.
-
-### Reading-order assembly
-
-Signs are grouped into quadrats (rectangular spatial cells) via density-based
-clustering, then ordered according to detected layout and direction. Cartouche
-interiors are assembled with `single_line=True`. Without this flag, the
-line-grouping logic splits the interior sequence and introduces spurious
-Unknown tokens.
+- **Server reading sessions:** a `reading_id`, a corrections ledger and versions of each reading.
+- **Browser memory:** readings, chats and decode history in `localStorage`, with a "Forget me" control.
+- **Seeker memory** in the Thot-Sphinx chat.
+- **Context management:** conversations stay under 10K tokens and tool loops are 2–3 turns, so no compaction or context editing is needed (`reports/context_report.json`).
 
 ---
 
-## 5. NLP Correction Layer
+## 5. Decisions from measurements
 
-**File:** `sphinx_corrector.py`
+| Decision | Evidence | Source |
+|---|---|---|
+| **Letterbox resize, never stretch; image enhancement off** | letterbox + raw YOLO matches Colab exactly (0 missing / 0 extra); stretch added 5 spurious detections; enhancement deleted real signs and hallucinated others | A/B, 2026-07-06 |
+| **V9C detector** | mAP50 0.925, mAP50-95 0.699, P 0.914, R 0.874 | Colab validation |
+| **Viterbi/trie corrector switched off at runtime** | changed 0 of 67 codes on one Unas photo and 6 of 101 on another (5 of them `Unknown` → a guess); it wasn't driving translation quality, and the agent's corpus tools do the job better | A/B, 2026-11-06 |
+| **Haiku 5.5 as the reader, Sonnet 5.5 only on escalation** | Haiku read better in the model comparison; ≈ $0.003 / 35 s vs $0.02–0.06 / 45–70 s escalated | model comparison, 2026-11-02 |
+| **Human-in-the-loop correction is worth the re-read** | Hatshepsut wall: X1 → N28 let Haiku read *xa-m-WAst* alone, $0.005 vs $0.06 | 2026-11-04 |
+| **TLA search: rerank stays opt-in** | strict hit@5 0.753 → 0.780, hit@10 0.827 → 0.853; MRR@10 and hit@1 barely move, margin ±7 | [`reports/retrieval_reranked.json`](reports/retrieval_reranked.json) |
+| **TLA search: sentence embeddings left out at runtime** | strict hit@5 0.773 / hit@10 0.840 with them vs 0.787 / 0.813 without: a wash; dropping them shrinks the deploy from 2.4 GB to about 0.9 GB | [`reports/retrieval_embeddings.json`](reports/retrieval_embeddings.json) |
+| **Hybrid beats either search alone** | 300 noisy queries: hybrid hit@5 0.787, MRR@10 0.683 vs transliteration alone 0.720 / 0.624 | [`reports/retrieval_baseline.json`](reports/retrieval_baseline.json) |
+| **Haiku drafts are weaker queries than glosses** | strict hit@5 0.213–0.253 vs 0.353 | [`reports/retrieval_haiku.json`](reports/retrieval_haiku.json) |
+| **Books: hybrid search, plain chunks** (semantic chunking removed) | 50 golden questions, LLM judge: hybrid answered@5 **0.92** (MRR@5 0.804) vs full text 0.86 vs vector 0.74; semantic chunking no better | [`reports/book_retrieval_plain.json`](reports/book_retrieval_plain.json), [`reports/book_retrieval_semantic.json`](reports/book_retrieval_semantic.json) |
+| **Translations: hybrid > vector** | 218 golden pairs (Allen's spell → Piankoff's utterance, truth from Allen's concordance, no LLM judge): hit@1 0.771 vs 0.734 (full passage), 0.716 vs 0.642 (one sentence) | [`reports/translation_retrieval.json`](reports/translation_retrieval.json) |
+| **Translations: Cohere rerank on** | one-sentence queries: hit@1 0.716 → **0.826**, hit@3 0.821 → 0.904, MRR@10 0.778 → 0.869; +300 ms, about $0.002 per read | translation evaluation |
+| **Group by spell** | stops one long spell (Utterance 219, 4 parts) filling the top 3; no accuracy change | same |
+| **Name-variant fusion** | the reranker scored "Unis" low against an "Unas" query and dropped Allen's Spell 152; after the fix, Piankoff Utt. 219 and Allen Spell 152 come first: two independent translations of the same litany | same |
+| **The rerank score is the confidence signal, not cosine** | true match 0.80 vs unrelated control 0.41 (cosine 0.62 vs 0.58) | same |
+| **No compaction, no context editing** | conversations stay under 10K tokens; tool loops are 2–3 turns | [`reports/context_report.json`](reports/context_report.json) |
 
-The correction layer operates on the top-3 YOLO candidates per slot and
-recovers the most linguistically plausible Gardiner code sequence.
+Every evaluation keeps a **negative control**: a fixture with no cartouche (`glyph_wall.jpeg`, 0 cartouches found), an unrelated passage for the reranker, and simulated noise on search queries.
 
-### Algorithms
+---
 
-**Bigram language model** — Markov chain, order 1, built from BBAW
-`gardiner_seq`. Transition probabilities stored as log-probabilities.
-Laplace smoothing applied for zero-count bigrams.
+## 6. Computer vision
 
-**Viterbi segmenter** — Dynamic programming over the flat YOLO sequence.
-At each position, all candidate segments of length 1 to `MAX_WORD_LEN` are
-scored as:
+### A detector trained by curriculum
+
+The detector is **YOLO11-Large** (Ultralytics), trained on a Colab A100 over **nine generations**, each one fine-tuned from the last, so the 150-class head has been unchanged since v1 (`Aa1=0, A1=1 … Z11=148, Aa15=149`). The curriculum moved from isolated signs to whole walls:
+
+| Stage | Input | What the model learned |
+|---|---|---|
+| **v1** | 224 × 224, one sign per image | the 148 Gardiner signs in isolation |
+| **v2** | 640 × 640 | cartouches and short rows |
+| **v3** | multi-row scenes | dense layouts |
+| **v4** | 1024 × 1024, 1,253 images, 53,706 instances | cartouche interiors labelled by hand; signs read natively inside royal names (E34, the hare of *Unas*) |
+| **v5–v8** | | runs corrupted and discarded |
+| **v9 / v9C** | 1024 × 1024, 557 dense images, 18,840 instances, 65 epochs + a fine-tune | walls of up to ~300 signs per image |
+
+**V9C metrics** (validation set of 162 multi-glyph images): **mAP50 0.925**, mAP50-95 0.699, precision 0.914, recall 0.874; cartouche mAP50 0.920. V4 was 0.884 / 0.654 / 0.896 / 0.827.
+
+- **Classes:** 148 Gardiner signs + `cartouche` + `unknown`. In v9, three rare signs were replaced by frequent ones that used to fall into `unknown`, chosen by their frequency in the corpus: idx 30 e10 → m4, idx 61 i15 → f34, idx 70 m20 → o29.
+- **Fine-tuned, never from scratch:** each generation starts from the previous `best.pt`, preserving the learned features of the 148-class vocabulary.
+- **Mosaic reduced to 0.3** (from the default 1.0) to avoid generating sign compositions that never occur in real inscriptions.
+- **Flips disabled:** hieroglyph orientation carries meaning and must not be randomised.
+- **Rotation limited to 3°:** enough to simulate camera tilt without implausible reading angles.
+- **Five backbone layers frozen** to stabilise low-level features during fine-tuning; SGD, early-stopping patience 12.
+- **Export:** ONNX, output `[1, 154, 21504]`, `nms=False`. Confidence filtering, NMS and top-3 extraction run in `spatial_logic.py`, for full control and so the layers after detection see the whole top-3 candidate list per sign.
+- **Low-data classes:** `d56`, `n23` and `i1` (V4 mAP50 0.00 / 0.19 / 0.27) are treated with reduced confidence.
+
+### Inference rules, proven by A/B
+
+- **Letterbox, never stretch**, at 1024 px. The model trains at 1024 through the Ultralytics loader, which letterboxes, and letterbox + raw output reproduces Colab exactly (0 missing / 0 extra), while stretch added 5 spurious detections. The old stretch rule dated from the v1-era 224 × 224 training and is obsolete.
+- **Image enhancement off by default:** on clean photos it deleted real signs and invented others.
+- **Layout comes from the seeker** (rows or columns): the geometric auto-detector misvoted on real walls.
+
+### Spatial logic (`vision/spatial_logic.py`)
+
+- **Post-processing:** sigmoid → confidence filter → NMS on the best score first, *then* top-3 on the survivors (typically dozens, never all 21,504 anchors). NMS is **class-agnostic** on purpose: one physical glyph predicted under two confusable classes must collapse to one detection, and the alternative class survives in its top-3.
+- **Cartouches:** a cartouche with an edge within 1% of the image border is a photo-crop artefact with an incomplete interior, so it is dropped before anything else, including the layout vote, whose cartouche-aspect signal it would corrupt; a sign belongs to a cartouche only if at least 20% of its area overlaps the raw box, which stopped neighbouring signs from being swallowed; duplicate cartouche boxes are merged at IoU 0.30.
+- **Quadrats and lines:** signs are clustered into quadrats, then into lines; `QUADRAT_MAX_EXTENT = 2.5` blocks merges across lines (a real stacked pair measures about 2.2× the median sign, a leak about 2.9×).
+- **Reading order:** by layout and direction; cartouche interiors are always read as a single line.
+
+**Fixtures (v9C, letterbox, no enhancement):**
+
+| Image | Layout | Detections | Cartouches |
+|---|---|---|---|
+| `Unas1c.jpg` | columns | 105 | 2 / 2 *wnjs* (Unas) |
+| `image_2_test.jpg` | columns | 76 | 3 / 3 *wnjs* |
+| `glyph_wall.jpeg` | columns | 64 | 0, none in the scene (negative control) |
+| `sandstone_wall.jpg` | rows, ltr | 18 (v4) | 1 / 1 Thutmose III (*mn-xpr-ra*) |
+| `grand_glyphs.jpeg` | rows, rtl | 63 (v4) | interior read `N5 W14 F34`; the middle sign is W9, not a model class, so `N5 W9 F34` = Khnemibre, **Amasis** (not yet in `royal_names.json`) |
+
+---
+
+## 7. Classic NLP and data structures
+
+Before the agent existed, the reading was corrected by classic algorithms. They are still in the code and covered by tests.
+
+| Algorithm | Where | Role |
+|---|---|---|
+| **Lexicon trie** | `vision/sphinx_trie.py` | 38,073 attested sign sequences; exact and fuzzy prefix search |
+| **Bigram language model** | `vision/sphinx_corrector.py` | Markov order 1, Laplace smoothing, trained on attested Gardiner sequences |
+| **Viterbi segmentation** | `vision/sphinx_corrector.py` | segments a line into words over YOLO's top-3 per sign, with a confusion-matrix substitution cost, determinative and particle bonuses, a step over one unread sign, and fuzzy matching that scales with word length |
+| **Confidence gate** | `vision/sphinx_corrector.py` | only corrects signs the detector scored ≤ 0.30 |
+| **Needleman-Wunsch alignment** | `vision/cartouche_matcher.py` | global alignment of a cartouche interior against 41 royal names (Dynasty III to the Ptolemies), with panel consensus |
+| **Symmetric-delete index** | `db/vocabulary.sql` | every spelling with one sign deleted, so a near-miss lookup is a table lookup |
+| **Reciprocal rank fusion** | `corpus/retrieve.py`, `corpus/books/search.py` | merges full-text and vector rankings |
+
+**The Viterbi score.** At each position, every candidate segment of 1 to 12 codes is scored as:
 
 ```
 score = log(freq + 1)                          # trie record frequency
       + log P(segment[0] | prev_last_code)     # bigram transition
       + edit_penalty                           # 0.0 exact / -1.0 dist=1 / -2.5 dist=2
       + linguistic_prior                       # determinative / particle / layout bonus
-      + substitution_cost                      # from V4 confusion matrix
+      + substitution_cost                      # -log P(truth | predicted) from the confusion matrix
 ```
 
-Backtracking from `dp[N]` recovers the optimal segmentation. If `dp[N]`
-remains at `-inf`, the segmenter degrades gracefully to single-sign segments.
-
-**Beam search over top-3 candidates** — The beam maintains the B
-highest-scoring partial sequences and expands each with all 3 YOLO candidates
-per slot. The highest-scoring complete path is selected.
-
-**Confidence gate (Naive Bayes)** — Prevents the corrector from overriding
-a high-confidence YOLO prediction. If the posterior probability of the
-correction being correct falls below threshold 0.30, the original YOLO code
-is kept.
-
-**Unknown-slot resolution** — When YOLO outputs `Unknown` at a slot, the
-trie enumerates child edges at that depth in surviving beam nodes and proposes
-the most frequent real Gardiner code as a replacement.
-
-**Substitution cost matrix** — Loaded from
-`artifacts/confusion_matrix_v4_normalized.csv`. Orientation: rows=predicted,
-cols=truth, cell = P(truth | predicted). Cost = `-log(P + epsilon)`,
-epsilon=1e-4, capped at ~9.21.
-
-### Linguistic priors
+Backtracking from the last position recovers the best segmentation; if no path explains a stretch, the segmenter steps over one unread sign (penalty -0.5) instead of failing the whole line. A **beam search** keeps the 8 best partial sequences and expands each with all three YOLO candidates per sign.
 
 | Prior | Bonus | Trigger |
 |---|---|---|
-| `DETERMINATIVE_BONUS` | 0.5 | Sign appears in `determinatives.json` |
-| `PARTICLE_BONUS` | 1.0 | Sign appears in `initial_particles.json` |
-| `LAYOUT_BONUS` | 1.5 | Sign coincides with a reading-order boundary hint |
+| `DETERMINATIVE_BONUS` | 0.5 | the segment ends in a determinative (`determinatives.json`) |
+| `PARTICLE_BONUS` | 1.0 | the segment is a phrase-initial particle (`initial_particles.json`) |
+| `LAYOUT_BONUS` | 1.5 | the segment ends at a row or column break from the image |
 
-### Entry point
+**Cartouche matching.** The alignment score uses the same confusion matrix, so visually similar confusions cost less than distant ones. A **panel-consensus** step reconciles several cartouches in one image: when one gives a strong direct match and another a weak or refused one, the stronger identity is promoted where the geometry agrees. A refused match is not lost: its raw interior codes go to the agent as an UNRESOLVED cartouche, with an instruction not to invent a king.
 
-```python
-from sphinx_corrector import correct, load_corrector
-
-trie, log_prob, unigrams, sub_cost = load_corrector(
-    trie_pkl     = 'artifacts/sphinx_trie_v4.pkl',
-    bbaw_parquet = 'artifacts/bbaw_clean.parquet',
-    confusion_csv= 'artifacts/confusion_matrix_v4_normalized.csv',
-)
-
-result = correct(yolo_topk, trie, log_prob, unigrams, sub_cost_matrix=sub_cost)
-print(result['flat_translit'])
-```
-
-`load_corrector()` returns a 4-tuple `(trie, log_prob, unigrams, sub_cost)`.
+The A/B of 2026-11-06 showed the Viterbi corrector was no longer driving quality once the agent had corpus tools and the photo, so at runtime the detector's top-1 codes now go to the agent unchanged (`use_corrector=False`). The spelling-correction idea lives on in `lookup_signs`, now backed by attestation counts.
 
 ---
 
-## 6. Cartouche Matching
+## 8. Thot-Sphinx: persona, riddles and the cartouche gift
 
-**File:** `cartouche_matcher.py`
+### The persona
 
-Each cartouche interior sequence is aligned against a database of attested
-royal names (`royal_names.json`) using the Needleman-Wunsch global alignment
-algorithm. The alignment score incorporates the V4 substitution cost matrix
-so that visually similar confusions are penalized less than semantically
-distant ones.
+The chat speaks as **Thot-Sphinx**, the guardian creature of Thoth: mighty, mythical, never apologising and never correcting its past words. The reading notes use a related voice, the **Reader of Stones**, an ancient creature crossed with an old professor. The persona is written for non-specialists: it explains, it tells stories, and it stays on Egypt.
 
-A panel-consensus step (`apply_panel_consensus`) reconciles multiple
-cartouches detected in the same image. If one cartouche produces a
-high-confidence direct match and another a weak or refused match, the
-consensus promotes the stronger identity where geometrically consistent.
+- **`/chat/`**: the general chat, with the knowledge graph and the books.
+- **`/chat/reading/`**: the chat about one reading, with every corpus tool.
+- **`/reverse/`**: English → Middle Egyptian (Sonnet 5.5): normalised English, Leiden transliteration, Gardiner codes and a word-by-word breakdown.
 
-Royal name normalization (`normalize_code`) maps YOLO-lowercase class names
-(e.g., `g17`) to canonical Gardiner codes (e.g., `G17`). The mapping is
-defined in `gardiner_Map.py` and is the single normalization source of truth
-throughout the pipeline.
+### The riddle trial
 
-### V4 results on canonical fixtures
+The seeker can ask the Sphinx for its trial: **3 riddles** drawn from 36, **3 attempts** each, a hint after the second miss, the answer revealed after the third; 2 of 3 solved passes. Answers are checked **in code** (`corpus/play_riddles.py`) and never reach the model. Because chat history is text only, the server restates the game every turn in a `<trial_state>` block, so the model never doubts its own earlier verdicts.
 
-| Image | Layout | Detections | Outer score | Cartouche result |
-|---|---|---|---|---|
-| `Unas1c.jpg` | columns | 100 | 1.39 | 2/2 direct *wnjs* (E34 native) |
-| `image_2_test.jpg` | columns | 77 | 2.08 | 3/3 direct *wnjs* |
-| `glyph_wall.jpeg` | columns | 60 | 3.47 | 0 cartouches in scene (negative control) |
-| `sandstone_wall.jpg` | rows (ltr) | 18 | — | 1/1 Thutmose III (*mn-xpr-ra*) |
-| `grand_glyphs.jpeg` | rows (rtl) | 63 | — | 1 detected @0.944, match refused (spelling `N5 W14 W22` not yet in database) |
+### The reward: a royal cartouche
+
+Pass the trial and the Sphinx carves **your name in a royal cartouche**:
+
+1. the name is spelled with a fixed table of uniliteral signs (plus SH, KH, CH, TH, PH, CK),
+2. the signs are carved onto a gilded frame (generated once with an image model): Noto hieroglyphs filled solid, lapis inlay, `sꜣ Ḥr` and the Latin name on the base,
+3. it comes back as a WebP image in about 0.9 s, with no API call per gift.
+
+Letting an image model draw the whole cartouche was tried and rejected: it drew the wrong signs, in a clip-art style. Each gift spends one passed trial, and there are at most 3 per visitor per day.
 
 ---
 
-## 7. FastAPI Backend
+## 9. The app
 
-**Directory:** `app/`  
-**Entry point:** `uvicorn app.main:app`
+The UI follows an Egyptian gold and desert-amber visual language (warm ochre backgrounds, gold accents, hieroglyph-inspired detail), referencing the palette of Middle Kingdom tomb and pyramid inscriptions.
 
-### Structure
+- **Glyphs page.** Image upload; mandatory layout and direction (picking a direction starts detection in the background); a mandatory archaeological-context form (every field defaults to Unknown). The result comes in ordered sections: Gardiner codes grouped by physical line, royal-cartouche identifications, Leiden transliteration, the translations, corpus evidence, the agent trace and the entities, the YOLO-annotated image with a download button, and a sign-frequency chart. Beside it, the decoded signs are rendered as **Unicode hieroglyphs in the wall's own geometry** (columns stack vertically; right-to-left places column 1 at the right edge), with a per-sign confidence table.
+- **Ask Thot-Sphinx.** The reading-chat drawer, with correction cards, a manual-correction form, Apply & re-read, and a "Scrolls consulted" block for the book passages behind each reply.
+- **SphinxChat.** Full-height chat with markdown replies, suggested topics, tool chips, and a **Scrolls** column listing the book passages each reply drew on (rank, similarity, pages, book).
+- **Reverse page.** English rendered as composed Middle Egyptian: golden hieroglyph runs, Leiden transliteration, a word-by-word breakdown and the scribe's grammar notes.
+- **Hieroglyph font:** a self-hosted 390 KB subset of Noto Sans Egyptian Hieroglyphs; the Gardiner → Unicode map covers all 148 model classes and is generated from Unicode names, not typed by hand.
 
+---
+
+## 10. Guardrails
+
+- **Input caps (422):** at most 300 codes, each shaped like a Gardiner code; 40 cartouche names; capped context, snapshot and history sizes.
+- **Rate limits:** 20 LLM requests per IP per 10 minutes; 5 readings per IP per day; 1 re-read per IP per hour; detection alone is never limited.
+- **Budget:** $3 per day for the whole agent. Every call's cost is added up, and the next call is refused once it's spent, so tool loops and reviews stop mid-read too.
+- **Prompt injection:** visitor text is stripped of invisible characters and fake role tags and fenced in `<user_message>`; chat markdown renders no images; `scripts/redteam_injection.py` sends 6 attacks to a running server ([`reports/red_team_injection.json`](reports/red_team_injection.json)).
+- **Errors:** 502s say a generic phrase plus an `error_id`; the real error goes to the log.
+
+---
+
+## 11. Stack
+
+| Layer | Technology |
+|---|---|
+| Detection | Ultralytics YOLO11l → ONNX Runtime (CPU), OpenCV, NumPy |
+| LLMs | Anthropic SDK: Claude Haiku 5.5, Claude Sonnet 5.5 |
+| Retrieval | PostgreSQL 16 + pgvector, OpenAI `text-embedding-3-small`, Cohere rerank |
+| Backend | FastAPI, pydantic v2, uvicorn |
+| Frontend | React 18, TypeScript, Vite 5, Tailwind 3.4, Zustand, Recharts, self-hosted Noto Sans Egyptian Hieroglyphs |
+| Tests | pytest, 370+ tests (`pytest -m "not slow"` runs without the ONNX model) |
+| Demo Space | Gradio on Hugging Face ZeroGPU (`space/`, AGPL-3.0) |
+
+---
+
+## 12. Running it
+
+```bash
+# Python 3.13
+python -m venv thoth && thoth/bin/pip install -r requirements.txt
+
+# .env at the repo root
+#   ANTHROPIC_API_KEY=...
+#   EVIDENCE_DB=...          # PostgreSQL + pgvector connection string
+#   OPENAI_API_KEY=...       # book and translation embeddings
+#   COHERE_API_KEY=...       # rerank
+#   EVIDENCE_DATA_DIR=...    # corpus, vocabulary and build data
+
+# Backend
+thoth/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
+
+# Frontend (Vite on :5173)
+cd frontend && npm install && npm run dev
+
+# Tests
+thoth/bin/python -m pytest -m "not slow" -q
+thoth/bin/python -m pytest -q          # includes the end-to-end ONNX tests
+
+# The vision pipeline alone
+thoth/bin/python -m vision.pipeline Unas1c.jpg
 ```
-app/
-+-- main.py                     # FastAPI factory, CORS middleware, exception handlers, lifespan
-+-- core/
-|   +-- config.py               # pydantic-settings: paths, thresholds, OPENAI_API_KEY, model
-|   +-- exception.py            # InferenceError -> 422; catch-all -> JSON 500 with error_id
-|   +-- lifespan.py             # artifact validation + SphinxPipeline construction
-+-- models/                     # Internal domain type wrappers
-+-- schemas/                    # Pydantic I/O contracts: predict, transliterations,
-|                               #   reverse_translation, corrections, cartouches
-+-- services/
-|   +-- sphinx_inference.py     # InferenceService.run() — pipeline call + schema mapping
-|   |                           #   + annotated-image JPEG encoding
-|   +-- transliteration_services.py  # GPT-4o Egyptologist transliteration (chunked)
-|   +-- sphinx_chat.py          # Thot-Sphinx conversational persona
-|   +-- reverse.py              # English -> Middle Egyptian composition (3-stage prompt)
-+-- utils/
-|   +-- image_utils.py          # decode_upload -> BGR ndarray, validation
-|   +-- post_process_utils.py   # low-level ONNX helpers (thin at Phase 5)
-+-- routers/
-    +-- deps.py                 # get_pipeline(request) -> SphinxPipeline
-    +-- predict.py              # POST /predict/
-    +-- transliterate.py        # POST /transliterate/  (LLM-only second stage)
-    +-- chat.py                 # POST /chat/
-    +-- reverse.py              # POST /reverse/
-    +-- health.py               # GET /health, /health/live, /health/ready
-```
 
-`pipeline.py` remains at the repository root. It is imported by
-`services/sphinx_inference.py` and is independently runnable as a CLI smoke
-test. All domain scripts (`spatial_logic`, `sphinx_corrector`,
-`cartouche_matcher`, etc.) also remain at root.
+Building the evidence store (TLA extraction, indexes, vocabulary, graph, books, translations) is documented in [`CorpusNotes.md`](CorpusNotes.md). Behind a reverse proxy, run uvicorn with `--proxy-headers --forwarded-allow-ips=127.0.0.1` so the per-IP limits see the real client.
 
 ### API
 
-**`POST /predict`** — `multipart/form-data`
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `file` | `UploadFile` | required | Raw image (JPEG, PNG, WebP) |
-| `direction` | `str` | `rtl` | Reading direction: `rtl` or `ltr` |
-| `layout` | `str` | required | `rows` or `columns` — must be supplied by the user |
-| `preset` | `str` | `none` | Enhancement preset: `none`, `default`, `aggressive`, `gentle` |
-| `translate` | `bool` | `false` | Run the LLM transliteration stage in the same request |
-| context fields | `str` | `unknown` | `period`, `text_type`, `support`, `location_type`, `site`, `dynasty`, `kings_reign` |
-
-The response additionally carries `annotated_image` — a JPEG data URL of the
-input with YOLO-style bounding boxes (gold cartouches, green signs, grey
-unknowns, `class conf` labels) for in-browser display and client-side
-download, and `transliteration` when the LLM stage ran.
-
-Returns `PredictResponse` (JSON):
-
-```json
-{
-  "layout": "columns",
-  "direction": "rtl",
-  "image_shape": [1024, 768],
-  "n_detections": 77,
-  "n_cartouches": 3,
-  "outer": {
-    "flat_corrected_seq": ["G17", "N35", "D21"],
-    "flat_translit": "m n r",
-    "score": 2.08,
-    "had_fallback": false
-  },
-  "cartouches": [
-    {
-      "translit": "wnjs",
-      "english": "Unas",
-      "score": 0.91,
-      "inferred": false,
-      "verified": true,
-      "n_members": 6
-    }
-  ]
-}
-```
-
-**`POST /transliterate/`** — JSON. Stateless LLM-only second stage: the
-client echoes the detection output back (`codes`, `confidences`,
-`boundary_hints`, `cartouche_names`, `direction`, `layout`, `context`) and
-receives a `TransliterationOut` (per-chunk Leiden transliteration, English
-gloss, linguistic notes, confidence). Chunking cuts at physical line
-boundaries first, then at 20 signs. The system prompt encodes the V4
-confusion pairs and pipeline provenance; matched cartouches are passed as
-authoritative anchors. This split enables the frontend's latency-hiding
-flow: detection fires when the user picks a reading direction, and the
-Decode action only waits on the LLM.
-
-**`POST /chat/`** — JSON `{prompt, history}` -> `{reply, message_id}`.
-Conversational agent with the Thot-Sphinx persona (guardian of temple
-knowledge, factual Egyptology, hard off-topic refusal). Stateless; history
-travels with each request. 503 without an API key, 502 on upstream failure.
-
-**`POST /reverse/`** — JSON `{text, register}`. Reverse translation: modern
-English rendered into composed Middle Egyptian by a three-stage prompt
-(semantic normalization to the attested lexicon, composition with real
-grammar plus Leiden transliteration, Gardiner sign coding with phonetic
-complements and determinatives). Returns the flat code sequence, a per-word
-breakdown, and grammar notes. Output codes are regex-sanitized to canonical
-Gardiner form. Sign-level orthography is LLM-approximate; no dictionary
-cross-check yet.
-
-**`GET /health`** — Returns pipeline status, class count, and ONNX output
-shape. Used by container orchestrators as a liveness probe.
-
-### Configuration
-
-All settings are read from environment variables or `.env` at startup.
-
-| Variable | Default | Description |
-|---|---|---|
-| `ONNX_PATH` | `artifacts/best_model_v4.onnx` | ONNX weights path |
-| `CLASS_MAP` | `artifacts/class_map50_v4.json` | Class index map |
-| `TRIE_PKL` | `artifacts/sphinx_trie_v4.pkl` | Serialized lexicon trie |
-| `BBAW_PARQUET` | `artifacts/bbaw_clean.parquet` | Bigram LM corpus |
-| `CONFUSION_CSV` | `artifacts/confusion_matrix_v4_normalized.csv` | Sub-cost matrix |
-| `IMGSZ` | `1024` | ONNX inference resolution |
-| `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
-| `MAX_UPLOAD_MB` | `20` | Hard cap on uploaded image size |
-
----
-
-## 8. Frontend
-
-**Directory:** `frontend/`  
-**Target stack:** TypeScript, React 18, Vite 4/5, Tailwind CSS 3.4,
-Recharts, Axios.
-
-The UI follows an Egyptian gold and desert amber visual language — warm ochre
-backgrounds, gold-toned accent colours, and hieroglyph-inspired typographic
-detail — referencing the visual palette of Middle Kingdom tomb and pyramid
-inscriptions. Design reference: `Sphinx_Eyes_Mockup.png` in the repo root.
-
-The stack downgrade (React 18.3 / Vite 5 / Tailwind 3.4 via PostCSS) and the
-full backend wiring are complete. The frontend implements the two-stage
-decode flow, renders detected signs as real Unicode hieroglyphs, and holds
-all page state in global Zustand stores so navigation between pages loses
-nothing.
-
-### Stack
-
-| Layer | Library | Version target |
-|---|---|---|
-| Language | TypeScript | 5.x |
-| UI framework | React | 18.x |
-| Build tool | Vite | 4 or 5 |
-| Styling | Tailwind CSS | 3.4 |
-| Charts | Recharts | 2.x |
-| HTTP client | Axios | 1.x |
-| State | Zustand | 5.x |
-| Markdown | react-markdown | 10.x |
-
-### Structure
-
-```
-frontend/src/
-+-- api/           -- glyphApi.ts (predict + transliterate adapter),
-|                     chatApi.ts, reverseApi.ts, analyticsApi.ts
-+-- components/    -- chat/ChatPanel, glyphs/{GlyphDecoder, GlyphWall,
-|                     SignConfidenceTable, SignFrequencyChart},
-|                     dashboard/ActivityChart, common/, layout/
-+-- stores/        -- Zustand global stores: useChatStore, useGlyphStore,
-|                     useReverseStore (state survives page navigation)
-+-- hooks/         -- useGlyphDecoder, useChat (thin store wrappers), useAnalytics
-+-- pages/         -- LandingHero, ChatPage, GlyphsPage, Reverse, LearnPage
-+-- utils/         -- gardinerUnicode.ts (Gardiner -> U+13000 glyph map,
-|                     generated from unicodedata; 148/148 model classes)
-+-- services/      -- http.ts (Axios instance, VITE_API_BASE_URL)
-+-- types/         -- mirrors backend contracts (PredictResponse,
-|                     TransliterationOut, ReverseTranslationOut, TextContext)
-+-- assets/        -- UI imagery + fonts/NotoSansEgyptianHieroglyphs.woff2
-                      (self-hosted 390 KB hieroglyph-block subset)
-```
-
-### Feature summary
-
-- **Glyphs page** — image upload, mandatory layout/direction selection
-  (picking a direction triggers background detection), mandatory
-  archaeological-context form (all fields default Unknown). The result is
-  presented in ordered sections: Gardiner codes grouped by physical line,
-  royal-cartouche identifications, Leiden transliteration, English gloss,
-  the YOLO-annotated image with a download action, and a Recharts
-  sign-frequency chart. The right column renders the decoded signs as
-  Unicode hieroglyphs in the wall's own geometry (columns stack vertically;
-  right-to-left reading places column 1 at the right edge), followed by a
-  per-detection confidence table (bars color-banded at 0.80 and 0.50;
-  displayed probabilities clamped to a 0.998 ceiling).
-- **SphinxChat** — full-height conversation panel, markdown rendering of
-  assistant replies, suggested-topic shortcuts wired to the shared store,
-  and a four-message rolling context window sent to the backend.
-- **Reverse page** — English input (300-character cap, register selection)
-  rendered as composed Middle Egyptian: golden hieroglyph runs, Leiden
-  transliteration, word-by-word breakdown, and the scribe's grammar notes.
-
-State persists across in-app navigation via Zustand but not across page
-reloads; durable persistence arrives with the Phase 6 database.
-
----
-
-## 9. Repository Structure
-
-```
-.
-+-- pipeline.py                  # SphinxPipeline -- CLI + FastAPI import target
-+-- spatial_logic.py             # Detection, NMS, reading-order assembly
-+-- sphinx_corrector.py          # Viterbi correction + bigram LM
-+-- sphinx_trie.py               # SphinxTrie class (module-scope, pickle-safe)
-+-- cartouche_matcher.py         # Needleman-Wunsch royal-name alignment
-+-- layout_detector.py           # Geometry-driven layout classification
-+-- enhance_img.py               # CLAHE + denoising + unsharp + gamma
-+-- wall_segmenter.py            # Multi-panel wall segmentation
-+-- build_master_trie.py         # Rebuild sphinx_trie_v4.pkl from sources
-+-- mine_determinatives.py       # Rebuild determinatives.json from dickson.csv
-+-- validate_onnx.py             # ONNX sanity-check (shape, sigmoid, class order)
-+-- gardiner_Map.py              # GARDINER_MAP -- normalization source of truth
-+-- royal_names.json             # Attested royal-name database
-+-- determinatives.json          # Determinative sign set
-+-- initial_particles.json       # Initial particle sign set
-|
-+-- app/                         # FastAPI backend (Phase 5)
-+-- artifacts/                   # Model weights and NLP artifacts (not committed)
-+-- ETL/                         # Dataset preparation scripts
-+-- frontend/                    # React frontend
-+-- TrainingV2/                  # YOLO-format training export
-+-- Glyph2025/                   # Raw scraped glyph corpus (~349 classes)
-+-- SphinxEyes_Final/            # Curated per-class source-of-truth
-+-- Backups/                     # V3 artifacts (reference only)
-|
-+-- Dockerfile
-+-- docker-compose.yml
-+-- requirements.txt
-+-- .env                         # Local environment overrides (not committed)
-+-- CLAUDE.md                    # AI assistant project context
-```
-
----
-
-## 10. Artifacts
-
-All model and NLP artifacts are stored under `artifacts/` and are not
-committed to version control.
-
-| File | Size | Description |
-|---|---|---|
-| `best_model_v4.onnx` | 97.5 MB | YOLOv11-Large V4 weights, opset 18 |
-| `class_map50_v4.json` | — | 150-class index map with per-class mAP50 |
-| `sphinx_trie_v4.pkl` | 23.1 MB | Serialized SphinxTrie (38,073 entries) |
-| `bbaw_clean.parquet` | — | BBAW Middle Egyptian corpus (bigram source) |
-| `confusion_matrix_v4_normalized.csv` | — | Row-normalized confusion, P(truth\|pred) |
-
-The normalized confusion matrix is derived from `confusion_matrix_v4_raw.csv`
-by dropping the background row/column and row-normalizing so that each row
-sums to 1.0.
-
----
-
-## 11. Running the Pipeline
-
-### Prerequisites
-
-```bash
-pip install -r requirements.txt
-```
-
-Python 3.11 or 3.12 recommended. ONNX Runtime CPU is the default provider.
-
-### CLI smoke test
-
-```bash
-python pipeline.py Unas1c.jpg
-```
-
-Runs the full pipeline on a single image and prints layout, detection count,
-corrected outer-text sequence, transliteration, and cartouche matches.
-
-### Component self-tests
-
-```bash
-python sphinx_corrector.py    # 5 correction tests
-python spatial_logic.py       # 14 spatial layer tests
-python cartouche_matcher.py   # royal-name alignment self-tests
-python validate_onnx.py       # ONNX shape and output validation
-```
-
-### FastAPI development server
-
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The server validates all artifact paths at startup and raises
-`FileNotFoundError` listing every missing file if any artifact is absent.
-
----
-
-## 12. Docker Deployment
-
-### Infrastructure overview
-
-```
-docker compose
-+-- sphinx_pyramid    FastAPI backend          :8000  (public)
-+-- sphinx_memory     PostgreSQL 16            :5437  (localhost only)
-
-Network : sphinx_net  (bridge, internal service discovery by name)
-Volume  : sphinx_db_data  (named, persists across restarts)
-```
-
-### Build
-
-The Dockerfile uses a two-stage build:
-
-| Stage | Base | Purpose |
-|---|---|---|
-| `builder` | `python:3.12-slim` | Compile wheels (numpy, asyncpg, cryptography) into `/opt/venv` |
-| `runtime` | `python:3.12-slim` | Copy venv only; no build toolchain in the final image |
-
-The runtime image runs as a non-root `sphinx` user (uid 1000). Build
-toolchain (`gcc`, `build-essential`) is present only in the builder stage
-and does not appear in the final image.
-
-Runtime OS dependencies installed in the final image:
-
-| Package | Reason |
+| Endpoint | Does |
 |---|---|
-| `libpq5` | asyncpg runtime |
-| `libgomp1` | OpenMP runtime for ONNX Runtime CPU provider |
-| `libgl1`, `libglib2.0-0` | OpenCV headless runtime |
-| `curl` | Container health check |
+| `POST /predict/` | photo + layout + direction → detections, lines, cartouches, annotated image |
+| `POST /transliterate/` | detections + context (+ human corrections) → the agent read |
+| `POST /chat/` | the Thot-Sphinx chat: graph, books, riddles, cartouche gift |
+| `POST /chat/reading/` | the chat about one reading, with corrections |
+| `POST /reverse/` | English → Middle Egyptian |
+| `GET /health`, `/health/live`, `/health/ready` | health |
 
-### Starting services
+**`POST /predict/`** takes `multipart/form-data`:
 
-```bash
-# First run: build image and start all services
-docker compose up --build
-
-# Subsequent runs
-docker compose up
-
-# Background
-docker compose up -d
-```
-
-### Artifact mount
-
-Model artifacts are mounted read-only from the host so that retraining does
-not require an image rebuild:
-
-```yaml
-volumes:
-  - ./artifacts:/app/artifacts:ro
-```
-
-All six artifact files must exist under `./artifacts/` before starting:
-
-```
-artifacts/
-+-- best_model_v4.onnx
-+-- class_map50_v4.json
-+-- sphinx_trie_v4.pkl
-+-- bbaw_clean.parquet
-+-- confusion_matrix_v4_normalized.csv
-```
-
-### Health check
-
-The container health check polls `GET /health/live` every 30 seconds.
-Start period is 60 seconds to allow ONNX session creation and trie
-deserialization (~15–20 seconds on CPU-only hardware) before the
-orchestrator begins counting failures.
-
-### Database
-
-PostgreSQL 16 (`sphinx_memory`) is configured for Phase 6 persistence.
-It is healthy-checked via `pg_isready` before `sphinx_pyramid` receives
-traffic (`depends_on: condition: service_healthy`). The database port
-(5432 internal) is exposed only on `127.0.0.1:5437` on the host — not
-accessible from outside the machine in development.
-
-Credentials are read from environment variables with development defaults:
-
-```
-POSTGRES_USER     = sphinx
-POSTGRES_PASSWORD = sphinx_dev_password
-POSTGRES_DB       = sphinxeyes
-```
-
-Override all three in `.env` before any deployment outside localhost.
-
----
-
-## 13. Training — V4 Summary
-
-Training was executed on a Google Colab A100 instance using Ultralytics
-YOLOv11. The V4 dataset added 45 manually labeled images with explicit
-interior cartouche annotations, enabling native detection of signs previously
-invisible to V3 at global inference resolution.
-
-Key design decisions:
-
-- Fine-tuned from V3 `best.pt` rather than training from scratch, preserving
-  learned feature representations for the 148-class Gardiner vocabulary.
-- Mosaic augmentation reduced to 0.3 (from default 1.0) to avoid generating
-  unrealistic sign compositions that do not occur in authentic inscriptions.
-- Horizontal and vertical flips disabled — hieroglyph orientation is
-  semantically significant and must not be randomized.
-- Rotation limited to 3 degrees to simulate minor camera tilt without
-  introducing implausible reading angles.
-- Five backbone layers frozen to stabilize low-level feature extraction during
-  fine-tuning.
-
-ONNX export uses `nms=False`. All post-processing (confidence filtering,
-class-agnostic NMS, top-3 extraction) is handled in `spatial_logic.py` for
-full programmatic control and to allow the NLP layer access to the full
-top-3 candidate distribution per anchor.
-
----
-
-## 14. Roadmap
-
-| Phase | Item | Status |
+| Field | Default | Description |
 |---|---|---|
-| 1–4 | CV + spatial + NLP + cartouche layers | Complete |
-| 5 | FastAPI backend (`app/`) | Complete |
-| 5 | Frontend wiring (`glyphApi.ts` adapter) | Complete |
-| 5 | Frontend stack downgrade (React 18, Vite 5, Tailwind 3.4) | Complete |
-| 5 | Inference fidelity (letterbox resize, enhancement off, user-supplied layout) | Complete — local ONNX matches Colab exactly |
-| 6 | GPT transliteration integration (`/transliterate/`, two-stage flow) | Complete |
-| 6 | Thot-Sphinx chat (`/chat/`) | Complete |
-| 6 | Reverse translation English -> Middle Egyptian (`/reverse/`) | Complete |
-| 6 | Annotated detection image + download | Complete |
-| 6 | Unicode hieroglyph rendering (self-hosted Noto font, 148-class map) | Complete |
-| 6 | Client state management (Zustand stores, cross-page) | Complete |
-| 6 | PostgreSQL schema + async persistence (decode history, chat sessions, auth) | Pending |
-| 7 | Real-image integration test (labeled fixture, assert transliteration) | Final gate |
-| — | `royal_names.json`: add `N5 W14 W22` spelling (grand_glyphs cartouche) | Pending — awaiting identification of the king |
-| — | V5 training (address `d56`, `n23`, `i1`; confusions G1/G5, N5/N33/Aa1, W14) | Deferred |
+| `file` | required | raw image (JPEG, PNG, WebP) |
+| `layout` | required | `rows` or `columns`, supplied by the seeker |
+| `direction` | `rtl` | `rtl` or `ltr` |
+| `preset` | `none` | enhancement preset: `none`, `default`, `aggressive`, `gentle` |
+| `translate` | `false` | run the agent read in the same request |
+| context fields | `unknown` | `period`, `text_type`, `support`, `location_type`, `site`, `dynasty`, `kings_reign` |
 
+The response carries `annotated_image`, a JPEG data URL with YOLO-style boxes (gold cartouches, green signs, grey unknowns, `class conf` labels) for display and download.
 
-### Project Complete and Shipped
+All heavy artifacts (ONNX model, trie, confusion matrix, class map) are loaded once at startup by the FastAPI lifespan and reach the handlers through dependency injection.
 
-public domain at [sphinx](https://sphinx.tensorgeek.com)
+---
 
-the backend server is OFFline,  request a demo if interested.
+## 13. Repository layout
 
+```
+app/          FastAPI backend: routers, services, schemas, guards
+  llm/        Anthropic client, tools, router, trace, prompts/*.md
+vision/       detection → spatial logic → corrector → cartouche matcher
+corpus/       evidence store: extraction, retrieval, rerank, graph, books, riddles, MCP server
+db/           SQL: schema, indexes, vocabulary, graph, books, translations
+knowledge/    curated sources for the knowledge graph
+reports/      evaluation results (JSON / JSONL)
+frontend/     React app
+space/        Hugging Face Space (a frozen copy of the pipeline)
+tests/        pytest suite
+scripts/      one-off tools: ONNX checks, red team, frame generation
+artifacts/    ONNX model, class map, confusion matrices, trie
+```
+
+---
+
+## 14. Attribution and licence
+
+- **Thesaurus Linguae Aegyptiae** (BBAW / AAEW): corpus and lemma data, CC BY-SA 4.0. Data derived from it stays under the same licence.
+- **Published translations**, used for non-commercial study: J. P. Allen, *The Ancient Egyptian Pyramid Texts*; R. O. Faulkner, *The Ancient Egyptian Coffin Texts*; A. Piankoff, *The Pyramid of Unas*, in Vincent Brown's online edition.
+- **Egyptology books:** 17 titles listed with their sources in `assets/sphinx_books_manifest.json`.
+- **Font:** Noto Sans Egyptian Hieroglyphs (SIL Open Font License).
+- **Code:** MIT (see [`LICENSE`](LICENSE)). The Hugging Face Space is AGPL-3.0 because Ultralytics is.
+
+---
+
+## 15. Roadmap
+
+| Item | Status |
+|---|---|
+| Vision pipeline, spatial logic, classic NLP, cartouche matching | Done |
+| FastAPI + React app, two-stage decode flow | Done |
+| Evidence store, hybrid retrieval, knowledge graph, books, translations | Done |
+| Agent read: tool loop, evidence check, router, Sonnet review, semantic refinement | Done |
+| Reading chat, human corrections, re-read | Done |
+| Guardrails, budget, injection fencing | Done |
+| Persona, riddle trial, cartouche gift | Done |
+| Reading sessions and memory | Done |
+| Deploy: database to AWS RDS, backend to the VPS | Next |
+| Corrections on the per-chunk path for long walls | Next |
+| More kings in `royal_names.json` (Amasis first) | Next |
+| v10 detector metrics and confusion matrix | Next |
