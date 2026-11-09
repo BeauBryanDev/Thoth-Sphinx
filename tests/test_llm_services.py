@@ -570,7 +570,7 @@ def test_semantic_translation_keeps_the_raw_one_and_filters_by_king(stub: StubMe
     monkeypatch.setattr(settings, 'semantic_translation', True)
     searched: dict[str, object] = {}
 
-    def fake_search(query: str, king: str | None = None, limit: int = 3) -> dict:
+    def fake_search(query: str, king: str | None = None, limit: int = 3, **_: object) -> dict:
         searched.update(query=query, king=king)
         return {'mode': 'hybrid', 'passages': [{
             'passage_id': 'pyramid_texts:unis:152:0', 'work': 'The Ancient Egyptian Pyramid Texts',
@@ -593,6 +593,30 @@ def test_semantic_translation_keeps_the_raw_one_and_filters_by_king(stub: StubMe
     assert out.semantic is not None and out.semantic.translation == 'He will live, and this Unis will live.'
     assert out.semantic.match == 'same_text' and out.semantic.passages[0].spell is None
     assert any(c.tool == 'search_translations' for c in out.tool_calls)
+
+
+def test_temple_king_maps_and_a_thin_king_filter_is_backfilled(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.llm import tools
+    from app.services import refine_translation
+    from corpus import embed
+    from corpus.translations import search as translation_search
+
+    assert refine_translation.text_king(['stj — Seti I (Dynasty XIX) (interior: M23 L2 X1)']) == 'SETY I'
+    assert refine_translation.text_king(['stj — Seti II (Dynasty XIX) (interior: M23 L2 X1)']) is None
+    plate = {'id': 'hypostyle:sety i:139:0', 'source': 'hypostyle', 'work': 'Great Hypostyle Hall', 'author': 'Brand',
+             'king': 'SETY I', 'location': None, 'section': None, 'spell': 139, 'title': None, 'page': '188',
+             'citation': 'Brand › Sety I › Plate 139', 'body': 'Presenting a conical loaf to his father Seth.'}
+    monkeypatch.setattr(embed, 'client', lambda: None)
+    monkeypatch.setattr(embed, 'embed_texts', lambda api, texts: ([[0.0]] * len(texts), 0))
+    monkeypatch.setattr(translation_search, 'search_variants',
+                        lambda variants, vectors, king=None: [] if king == 'HATSHEPSUT' else [plate])
+    monkeypatch.setattr(translation_search, 'rerank', lambda query, hits, limit, king=None: hits[:limit])
+    monkeypatch.setattr(translation_search, 'whole_spell', lambda hit: hit['body'])
+
+    assert tools.search_translations('a loaf for Seth', king='HATSHEPSUT', limit=3)['found'] == 0
+    out = tools.search_translations('a loaf for Seth', king='HATSHEPSUT', limit=3, backfill=True)
+    assert [p['passage_id'] for p in out['passages']] == ['hypostyle:sety i:139:0']
+    assert out['passages'][0]['unit'] == 'Plate' and 'added without the king filter' in out['mode']
 
 
 def test_chat_seeker_memory_is_cleaned_and_fenced_and_absent_for_new_visitors(stub: StubMessages,

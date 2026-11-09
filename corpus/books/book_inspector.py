@@ -234,7 +234,7 @@ def inspect(
         layout = read_layout(path)
         chosen, found = find_headings(layout, source)
         alternatives = {name: len(merge(finder(layout))) for name, finder in FINDERS.items()}
-        
+
     return BookReport(
         path=path,
         info=info,
@@ -340,7 +340,8 @@ def write_manifest(report: BookReport, manifest: Path) -> None:
         print(f'added {draft["doc_id"]}: {len(draft["sections"])} sections')
     else:
         print(f'{entry["doc_id"]}: {len(entry["sections"])} -> {len(draft["sections"])} sections')
-        print(f'  {draft["notes"]}')
+        print(f'  {draft["notes"]}'
+        )
         entry['sections'] = draft['sections']
         start, end = spans[index]
         block = _indented(entry)

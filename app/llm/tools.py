@@ -509,7 +509,8 @@ def search_books(query: str,
 
 def search_translations(query: str,
                         king: str | None = None,
-                        limit: int = translation_search.TOP_K
+                        limit: int = translation_search.TOP_K,
+                        backfill: bool = False,
                         ) -> dict[str, Any]:
     """Published English translations of whole spells: hybrid search on parts, one hit per spell, Cohere rerank."""
     # Rerank lifted hit@1 0.716 -> 0.826 on 218 Allen -> Piankoff pairs (reports/translation_retrieval.json).
@@ -537,30 +538,40 @@ def search_translations(query: str,
         logger.warning('translation rerank failed: %s', error)
         hits = spells[:limit]
         mode += ', grouped by spell (rerank unavailable)'
+    passages = [
+        {
+            'passage_id': h['id'],
+            'unit': translation_search.UNITS.get(h['source'], 'Spell'),
+            'work': h['work'],
+            'author': h['author'],
+            'king': h['king'],
+            'location': h['location'],
+            'section': h['section'],
+            'spell': h['spell'],
+            'title': h['title'],
+            'page': h['page'],
+            'citation': h['citation'],
+            'similarity': round(h['similarity'], 3) if h.get('similarity') is not None else None,
+            'rerank_score': round(h['rerank_score'], 3) if h.get('rerank_score') is not None else None,
+            'hybrid_rank': h.get('hybrid_rank'),
+            'matched_by': [name for name, key in (('words', 'text_rank'), ('meaning', 'vector_rank')) if h.get(key)]
+            or ['words'],
+            'text': h['body'],
+            'spell_text': translation_search.whole_spell(h),
+        }
+        for h in hits
+    ]
+    if backfill and king and len(passages) < limit:
+        # A king with few or no passages (HATSHEPSUT has none): fill up without the filter, own king first.
+        seen = {(p['work'], p['king'], p['spell']) for p in passages}
+        extra = [p for p in search_translations(query, king=None, limit=limit)['passages']
+                 if (p['work'], p['king'], p['spell']) not in seen][:limit - len(passages)]
+        if extra:
+            passages += extra
+            mode += f'; {len(extra)} added without the king filter'
     return {
-        'found': len(hits),
+        'found': len(passages),
         'mode': mode,
         'king': king,
-        'passages': [
-            {
-                'passage_id': h['id'],
-                'work': h['work'],
-                'author': h['author'],
-                'king': h['king'],
-                'location': h['location'],
-                'section': h['section'],
-                'spell': h['spell'],
-                'title': h['title'],
-                'page': h['page'],
-                'citation': h['citation'],
-                'similarity': round(h['similarity'], 3) if h.get('similarity') is not None else None,
-                'rerank_score': round(h['rerank_score'], 3) if h.get('rerank_score') is not None else None,
-                'hybrid_rank': h.get('hybrid_rank'),
-                'matched_by': [name for name, key in (('words', 'text_rank'), ('meaning', 'vector_rank')) if h.get(key)]
-                or ['words'],
-                'text': h['body'],
-                'spell_text': translation_search.whole_spell(h),
-            }
-            for h in hits
-        ],
+        'passages': passages,
     }

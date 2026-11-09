@@ -187,7 +187,7 @@ def read_layout(path: Path) -> Layout:
         pages.append(_rows(len(pages) + 1, chunks[i + 1], fonts))
     sizes = [r.height for page in pages for r in page for _ in range(len(r.text))]
     body = statistics.median(sizes) if sizes else 12.0
-    
+
     return Layout(
         pages=pages,
         outline=_outline(xml),
@@ -429,6 +429,7 @@ def from_outline(layout: Layout) -> list[Heading]:
             title = f'{parents[depth - 1]} — {title}'
         found.append(Heading(page=page, title=title, source='outline'))
     return found
+    
 
 
 def toc_pages(layout: Layout) -> list[int]:

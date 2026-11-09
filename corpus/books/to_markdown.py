@@ -75,7 +75,10 @@ def page_markdown(
     for bad, good in book.get('char_map', {}).items():
         raw = raw.replace(bad, good)
     strip = {clean_text(s) for s in book.get('strip_lines', [])}
+    patterns = [re.compile(p) for p in book.get('strip_patterns', [])]   # lines that vary: '….indd 29', '6/24/24 2:13 PM'
     text = clean_text(raw)
+    if patterns:
+        text = '\n'.join(ln for ln in text.split('\n') if not any(p.fullmatch(ln.strip()) for p in patterns))
     if pdf_order:
         text = paragraph_breaks(text)
     paragraphs: list[str] = []

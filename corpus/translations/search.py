@@ -13,7 +13,19 @@ COLUMNS = ('t.id, t.source, t.work, t.author, t.king, t.location, t.section, t.s
 TOP_K = 5
 RERANK_CANDIDATES = 15            # distinct spells handed to the reranker
 WHOLE_SPELL_CHARS = 3000          # small-to-big cap on the spell text given to the editor
-KING_NAMES = {'UNIS': ('Unas', 'Unis', 'Wenis')}   # Piankoff and the LLM write Unas, Allen writes Unis
+KING_NAMES = {                    # spellings of one king's name across sources and the LLM
+    'UNIS': ('Unas', 'Unis', 'Wenis'),          # Piankoff and the LLM write Unas, Allen writes Unis
+    'SETY I': ('Sety', 'Seti', 'Sethos'),       # Hypostyle writes Sety, royal_names.json writes Seti
+    'RAMESSES II': ('Ramesses', 'Ramses', 'Rameses'),
+    'RAMESSES I': ('Ramesses', 'Ramses', 'Rameses'),
+    'THUTMOSE III': ('Thutmose', 'Tuthmosis', 'Thutmosis'),
+}
+UNITS = {                         # what one passage of each source is called; 'Spell' otherwise
+    'unas_online': 'Utterance',
+    'hypostyle': 'Plate',
+    'medinet_habu': 'Plate',
+    'birds_catalog': 'Catalog No.',
+}
 
 
 def _king_filter(king: str | None, sources: list[str] | None = None) -> str:
@@ -78,7 +90,10 @@ def search_hybrid(
         for rank, hit in enumerate(hits, start=1):
             row = fused.setdefault(
                 hit['id'],
-                {**hit, 'score': 0.0, 'text_rank': None, 'vector_rank': None, 'similarity': None},
+                {**hit, 'score': 0.0, 
+                'text_rank': None, 
+                'vector_rank': None, 
+                'similarity': None},
             )
             row[f'{channel}_rank'] = rank
             row['score'] += 1 / (RRF_K + rank)

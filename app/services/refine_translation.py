@@ -18,12 +18,17 @@ logger = logging.getLogger('sphinxeyes.refine_translation')
 
 SYSTEM_PROMPT = load('translation_polish')
 MAX_PASSAGE_TEXT = 3000           # characters of each spell sent to the editor (whole spell, small-to-big)
-PYRAMID_KINGS = {                 # cartouche English name -> king column of english_translations
-    'Unas': 'UNIS',
+TEXT_KINGS = {                    # cartouche English name -> king column of english_translations
+    'Unas': 'UNIS',                # pyramids (Allen, Piankoff)
     'Teti': 'TETI',
     'Pepi I ': 'PEPI I',
     'Merenre': 'MERENRE',
     'Pepi II': 'PEPI II',
+    'Thutmose III ': 'THUTMOSE III',   # temples (Medinet Habu X, Great Hypostyle Hall)
+    'Hatshepsut': 'HATSHEPSUT',        # no passages yet: the search backfills
+    'Seti I ': 'SETY I',               # royal_names.json writes Seti, the Hypostyle volume Sety
+    'Ramesses I ': 'RAMESSES I',
+    'Ramesses II ': 'RAMESSES II',
 }
 
 
@@ -35,13 +40,13 @@ class _Refined(BaseModel):
     note         : str
 
 
-def pyramid_king(cartouche_names: list[str]) -> str | None:
-    """The first matched cartouche whose king owns a pyramid with texts, as the table spells it."""
+def text_king(cartouche_names: list[str]) -> str | None:
+    """The first matched cartouche whose king has published texts in the table, as the table spells him."""
     for name in cartouche_names:
         if name.startswith('[UNRESOLVED') or ' — ' not in name:
             continue
         english = name.split(' — ', 1)[1] + ' '
-        for label, king in PYRAMID_KINGS.items():
+        for label, king in TEXT_KINGS.items():
             if english.startswith(label):
                 return king
     return None
@@ -66,12 +71,12 @@ def refine(translation: str, cartouche_names: list[str]) -> tuple[SemanticTransl
     """Search, then refine; failures land in .error and never break the reading."""
     started = time.monotonic()
     query = clean_query(translation)
-    king = pyramid_king(cartouche_names)
+    king = text_king(cartouche_names)
     out = SemanticTranslation(query=query, king_filter=king)
     call = None
     try:
         search_started = time.monotonic()
-        result = tools.search_translations(query, king=king, limit=settings.semantic_top_k)
+        result = tools.search_translations(query, king=king, limit=settings.semantic_top_k, backfill=True)
         out.search_mode = result['mode']
         out.passages = [TranslationPassage(**p) for p in result['passages']]
         call = ToolCallOut(

@@ -33,6 +33,7 @@ LAST_WORD = re.compile(r'([A-Za-z.]+)[.]["\')\]]*$')
 INITIAL = re.compile(r'(^|[\s(])[A-Z]\.["\')\]]*$')    # 'E. A. Wallis Budge': an initial, not a sentence end
 PAGE_MARK = re.compile(r'^<!-- (pdf )?p\. (\d+) -->$')
 DOC_MARK = re.compile(r'^<!-- doc_id: ([^ |]+)')
+CITE_MARK = re.compile(r'^<!-- cite: (.+?) -->$')   # hand-written Markdown with no pages: '<!-- cite: Sphinx-Wisdom -->'
 
 encoder = tiktoken.get_encoding(ENCODING)
 
@@ -105,12 +106,16 @@ def read_book(path: Path) -> list[Section]:
         line = line.strip()
         if not line:
             continue
+        if line.startswith('###'):
+            line = line.lstrip('#').strip()          # a sub-heading of hand-written Markdown stays as text
         if line.startswith('# '):
             book = line[2:].strip()
         elif DOC_MARK.match(line):
             doc_id = DOC_MARK.match(line).group(1)
         elif line.startswith('## '):
             sections.append(Section(doc_id=doc_id, book=book, title=line[3:].strip()))
+        elif CITE_MARK.match(line):
+            page = CITE_MARK.match(line).group(1)    # a page-less source cites a label instead
         elif PAGE_MARK.match(line):
             m = PAGE_MARK.match(line)
             page = f'{"pdf p." if m.group(1) else "p."} {m.group(2)}'

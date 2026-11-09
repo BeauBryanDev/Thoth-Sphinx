@@ -33,6 +33,7 @@ def page_range(start: str | None, end: str | None) -> tuple[str, int, int] | Non
         return None
     kind, first = start.rsplit(' ', 1)
     last = (end or start).rsplit(' ', 1)[1]
+
     return kind, int(first), int(last)
 
 
@@ -44,6 +45,7 @@ def is_hit(hit: dict[str, Any], gold: dict[str, Any], strict: bool) -> bool:
         return squash(gold['evidence']) in squash(hit['body'])
     a = page_range(hit['page_start'], hit['page_end'])
     b = page_range(gold['page_start'], gold['page_end'])
+
     return bool(a and b and a[0] == b[0] and a[1] <= b[2] and b[1] <= a[2])
 
 
@@ -67,7 +69,8 @@ def run(
     golden: list[dict[str, Any]],
     vectors: dict[str, list[float]],
     variant: str,
-) -> tuple[dict[str, list[list[dict[str, Any]]]], dict[str, float]]:
+) -> tuple[dict[str, list[list[dict[str, Any]]]], 
+            dict[str, float]]:
     """Top-K hits per mode per question, and mean latency per mode in ms."""
     results: dict[str, list[list[dict[str, Any]]]] = {m: [] for m in MODES}
     timing: dict[str, list[float]] = {m: [] for m in MODES}
@@ -82,6 +85,7 @@ def run(
                 hits = search_hybrid(q['question'], vectors[q['id']], variant, K)
             timing[mode].append(1000 * (time.perf_counter() - start))
             results[mode].append(hits)
+
     return results, {m: round(statistics.mean(t), 1) for m, t in timing.items()}
 
 
@@ -95,6 +99,7 @@ def negative_check(
     neg = sorted(t for t, q in zip(tops, golden) if q['negative'])
     if not pos or not neg:
         return {}
+
     floor = pos[max(0, int(0.1 * len(pos)) - 1)]
     return {
         'vector_top1': {
@@ -160,6 +165,7 @@ def judged(
     }
     out['judge_cost_usd'] = round(judge.spent, 3)
     out['judge_calls'] = judge.calls
+    
     return out
 
 

@@ -120,9 +120,10 @@ class ToolCallOut(BaseModel):
 class TranslationPassage(BaseModel):
     """One published translation passage (english_translations) close to the reading."""
     passage_id : str
+    unit       : str = 'Spell'                    # Spell, Utterance, Plate or Catalog No.: what `spell` numbers
     work       : str
     author     : str
-    king       : Optional[str] = None             # pyramid owner, e.g. UNIS
+    king       : Optional[str] = None             # pyramid owner or temple king, e.g. UNIS, SETY I
     location   : Optional[str] = None             # the wall, e.g. ANTECHAMBER, WEST GABLE
     section    : Optional[str] = None
     spell      : Optional[int] = None
@@ -140,7 +141,7 @@ class TranslationPassage(BaseModel):
 class SemanticTranslation(BaseModel):
     """The second translation: the LLM translation, smoothed against the closest published passages."""
     query        : str                            # the LLM translation as searched
-    king_filter  : Optional[str] = None           # search limited to this pyramid's spells
+    king_filter  : Optional[str] = None           # search led by this king's passages (backfilled when few)
     search_mode  : str = 'hybrid'
     passages     : list[TranslationPassage] = []
     translation  : str = ''                       # the refined English; '' when the step failed
