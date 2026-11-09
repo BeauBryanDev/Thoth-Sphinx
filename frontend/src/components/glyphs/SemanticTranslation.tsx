@@ -1,9 +1,10 @@
 // ============================================================
 // <SemanticTranslation /> — the second translation, under the raw one
 // ============================================================
-// The LLM's English is searched against published translations of
-// whole spells (Allen's Pyramid Texts, Faulkner's Coffin Texts), then
-// smoothed against the closest passages (app/services/translation_refine.py).
+// The LLM's English is searched against published translations (Allen's
+// Pyramid Texts, Faulkner's Coffin Texts, temple plates from Karnak and
+// Medinet Habu, museum catalogue inscriptions), then smoothed against the
+// closest passages (app/services/refine_translation.py).
 // The raw LLM translation above stays untouched; this card shows the
 // refined text, how the passages were used, and the passages themselves.
 
@@ -29,7 +30,19 @@ const Similarity = ({ value }: { value: number | null }) => {
   );
 };
 
-const titleCase = (s: string) => s.toLowerCase().replace(/(^|[\s,–-])\p{L}/gu, (m) => m.toUpperCase());
+// Roman numerals stay upper case: 'RAMESSES II' -> 'Ramesses II', not 'Ramesses Ii'.
+const titleCase = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/(^|[\s,–-])\p{L}/gu, (m) => m.toUpperCase())
+    .replace(/\b[IVX][ivx]+\b/g, (m) => m.toUpperCase());
+
+const WHOLE_LABEL: Record<string, string> = {
+  Spell: "Whole spell",
+  Utterance: "Whole utterance",
+  Plate: "Whole plate",
+  "Catalog No.": "Whole catalogue entry",
+};
 
 const PassageRow = ({ passage, rank, used }: { passage: TranslationPassage; rank: number; used: boolean }) => {
   const [open, setOpen] = useState(false);
@@ -65,7 +78,7 @@ const PassageRow = ({ passage, rank, used }: { passage: TranslationPassage; rank
             )}
           </span>
           <span className="shrink-0 text-xs text-amber-200/80">
-            {passage.spell !== null && `Spell ${passage.spell}`}
+            {passage.spell !== null && `${passage.unit ?? "Spell"} ${passage.spell}`}
             {passage.page && ` · p. ${passage.page}`}
           </span>
         </div>
@@ -87,7 +100,9 @@ const PassageRow = ({ passage, rank, used }: { passage: TranslationPassage; rank
         {open && (
           <div className="mt-2 border-t border-amber-800/50 pt-2">
             <p className="text-[10px] uppercase tracking-wide text-amber-500/70">
-              {passage.spell_text ? "Whole spell (what the editor read)" : "Matching part"}
+              {passage.spell_text
+                ? `${WHOLE_LABEL[passage.unit ?? "Spell"] ?? "Whole text"} (what the editor read)`
+                : "Matching part"}
             </p>
             <p className="mt-1 whitespace-pre-line font-serif text-sm italic leading-relaxed text-stone-200/90">
               {passage.spell_text || passage.text}
@@ -129,7 +144,7 @@ export const SemanticTranslation = ({ semantic }: { semantic: Semantic | null })
         <p className="mb-1.5 flex flex-wrap gap-x-3 text-[10px] uppercase tracking-wide text-amber-500/70">
           <span>{semantic.passages.length} closest passages</span>
           <span>search: {semantic.search_mode}</span>
-          {semantic.king_filter && <span>pyramid: {titleCase(semantic.king_filter)}</span>}
+          {semantic.king_filter && <span>king: {titleCase(semantic.king_filter)}</span>}
           {semantic.latency_ms !== null && <span>{(semantic.latency_ms / 1000).toFixed(1)} s</span>}
           {semantic.cost_usd !== null && <span>${semantic.cost_usd.toFixed(4)}</span>}
         </p>

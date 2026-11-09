@@ -176,8 +176,9 @@ LOOKUP_ENTITY = AgentTool(
 
 SEARCH_BOOKS = AgentTool(
     name='search_books',
-    description=('Search 17 Egyptology books (Budge, the Pyramid Texts, the Book of the Dead, an '
-                 'encyclopedia of ancient Egypt, Egyptian tales, magic, gods, art, history of '
+    description=('Search 27 Egyptology books (Budge, the Pyramid Texts, the Book of the Dead, an '
+                 'encyclopedia of ancient Egypt, Egyptian tales, magic and ritual, gods, art, temples, '
+                 'kings and history, animals and birds, Nubia, the Rosetta Stone, history of '
                  'Egyptology) for passages that answer a question. Ask in plain English, one topic per '
                  'search. Returns up to 5 passages with a citation (book › chapter › page). When '
                  'no_book_support is true, the books do not cover the question: say so instead of '

@@ -97,6 +97,7 @@ export interface TransliterationOut {
 /** A published translation passage — mirrors app/schemas/transliterations.py TranslationPassage. */
 export interface TranslationPassage {
   passage_id: string;
+  unit?: string;                    // what `spell` numbers: Spell, Utterance, Plate, Catalog No. (absent on older readings)
   work: string;
   author: string;
   king: string | null;

@@ -107,7 +107,7 @@ def refine(translation: str, cartouche_names: list[str]) -> tuple[SemanticTransl
         )
         out.translation = refined.translation
         out.match = refined.match
-        out.used_passage = refined.used_passage or None
+        out.used_passage = refined.used_passage.strip('[] ') or None   # the model may copy the [id] brackets
         out.note = refined.note
         out.model = usage.served_by
         out.cost_usd = usage.cost_usd
