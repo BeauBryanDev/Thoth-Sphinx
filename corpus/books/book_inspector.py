@@ -93,6 +93,7 @@ def run(command: list[str]) -> str:
     )
     if done.returncode != 0 and not done.stdout:
         raise RuntimeError(f'{command[0]} failed: {done.stderr.strip()[:200]}')
+
     return done.stdout
 
 
@@ -127,11 +128,14 @@ def page_texts(
     first: int | None = None,
     last: int | None = None,
     layout: bool = False,
+    raw: bool = False,
 ) -> list[str]:
-    """pdftotext, one string per page."""
+    """pdftotext, one string per page; raw keeps the PDF's own text order, which columns need."""
     command = ['pdftotext', '-enc', 'UTF-8']
     if layout:
         command.append('-layout')
+    if raw:
+        command.append('-raw')
     if first:
         command += ['-f', str(first)]
     if last:
@@ -140,7 +144,10 @@ def page_texts(
     return pages[:-1] if pages and not pages[-1].strip() else pages
 
 
-def page_stats(number: int, text: str, images: int) -> PageStats:
+def page_stats(number: int, 
+text: str, 
+images: int
+) -> PageStats:
     """Count characters that tell text, OCR noise and font trouble apart."""
     body = ''.join(text.split())
     return PageStats(
@@ -154,7 +161,10 @@ def page_stats(number: int, text: str, images: int) -> PageStats:
     )
 
 
-def verdict(info: dict[str, str], fonts: list[str], pages: list[PageStats]) -> str:
+def verdict(info: dict[str, str], 
+fonts: list[str], 
+pages: list[PageStats]
+) -> str:
     """text, ocr (scanned with a text layer), scan (needs OCR) or mixed."""
     producer = f"{info.get('Producer', '')} {info.get('Creator', '')}".lower()
     ocr_marked = any(p in producer for p in OCR_PRODUCERS) or any('glyphless' in f.lower() for f in fonts)
@@ -224,6 +234,7 @@ def inspect(
         layout = read_layout(path)
         chosen, found = find_headings(layout, source)
         alternatives = {name: len(merge(finder(layout))) for name, finder in FINDERS.items()}
+        
     return BookReport(
         path=path,
         info=info,
@@ -321,6 +332,8 @@ def write_manifest(report: BookReport, manifest: Path) -> None:
         raise SystemExit(f'{entry["doc_id"]} is {entry.get("status")} or protected; edit it by hand.')
     if entry is None and draft['doc_id'] in PROTECTED:
         raise SystemExit(f'{draft["doc_id"]} is protected; edit it by hand.')
+    if entry is None and any(b['doc_id'] == draft['doc_id'] for b in books):
+        raise SystemExit(f'doc_id {draft["doc_id"]} is already in the manifest under another path; rename the PDF.')
     if entry is None:
         start, end = spans[-1][1], spans[-1][1]
         block = ',\n    ' + _indented(draft)
@@ -403,11 +416,16 @@ def detail(r: BookReport) -> None:
     print('\n  ? = not found on its page, check it.  - = front/back matter, left out of the skeleton.')
 
 
-def print_pages(path: Path, spec: str, layout: bool, clean: bool = False) -> None:
+def print_pages(path: Path, 
+spec: str, 
+layout: bool,
+clean: bool = False,
+raw: bool = False
+) -> None:
     """The text of a page range, as pdftotext gives it, or as ingest will see it after clean_text."""
     first, _, last = spec.partition('-')
     start, end = int(first), int(last or first)
-    for number, text in enumerate(page_texts(path, start, end, layout), start=start):
+    for number, text in enumerate(page_texts(path, start, end, layout, raw), start=start):
         text = clean_text(text) if clean else text.rstrip()
         print(f'\n───── page {number} ─────\n{text}')
 
@@ -430,6 +448,7 @@ def main() -> None:
     parser.add_argument('target', type=Path, help='a PDF, or a folder of PDFs (subfolders are skipped)')
     parser.add_argument('--pages', help='print the text of these pages, e.g. 40-42')
     parser.add_argument('--layout', action='store_true', help='with --pages: keep the physical layout')
+    parser.add_argument('--raw', action='store_true', help='with --pages: the PDF text order (column layouts)')
     parser.add_argument('--clean', action='store_true', help='with --pages: show the text after junk removal')
     parser.add_argument('--skeleton', action='store_true', help='print a draft manifest entry as JSON')
     parser.add_argument('--source', choices=list(FINDERS), help='take section titles from this source only')
@@ -443,7 +462,7 @@ def main() -> None:
         overview(sorted(args.target.glob('*.pdf')))
         return
     if args.pages:
-        print_pages(args.target, args.pages, args.layout, args.clean)
+        print_pages(args.target, args.pages, args.layout, args.clean, args.raw)
         return
     report = inspect(
         args.target,

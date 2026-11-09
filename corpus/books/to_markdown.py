@@ -16,6 +16,7 @@ MIN_LETTER_SHARE = 0.5    # a line with fewer letters than this share is OCR deb
 EDGE_LINES = 3            # lines at each page edge checked for running headers
 HEADER_WORDS = 8          # a running header is at most this many words
 SENTENCE_END = re.compile(r'[.!?:;"\')\]]$')
+SHORT_LINE_SHARE = 0.8    # raw text: a sentence-ending line shorter than this share of the median line ends a paragraph
 
 
 def keep_line(line: str, strip: set[str]) -> bool:
@@ -24,7 +25,8 @@ def keep_line(line: str, strip: set[str]) -> bool:
     if not text or text in strip or PAGE_ONLY.match(text):
         return False
     letters = sum(ch.isalpha() for ch in text)
-    return letters >= 2 and letters >= MIN_LETTER_SHARE * len(text.replace(' ', ''))
+    content = sum(ch.isalnum() for ch in text)   # digits count, or citation lines '152–54; … 2005, pp. 205' are lost
+    return letters >= 1 and content >= MIN_LETTER_SHARE * len(text.replace(' ', ''))
 
 
 def header_vocabulary(book: dict) -> set[str]:
@@ -48,14 +50,37 @@ def strip_edges(lines: list[str], vocabulary: set[str]) -> list[str]:
     return [ln for ln in lines if id(ln) not in drop]
 
 
-def page_markdown(raw: str, book: dict, vocabulary: set[str]) -> str:
+def paragraph_breaks(text: str) -> str:
+    """pdftotext -raw has no blank lines: a short line that ends a sentence closes its paragraph."""
+    lines = text.split('\n')
+    lengths = sorted(len(ln.strip()) for ln in lines if ln.strip())
+    if not lengths:
+        return text
+    short = SHORT_LINE_SHARE * lengths[len(lengths) // 2]
+    out: list[str] = []
+    for line in lines:
+        out.append(line)
+        if SENTENCE_END.search(line.strip()) and len(line.strip()) < short:
+            out.append('')
+    return '\n'.join(out)
+
+
+def page_markdown(
+    raw: str,
+    book: dict,
+    vocabulary: set[str],
+    pdf_order: bool = False,
+) -> str:
     """One page as clean paragraphs: headers dropped, wrapped lines joined, hyphenated breaks mended."""
     for bad, good in book.get('char_map', {}).items():
         raw = raw.replace(bad, good)
     strip = {clean_text(s) for s in book.get('strip_lines', [])}
+    text = clean_text(raw)
+    if pdf_order:
+        text = paragraph_breaks(text)
     paragraphs: list[str] = []
     current: list[str] = []
-    for line in strip_edges(clean_text(raw).split('\n'), vocabulary):
+    for line in strip_edges(text.split('\n'), vocabulary):
         if not line.strip():
             if current and SENTENCE_END.search(current[-1]):
                 paragraphs.append(' '.join(current))
@@ -88,11 +113,12 @@ def book_markdown(book: dict, assets: Path) -> str:
     ]
     vocabulary = header_vocabulary(book)
     for section in book['sections']:
-        layout = section.get('layout', book.get('layout')) == 'layout'
+        mode = section.get('layout', book.get('layout'))
         start, end = section['pdf_start'], section['pdf_end']
         lines += ['', f'## {section["title"]}']
-        for number, raw in enumerate(page_texts(path, start, end, layout), start=start):
-            body = page_markdown(raw, book, vocabulary)
+        pages = page_texts(path, start, end, layout=mode == 'layout', raw=mode == 'raw')
+        for number, raw in enumerate(pages, start=start):
+            body = page_markdown(raw, book, vocabulary, pdf_order=mode == 'raw')
             if body:
                 lines += ['', f'<!-- {printed(number, book, section)} -->', '', body]
     return '\n'.join(lines) + '\n'

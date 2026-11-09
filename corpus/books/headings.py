@@ -187,6 +187,7 @@ def read_layout(path: Path) -> Layout:
         pages.append(_rows(len(pages) + 1, chunks[i + 1], fonts))
     sizes = [r.height for page in pages for r in page for _ in range(len(r.text))]
     body = statistics.median(sizes) if sizes else 12.0
+    
     return Layout(
         pages=pages,
         outline=_outline(xml),

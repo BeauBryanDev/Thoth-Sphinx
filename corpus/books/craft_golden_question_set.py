@@ -76,7 +76,8 @@ def client() -> anthropic.Anthropic:
     )
 
 
-def ask(system: str, content: str, fmt: JSONOutputFormatParam) -> tuple[dict | None, int, int]:
+def ask(system: str, content: str, 
+fmt: JSONOutputFormatParam) -> tuple[dict | None, int, int]:
     """One Haiku call with a JSON schema; (reply or None on refusal or cut-off, input tokens, output tokens)."""
     config: OutputConfigParam = {'effort': 'low', 'format': fmt}
     message = client().messages.create(
@@ -108,8 +109,10 @@ def quota(chunks: dict[str, list[Chunk]], total: int) -> dict[str, int]:
     exact = {b: left * len(chunks[b]) / size for b in books}
     for b in books:
         share[b] += int(exact[b])
-    for b in sorted(books, key=lambda b: exact[b] - int(exact[b]), reverse=True)[:total - sum(share.values())]:
+    for b in sorted(books, key=lambda b: exact[b] - int(exact[b]),
+                    reverse=True)[:total - sum(share.values())]:
         share[b] += 1
+
     return share
 
 
