@@ -358,3 +358,4 @@ wscripts/extract_unas_text.py
 scripts/extract_unas_text.py
 
 frontend/.env.development
+notes.txt

@@ -57,6 +57,7 @@ def load_royal_names(path: Optional[Path] = None) -> dict:
         return {}
     with open(p, encoding='utf-8') as f:
         data = json.load(f)
+    
     return data.get('names', {})
 
 
@@ -95,9 +96,9 @@ def _align(
     sub_cost : Optional[dict],
 ) -> tuple[float, list[str]]:
     """
-    Needleman-Wunsch over (slots x spelling). 
+    Needleman-Wunsch over slots x spelling. 
     Returns
-    (normalized_score, aligned_codes) — aligned_codes has one entry per
+    (normalized_score, aligned_codes) —> aligned_codes has one entry per
     slot: the name code assigned to it, or the slot's own top-1 when the
     slot was skipped as spurious.
     """
@@ -107,7 +108,7 @@ def _align(
     
     dp   = [[NEG] * (n + 1) for _ in range(m + 1)]
     back = [[None] * (n + 1) for _ in range(m + 1)]
-    
+    # Applied Dynamic Programming
     dp[0][0] = 0.0
     
     for i in range(1, m + 1):
@@ -123,7 +124,10 @@ def _align(
     for i in range(1, m + 1):
         for j in range(1, n + 1):
             diag = dp[i - 1][j - 1] + _match_score(
-                slots[i - 1], spelling[j - 1], sub_cost)
+                                        slots[i - 1], 
+                                        spelling[j - 1], 
+                                        sub_cost
+                                        )
             up   = dp[i - 1][j] + SKIP_SLOT       # spurious slot
             left = dp[i][j - 1] + SKIP_NAME       # missed name code
             best = max(diag, up, left)
@@ -144,7 +148,8 @@ def _align(
             aligned[i - 1] = slots[i - 1][0][0]   # spurious: keep YOLO code
             i -= 1
         else:
-            j -= 1                                 # missed sign: no slot
+            j -= 1 
+            # missed sign: no slot
     return dp[m][n] / max(n, 1), aligned
 
 
@@ -239,12 +244,14 @@ def apply_panel_consensus(
     votes = Counter(r.name_key for r in results if r is not None)
     if not votes:
         return [(r, False) for r in results]
+    
     top_name, n_votes = votes.most_common(1)[0]
     if n_votes < min_votes:
         return [(r, False) for r in results]
 
     consensus_lex = {top_name: royal_names[top_name]}
     out: list[tuple[Optional[RoyalMatch], bool]] = []
+    
     for r, slots in zip(results, slots_per_cart):
         if r is not None or not slots:
             out.append((r, False))
@@ -259,5 +266,6 @@ def apply_panel_consensus(
             out.append((best_cons, True))
         else:
             out.append((None, False))
+    
     return out
 

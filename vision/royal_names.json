@@ -125,6 +125,26 @@
       "verified": true,
       "source": "claude-generated, nomen ppj, prenomen nfr-ka-ra. Validate against Beckerath p.66-67"
     },
+    "tti": {
+        "translit": "tti",
+        "english": "Teti (Dynasty VI)",
+        "spellings": [
+          [
+            "X1",
+            "X1",
+            "M17"
+          ],
+          [
+            "X1",
+            "U33",
+            "M17"
+          ]
+        ],
+        "freq": 25,
+        "verified": false,
+        "source": "nomen tti; no cartouche prenomen known (Horus name sḥtp-tꜣwj is not in a cartouche). Validate against Beckerath"
+      },
+
     "mntw_htp_ii": {
       "translit": "mntw-htp (nb-hpt-ra)",
       "english": "Mentuhotep II (Dynasty XI)",

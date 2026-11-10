@@ -155,7 +155,8 @@ def apply_gamma(img: np.ndarray, gamma: float = 1.05) -> np.ndarray:
 
 def enhance(img: np.ndarray,
             preset: str = "default",
-            custom: dict | None = None) -> np.ndarray:
+            custom: dict | None = None
+            ) -> np.ndarray:
     """
     Complete image enhancement pipeline.
 
@@ -201,7 +202,8 @@ def enhance(img: np.ndarray,
 
 def compare_side_by_side(original: np.ndarray,
                           enhanced: np.ndarray,
-                          label: str = "") -> np.ndarray:
+                          label: str = ""
+                         ) -> np.ndarray:
     """Generate side-by-side comparison image original | enhanced for inspection."""
     h = max(original.shape[0], enhanced.shape[0])
 
