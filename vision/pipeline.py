@@ -235,7 +235,7 @@ class SphinxPipeline:
         outer = [d for d in dets
                  if not d.inside_cartouche and not d.is_cartouche()]
         
-        outer_quads = SL.cluster_quadrats(outer, layout=layout)
+        outer_quads = SL.cluster_quadrats(outer, layout=layout, split_lines=True)
         
         outer_ro    = SL.assemble_reading_order(
             outer_quads, layout=layout, direction=direction)

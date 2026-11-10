@@ -278,3 +278,17 @@ def test_single_line_forces_one_column():
     assert len(multi.lines) == 2           # the failure mode: fake columns
     assert len(single.lines) == 1
     assert [s[0][0] for s in single.slots] == ['unknown', 'n35', 's29', 'm17']
+
+
+def test_split_lines_keeps_quadrats_inside_their_row():
+    # Hatshepsut wall, rows 12 px apart: m17 of row 2 used to join f39/f34 of row 1
+    row1 = [det(3, 19, 51, 117, 's34'), det(50, 12, 148, 121, 'g5'), det(291, 14, 383, 118, 'g17'),
+            det(444, 14, 481, 117, 's38'), det(504, 10, 577, 83, 'f39'), det(540, 60, 596, 116, 'f34')]
+    row2 = [det(3, 137, 49, 240, 's34'), det(75, 137, 162, 214, 'l2'), det(496, 135, 553, 236, 'u6'),
+            det(551, 132, 584, 241, 'm17'), det(581, 130, 615, 240, 'm17')]
+    leaky = cluster_quadrats(row1 + row2, layout='rows')
+    assert any({'f34', 'm17'} <= {d.cls for d in q.members} for q in leaky)
+    quads = cluster_quadrats(row1 + row2, layout='rows', split_lines=True)
+    for q in quads:
+        assert len({d.centroid[1] < 125 for d in q.members}) == 1
+    assert any({'f39', 'f34'} == {d.cls for d in q.members} for q in quads)

@@ -105,6 +105,12 @@ QUADRAT_MAX_EXTENT      = 2.5    # max merged cross-extent (x median sign
                                  # (sandstone_wall: g5+l2 spanned 2.9x).
                                  # NOT lower: two equal stacked signs are
                                  # ~2.2x, must stay mergeable.
+BAND_SHRINK             = 0.10   # trim each sign's cross-axis extent by this
+                                 # fraction per side before the coverage
+                                 # profile, so boxes that touch across a line
+                                 # gap don't hide it
+BAND_VALLEY_FRAC        = 0.10   # coverage at or under this fraction of the
+                                 # peak is a gap between two lines
 
 # Step 4 — line assembly + gap insertion
 LINE_GAP_FRAC           = 0.60   # cross-axis jump (x median) = new line
@@ -667,6 +673,47 @@ def _split_component(
             + _split_component(members[cut:], stack_axis, max_signs))
 
 
+def line_bands(
+    detections  : list[Detection],
+    cross       : int,                    # cross axis: 0=x (columns), 1=y (rows)
+    shrink      : float = BAND_SHRINK,
+    valley_frac : float = BAND_VALLEY_FRAC,
+) -> list[float]:
+    """Cross-axis cuts between text lines: the empty valleys of the sign coverage profile."""
+    signs = [d for d in detections if d.cls != CARTOUCHE_CLASS]
+    if len(signs) < 2:
+        return []
+    lo, hi = (0, 2) if cross == 0 else (1, 3)
+    start = int(min(d.bbox[lo] for d in signs))
+    cov = np.zeros(int(max(d.bbox[hi] for d in signs)) - start + 1)
+    for d in signs:
+        pad = shrink * (d.bbox[hi] - d.bbox[lo])
+        a, b = int(d.bbox[lo] + pad) - start, int(d.bbox[hi] - pad) - start
+        cov[a:b + 1] += d.height if cross == 0 else d.width   # length along the reading axis
+
+    low = cov <= valley_frac * cov.max()
+    filled = np.flatnonzero(~low)
+    first = int(filled[0])
+    # inside the text block every valley is one (enter, exit) pair of flips
+    flips = np.flatnonzero(np.diff(low[first:int(filled[-1]) + 1])) + first + start
+    med = float(np.median([d.bbox[hi] - d.bbox[lo] for d in signs]))
+
+    def bridged(a: float, b: float) -> bool:
+        """A full-size sign lying right across the valley means one line, not two."""
+        return any(d.bbox[lo] <= a and d.bbox[hi] >= b and d.bbox[hi] - d.bbox[lo] >= med
+                   for d in signs)
+
+    return [(a + b) / 2.0 for a, b in zip(flips[::2], flips[1::2]) if not bridged(a, b)]
+
+
+def band_of(det: Detection, 
+            cuts: list[float], 
+            cross: int
+            ) -> int:
+    """Index of the line band holding the detection's centroid."""
+    return int(np.searchsorted(cuts, det.centroid[cross]))
+
+
 def cluster_quadrats(
     detections    : list[Detection],
     layout        : str   = 'columns',          # 'rows' | 'columns'
@@ -674,6 +721,7 @@ def cluster_quadrats(
     gap_frac      : float = QUADRAT_GAP_FRAC,
     size_ratio    : tuple = QUADRAT_SIZE_RATIO,
     max_signs     : int   = QUADRAT_MAX_SIGNS,
+    split_lines   : bool  = False,
 ) -> list[Quadrat]:
     """
     Group detections into quadrats via DSU connected components.
@@ -691,6 +739,10 @@ def cluster_quadrats(
     Additional guards: sqrt-area ratio within `size_ratio`; components
     larger than `max_signs` split at their largest perpendicular gap.
     Cartouche-class detections never merge (each is its own quadrat).
+    `split_lines=True` (outer text) first cuts the wall into line bands
+    (`line_bands`) and never merges two signs from different bands, so a
+    quadrat cannot reach into the neighbouring row/column. Leave it off
+    for cartouche interiors, where side-by-side signs leave a real gap.
     Caller chooses the subset: outer text = not inside_cartouche;
     cartouche interiors = per-cartouche member lists.
 
@@ -708,6 +760,9 @@ def cluster_quadrats(
                                   for d in sign_dets]))
                  if sign_dets else 1.0)
 
+    cuts  = line_bands(detections, stack_axis) if split_lines else []
+    bands = [band_of(d, cuts, stack_axis) for d in detections]
+
     n = len(detections)
     dsu = DSU(n)
     for i in range(n):
@@ -717,6 +772,8 @@ def cluster_quadrats(
         for j in range(i + 1, n):
             dj = detections[j]
             if dj.cls == CARTOUCHE_CLASS:
+                continue
+            if bands[i] != bands[j]:
                 continue
             if _axis_overlap(di.bbox, dj.bbox, read_axis) < align_overlap:
                 continue
