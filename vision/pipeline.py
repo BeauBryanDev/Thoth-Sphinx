@@ -238,7 +238,9 @@ class SphinxPipeline:
         outer_quads = SL.cluster_quadrats(outer, layout=layout, split_lines=True)
         
         outer_ro    = SL.assemble_reading_order(
-            outer_quads, layout=layout, direction=direction)
+            outer_quads, layout=layout, direction=direction,
+            blockers=[dets[i].bbox for i in cart_idxs],
+        )
 
         canon_outer = self._canon_slots(outer_ro.slots)
         

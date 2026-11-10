@@ -94,6 +94,12 @@ DEDUPE_IOU              = 0.50   # inner det vs global det dedupe threshold
 # Step 3 — quadrat clustering
 DUP_OVERLAP             = 0.55   # intersection/min-area above which two
                                  # boxes are the SAME physical sign
+DISTINCT_IOU            = (0.10, 0.30)   # two overlapping boxes whose IoU falls
+                                 # inside this range are two real signs (a
+                                 # sun over a duck's back), not one sign
+                                 # boxed twice
+DISTINCT_MIN_CONF       = 0.56   # ...when both score above this; a weaker
+                                 # box is noise and still merges
 QUADRAT_ALIGN           = 0.50   # min projection-overlap ratio along the
                                  # reading axis to share a quadrat
 QUADRAT_GAP_FRAC        = 0.60   # max perpendicular gap (x median size)
@@ -519,7 +525,9 @@ def merge_duplicate_boxes(
     IoU < 0.5 (e.g. a thin f31 box inside a taller s29 box on one stroke).
 
     Two detections merge iff intersection/min-area > overlap_thresh, both
-    are non-cartouche, and they share the same cartouche context. DSU
+    are non-cartouche, and they share the same cartouche context. They stay
+    apart when their IoU is inside DISTINCT_IOU and both score above
+    DISTINCT_MIN_CONF: that is a small sign in the corner of a big one. DSU
     handles transitivity. The highest-scoring member keeps its bbox and
     identity; top-3s of the group are unioned (max score per code, top 3).
 
@@ -539,8 +547,13 @@ def merge_duplicate_boxes(
             if (di.inside_cartouche, di.cartouche_id) != \
                (dj.inside_cartouche, dj.cartouche_id):
                 continue
-            if overlap_ratio(di.bbox, dj.bbox) > overlap_thresh:
-                dsu.union(i, j)
+            if overlap_ratio(di.bbox, dj.bbox) <= overlap_thresh:
+                continue
+            # two confident boxes that only partly overlap are neighbours, keep both
+            if (DISTINCT_IOU[0] < iou(di.bbox, dj.bbox) < DISTINCT_IOU[1]
+                    and min(di.max_score, dj.max_score) > DISTINCT_MIN_CONF):
+                continue
+            dsu.union(i, j)
 
     merged: list[Detection] = []
     seen_root: set[int] = set()
@@ -851,6 +864,7 @@ def assemble_reading_order(
     max_inserts      : int   = MAX_GAP_INSERTS,
     extent           : Optional[tuple] = None,
     single_line      : bool  = False,
+    blockers         : Optional[list[tuple]] = None,
 ) -> ReadingOrder:
     """
     Assemble quadrats into final reading order.
@@ -871,6 +885,10 @@ def assemble_reading_order(
        Unas e34 case) is only detectable against a known extent.
     5. After each line, append len(slots) to boundary_hints (exclusive
        end index — the corrector's LAYOUT_BONUS convention).
+
+    `blockers` are bboxes that fill space in a line without being signs
+    of it (the cartouches, for the outer text). The stretch of a gap they
+    cover is not empty, so no Unknown is invented there.
 
     `single_line=True` skips line grouping and treats every quadrat as
     one line. REQUIRED for cartouche interiors: narrow signs are not
@@ -915,6 +933,14 @@ def assemble_reading_order(
             slots.append([(UNKNOWN_CLASS, 0.0)])
             slot_detections.append(None)
 
+    def blocked(a: float, b: float, prev: Quadrat, q: Quadrat) -> float:
+        """Length of the gap [a, b] that a blocker in the same line covers."""
+        return sum(
+            max(0.0, min(b, blk[hi]) - max(a, blk[lo]))
+            for blk in blockers or []
+            if max(_axis_overlap(blk, prev.bbox, cross), _axis_overlap(blk, q.bbox, cross)) >= 0.5
+        )
+
     for line in lines:
         line.sort(key=lambda q: q.centroid[read_axis], reverse=descending)
 
@@ -926,9 +952,9 @@ def assemble_reading_order(
                     emit_unknowns(lead)
             else:
                 prev = line[k - 1]
-                gap = (prev.bbox[lo] - q.bbox[hi] if descending
-                       else q.bbox[lo] - prev.bbox[hi])
-                emit_unknowns(gap)
+                a, b = ((q.bbox[hi], prev.bbox[lo]) if descending
+                        else (prev.bbox[hi], q.bbox[lo]))
+                emit_unknowns(b - a - blocked(a, b, prev, q))
             for d in q.ordered(direction):
                 slots.append(list(d.top3))
                 slot_detections.append(d)
