@@ -11,7 +11,7 @@
 
 import { Fragment } from "react";
 import { Card } from "@/components/common";
-import { toHieroglyph } from "@/utils/gardinerUnicode";
+import { isCartouche, toHieroglyph } from "@/utils/gardinerUnicode";
 import type { GlyphDecodingResult } from "@/types";
 
 const barColor = (p: number): string =>
@@ -36,14 +36,18 @@ export const SignConfidenceTable = ({ result }: SignConfidenceTableProps) => {
   // Walk lines with a running flat index so confidences stay aligned
   // with the spatial ordering shown on the wall above.
   let flat = 0;
+  // A cartouche marker keeps its place in the flat index but is not a sign: no row.
   const groups = result.lines.map((line) =>
-    line.map((code) => ({ code, conf: result.signConfidences[flat++] ?? 0 })),
+    line
+      .map((code) => ({ code, conf: result.signConfidences[flat++] ?? 0 }))
+      .filter(({ code }) => !isCartouche(code)),
   );
+  const nSigns = groups.reduce((n, line) => n + line.length, 0);
 
   return (
     <Card
       title="Sign Confidence"
-      subtitle={`${result.detectedGlyphs.length} detections · spatial reading order`}
+      subtitle={`${nSigns} detections · spatial reading order`}
       icon="𓏞"
     >
       <div className="overflow-hidden rounded-md border-2 border-amber-800/70 shadow-inner">

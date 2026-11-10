@@ -65,12 +65,12 @@ def detector_low_share(codes: list[str],
                        confidences: list[float]
                        ) -> float:
     """Share of codes the detector was unsure of (confidence below 0.5, or Unknown)."""
-    if not codes:
+    # a 'cartouche' place marker is not a sign, and cartouche boxes score low by nature
+    signs = [(c, s) for c, s in zip(codes, confidences) if c != 'cartouche']
+    if not signs:
         return 1.0
-    low = sum(c == 'Unknown' or s < 0.5 for c, s in zip(codes, confidences))
-    # Calculate the share of codes the detector was unsure of by dividing the number 
-    # of codes the detector was unsure of by the total number of codes
-    return low / len(codes)
+    low = sum(c == 'Unknown' or s < 0.5 for c, s in signs)
+    return low / len(signs)
 
 
 def decide(signals: Signals, 

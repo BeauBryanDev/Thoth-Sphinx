@@ -28,6 +28,7 @@ import { useReadingChatStore } from "@/stores";
 import { HintButton, HintModal, LayoutHint, DirectionHint } from "./DecoderHints";
 import queenIcon from "@/assets/qeen.svg";
 import pharaohIcon from "@/assets/pharaoh.svg";
+import { isCartouche } from "@/utils/gardinerUnicode";
 
 // Controlled vocabularies — must match app/schemas/transliterations.py.
 // "unknown" first = default, for the tourist who knows nothing.
@@ -349,19 +350,29 @@ export const GlyphDecoder = ({ controller }: GlyphDecoderProps = {}) => {
                     {result.layout === "columns" ? "col" : "row"} {i + 1}
                   </span>
                   <div className="flex flex-wrap gap-1">
-                    {line.map((code, j) => (
-                      <span
-                        key={j}
-                        className={`rounded px-2 py-0.5 font-mono text-sm ${
-                          code === "Unknown"
-                            ? "border border-stone-600/60 bg-stone-800/60 text-stone-400"
-                            : "border border-amber-700/50 bg-amber-950/60 text-amber-200"
-                        }`}
-                        title={code === "Unknown" ? "Undetected sign (lacuna)" : code}
-                      >
-                        {code === "Unknown" ? "?" : code}
-                      </span>
-                    ))}
+                    {line.map((code, j) =>
+                      isCartouche(code) ? (
+                        <span
+                          key={j}
+                          className="rounded-full border border-amber-400/80 bg-amber-900/50 px-2.5 py-0.5 text-sm font-semibold text-amber-300"
+                          title="Royal cartouche (its signs are read separately)"
+                        >
+                          𓍷 cartouche
+                        </span>
+                      ) : (
+                        <span
+                          key={j}
+                          className={`rounded px-2 py-0.5 font-mono text-sm ${
+                            code === "Unknown"
+                              ? "border border-stone-600/60 bg-stone-800/60 text-stone-400"
+                              : "border border-amber-700/50 bg-amber-950/60 text-amber-200"
+                          }`}
+                          title={code === "Unknown" ? "Undetected sign (lacuna)" : code}
+                        >
+                          {code === "Unknown" ? "?" : code}
+                        </span>
+                      ),
+                    )}
                   </div>
                 </div>
               ))}

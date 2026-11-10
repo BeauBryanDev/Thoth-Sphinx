@@ -16,6 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import type { GlyphDecodingResult } from "@/types";
+import { isCartouche } from "@/utils/gardinerUnicode";
 
 const GOLD = "#f59e0b";
 const GOLD_DIM = "#b45309";
@@ -27,8 +28,10 @@ interface SignFrequencyChartProps {
 export const SignFrequencyChart = ({ result }: SignFrequencyChartProps) => {
   if (!result || result.detectedGlyphs.length === 0) return null;
 
+  // Cartouche markers are places in a line, not signs.
+  const signs = result.detectedGlyphs.filter((code) => !isCartouche(code));
   const counts = new Map<string, number>();
-  for (const code of result.detectedGlyphs) {
+  for (const code of signs) {
     counts.set(code, (counts.get(code) ?? 0) + 1);
   }
   const data = [...counts.entries()]
@@ -41,7 +44,7 @@ export const SignFrequencyChart = ({ result }: SignFrequencyChartProps) => {
     <div className="mt-3 rounded border border-amber-700/40 bg-stone-950/60 p-3">
       <p className="mb-1.5 text-[10px] uppercase tracking-[0.25em] text-amber-500/80">
         Sign frequency · {data.length} distinct signs ·{" "}
-        {result.detectedGlyphs.length} detections
+        {signs.length} detections
       </p>
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">

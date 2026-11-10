@@ -292,3 +292,24 @@ def test_split_lines_keeps_quadrats_inside_their_row():
     for q in quads:
         assert len({d.centroid[1] < 125 for d in q.members}) == 1
     assert any({'f39', 'f34'} == {d.cls for d in q.members} for q in quads)
+
+
+def test_merge_keeps_confident_neighbours_and_drops_noise():
+    # Hatshepsut wall: the sun over the goose's back is a second sign, the edge sliver is noise
+    goose, sun = det(49, 265, 144, 368, 'g39', 0.89), det(95, 258, 157, 307, 'n5', 0.88)
+    ankh, sliver = det(3, 19, 51, 117, 's34', 0.86), det(0, 77, 14, 117, 'o49', 0.17)
+    weak_sun = det(95, 258, 157, 307, 'n5', 0.40)
+    assert [d.cls for d in merge_duplicate_boxes([goose, sun, ankh, sliver])] == ['g39', 'n5', 's34']
+    assert [d.cls for d in merge_duplicate_boxes([goose, weak_sun])] == ['g39']
+
+
+def test_cartouche_takes_its_place_in_the_line():
+    # Hatshepsut row 2: the cartouche sits between the bee and the signs after it
+    signs = [det(3, 137, 49, 240, 's34'), det(75, 137, 162, 214, 'l2'),
+             det(426, 129, 502, 240, 'u6'), det(551, 132, 584, 241, 'm17')]
+    cart = det(161, 129, 398, 259, 'cartouche', 0.74)
+    bare = assemble_reading_order(cluster_quadrats(signs, layout='rows'), layout='rows', direction='ltr')
+    assert [s[0][0] for s in bare.slots] == ['s34', 'l2', 'unknown', 'unknown', 'u6', 'm17']
+    ro = assemble_reading_order(cluster_quadrats(signs + [cart], layout='rows'), layout='rows', direction='ltr')
+    assert ro.slots[2] == [('cartouche', 0.74)]
+    assert [s[0][0] for s in ro.slots] == ['s34', 'l2', 'cartouche', 'u6', 'm17']

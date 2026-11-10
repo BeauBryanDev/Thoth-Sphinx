@@ -864,7 +864,6 @@ def assemble_reading_order(
     max_inserts      : int   = MAX_GAP_INSERTS,
     extent           : Optional[tuple] = None,
     single_line      : bool  = False,
-    blockers         : Optional[list[tuple]] = None,
 ) -> ReadingOrder:
     """
     Assemble quadrats into final reading order.
@@ -886,9 +885,10 @@ def assemble_reading_order(
     5. After each line, append len(slots) to boundary_hints (exclusive
        end index — the corrector's LAYOUT_BONUS convention).
 
-    `blockers` are bboxes that fill space in a line without being signs
-    of it (the cartouches, for the outer text). The stretch of a gap they
-    cover is not empty, so no Unknown is invented there.
+    A cartouche detection among the quadrats takes its place in the line
+    as ONE slot, `[('cartouche', score)]`: the space it fills is not a gap,
+    and the reader sees where the royal name sits. Its interior is read
+    separately by the caller.
 
     `single_line=True` skips line grouping and treats every quadrat as
     one line. REQUIRED for cartouche interiors: narrow signs are not
@@ -905,8 +905,10 @@ def assemble_reading_order(
     cross     = 1 - read_axis
     lo, hi    = (0, 2) if read_axis == 0 else (1, 3)
 
+    # sign quadrats only: a cartouche is several signs long and would skew the step
+    sign_quads = [q for q in quadrats if q.members[0].cls != CARTOUCHE_CLASS] or quadrats
     med_step = float(np.median(
-        [q.bbox[hi] - q.bbox[lo] for q in quadrats]))
+        [q.bbox[hi] - q.bbox[lo] for q in sign_quads]))
 
     lines = ([list(quadrats)] if single_line
              else _group_lines(quadrats, cross, line_gap_frac))
@@ -933,14 +935,6 @@ def assemble_reading_order(
             slots.append([(UNKNOWN_CLASS, 0.0)])
             slot_detections.append(None)
 
-    def blocked(a: float, b: float, prev: Quadrat, q: Quadrat) -> float:
-        """Length of the gap [a, b] that a blocker in the same line covers."""
-        return sum(
-            max(0.0, min(b, blk[hi]) - max(a, blk[lo]))
-            for blk in blockers or []
-            if max(_axis_overlap(blk, prev.bbox, cross), _axis_overlap(blk, q.bbox, cross)) >= 0.5
-        )
-
     for line in lines:
         line.sort(key=lambda q: q.centroid[read_axis], reverse=descending)
 
@@ -952,11 +946,12 @@ def assemble_reading_order(
                     emit_unknowns(lead)
             else:
                 prev = line[k - 1]
-                a, b = ((q.bbox[hi], prev.bbox[lo]) if descending
-                        else (prev.bbox[hi], q.bbox[lo]))
-                emit_unknowns(b - a - blocked(a, b, prev, q))
+                gap = (prev.bbox[lo] - q.bbox[hi] if descending
+                       else q.bbox[lo] - prev.bbox[hi])
+                emit_unknowns(gap)
             for d in q.ordered(direction):
-                slots.append(list(d.top3))
+                # a cartouche is a place marker, its runner-up classes mean nothing
+                slots.append(list(d.top3[:1] if d.cls == CARTOUCHE_CLASS else d.top3))
                 slot_detections.append(d)
 
         if extent is not None and line:

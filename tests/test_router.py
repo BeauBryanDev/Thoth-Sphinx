@@ -45,3 +45,9 @@ def test_every_reason_is_in_the_vocabulary() -> None:
 def test_detector_low_share_counts_unknown_and_low() -> None:
     assert router.detector_low_share(['G17', 'Unknown', 'N35', 'X1'], [0.9, 0.9, 0.3, 0.6]) == 0.5
     assert router.detector_low_share([], []) == 1.0
+
+
+def test_cartouche_marker_is_a_place_not_a_sign():
+    from app.services.transliteration_services import _signs
+    assert _signs(['L2', 'cartouche', 'Y5'], [0.94, 0.10, 0.87]) == 'L2(HIGH:0.94) — [cartouche] — Y5(HIGH:0.87)'
+    assert router.detector_low_share(['L2', 'cartouche', 'Unknown', 'X1'], [0.9, 0.1, 0.0, 0.9]) == 1 / 3

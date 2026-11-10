@@ -16,6 +16,7 @@ import type {
   TextContext,
   TransliterationOut,
 } from "@/types";
+import { isCartouche } from "@/utils/gardinerUnicode";
 
 // Inference on CPU can take a while for dense walls — override the
 // 15 s default on this call only.
@@ -29,7 +30,9 @@ const toDecodingResult = (
   const { correction } = res.outer;
 
   // Mean top-1 confidence over real (non-synthetic) slots.
+  // Cartouche markers are places in a line, not signs: they stay out of the mean.
   const top1 = res.outer.slots
+    .filter((slot) => !isCartouche(slot[0]?.[0] ?? ""))
     .map((slot) => slot[0]?.[1] ?? 0)
     .filter((c) => c > 0);
   const confidence =

@@ -73,10 +73,16 @@ def segment_into_chunks(
 SYSTEM_PROMPT = load('transliteration') + '\n\n' + grammar.grammar_skill()   # app/llm/prompts/
 
 
+CARTOUCHE_MARK = 'cartouche'   # the pipeline's place marker for a cartouche in a line; not a sign
+CARTOUCHE_NOTE = ('[cartouche] marks the place of a royal cartouche in its line; '
+                  'its interior signs are under the context, not here')
+
+
 def _signs(codes: list[str], confidences: list[float]) -> str:
-    """Codes with their confidence band, e.g. G17(HIGH:0.92) — N35(MED:0.61)."""
+    """Codes with their confidence band, e.g. G17(HIGH:0.92) — N35(MED:0.61); a cartouche as [cartouche]."""
     return ' — '.join(
-        f'{c}({"HIGH" if s >= 0.80 else "MED" if s >= 0.50 else "LOW"}:{s:.2f})'
+        f'[{c}]' if c == CARTOUCHE_MARK
+        else f'{c}({"HIGH" if s >= 0.80 else "MED" if s >= 0.50 else "LOW"}:{s:.2f})'
         for c, s in zip(codes, confidences)
     )
 
@@ -171,7 +177,7 @@ def build_egyptologist_prompt(
         if has_image else ''
     )
 
-    return f"""DETECTED SIGN SEQUENCE ({chunk_info}; each segment is one physical line of text; Gardiner codes with detector confidence):
+    return f"""DETECTED SIGN SEQUENCE ({chunk_info}; each segment is one physical line of text; Gardiner codes with detector confidence; {CARTOUCHE_NOTE}):
 {signs}
 
 {_context_block(ctx, direction, layout, cartouche_names, graph)}
@@ -199,9 +205,7 @@ def build_wall_prompt(
     photo_block = (
         '\nTHE PHOTOGRAPH (attached, unprocessed, downscaled): the lines above follow the '
         f'physical {layout} of the photograph in reading order, read {direction}; match each '
-        f'numbered line to its {layout[:-1]} on the stone. Cartouche interiors are listed under '
-        'the context, not inside the lines, so each cartouche shows on the photograph between '
-        f'the signs around it. {_photo_rules()}\n'
+        f'numbered line to its {layout[:-1]} on the stone. {_photo_rules()}\n'
         if has_image else ''
     )
     tools_block = (
@@ -226,7 +230,7 @@ def build_wall_prompt(
         'a reason; otherwise set it to false and leave the reason empty.\n'
         if ask_second_opinion else ''
     )
-    return f"""DETECTED SIGN SEQUENCE (the WHOLE inscription, {len(lines)} physical lines in reading order; Gardiner codes with detector confidence):
+    return f"""DETECTED SIGN SEQUENCE (the WHOLE inscription, {len(lines)} physical lines in reading order; Gardiner codes with detector confidence; {CARTOUCHE_NOTE}):
 {numbered}
 
 {_context_block(ctx, direction, layout, cartouche_names, graph)}
@@ -565,7 +569,7 @@ class TransliterationService:
         """Haiku reads the wall with corpus tools; the router may ask Sonnet for a second opinion."""
         human = human_corrections or []
         lines = segment_into_chunks(codes, confidences, boundary_hints, max_signs=WHOLE_LINE)
-        line_signs = {i + 1: ' '.join(c for c, _ in line if c != 'Unknown')
+        line_signs = {i + 1: ' '.join(c for c, _ in line if c not in ('Unknown', CARTOUCHE_MARK))
                       for i, line in enumerate(lines)}
         escalation_on = settings.translit_escalation
         reading_tools = agent_tools.READING_TOOLS if settings.translit_tools else ()

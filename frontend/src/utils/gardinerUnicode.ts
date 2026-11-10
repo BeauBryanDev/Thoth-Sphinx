@@ -161,6 +161,10 @@ export const GARDINER_TO_UNICODE: Record<string, string> = {
 /** Model classes with no glyph: structural tokens, not signs. */
 export const NON_SIGN_TOKENS = new Set(["cartouche", "unknown", "Unknown"]);
 
+/** The pipeline's place marker for a royal cartouche inside a line; not a sign. */
+export const isCartouche = (code: string): boolean =>
+  code.toLowerCase() === "cartouche";
+
 /**
  * Resolve a pipeline code (any case: "m17", "M17", "Aa1") to its
  * hieroglyph, or null for cartouche/unknown/unmapped codes.

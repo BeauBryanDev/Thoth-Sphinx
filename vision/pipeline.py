@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from bisect import bisect_left
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional, Union
@@ -229,27 +230,36 @@ class SphinxPipeline:
         cart_idxs = SL.tag_cartouche_members(dets, img_w=W, img_h=H)
         dets = SL.merge_duplicate_boxes(dets)
         
-        cart_idxs = [i for i, d in enumerate(dets) if d.is_cartouche()]
-
-        # 3) Outer text reading order + corrector
+        # 3) Outer text reading order + corrector. The cartouches go in as
+        #    place markers: one 'cartouche' slot each, where it sits in the line.
         outer = [d for d in dets
-                 if not d.inside_cartouche and not d.is_cartouche()]
+                 if d.is_cartouche() or (not d.inside_cartouche and d.cls != SL.CARTOUCHE_CLASS)]
         
         outer_quads = SL.cluster_quadrats(outer, layout=layout, split_lines=True)
         
         outer_ro    = SL.assemble_reading_order(
-            outer_quads, layout=layout, direction=direction,
-            blockers=[dets[i].bbox for i in cart_idxs],
-        )
+            outer_quads, layout=layout, direction=direction)
 
         canon_outer = self._canon_slots(outer_ro.slots)
-        
+
+        # Cartouches in reading order, so the nth 'cartouche' slot is cartouches[n].
+        cart_dets = [d for d in outer_ro.slot_detections if d is not None and d.is_cartouche()]
+        cart_idxs = [i for d in cart_dets for i, x in enumerate(dets) if x is d]
+
         if use_corrector:
+            # The corrector knows signs only: it reads the line without the markers.
+            keep = [k for k, slot in enumerate(canon_outer) if slot[0][0] != SL.CARTOUCHE_CLASS]
             correction = SC.correct(
-                canon_outer, self.trie, self.log_prob, self.unigrams,
+                [canon_outer[k] for k in keep], self.trie, self.log_prob, self.unigrams,
                 sub_cost_matrix=self.sub_cost,
-                boundary_hints=outer_ro.boundary_hints,
+                boundary_hints=[bisect_left(keep, b) for b in outer_ro.boundary_hints],
             )
+            seq = [SL.CARTOUCHE_CLASS] * len(canon_outer)
+            for k, code in zip(keep, correction.flat_corrected_seq):
+                seq[k] = code
+            correction.flat_corrected_seq = seq
+            for u in correction.unknowns_resolved:
+                u.slot = keep[u.slot]
         else:
             # Same shape, no trie and no Viterbi: each slot's top-1 code, empty slots as Unknown.
             correction = SC.CorrectionResult(

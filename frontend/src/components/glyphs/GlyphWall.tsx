@@ -10,7 +10,7 @@
 // ============================================================
 
 import { Card } from "@/components/common";
-import { toHieroglyph } from "@/utils/gardinerUnicode";
+import { isCartouche, toHieroglyph } from "@/utils/gardinerUnicode";
 import type { GlyphDecodingResult } from "@/types";
 
 const FALLBACK_KEY = [
@@ -28,6 +28,17 @@ interface GlyphCellProps {
 }
 
 const GlyphCell = ({ code }: GlyphCellProps) => {
+  // A royal cartouche sits here in the line; its name is in the Royal cartouches section.
+  if (isCartouche(code)) {
+    return (
+      <span
+        title="Royal cartouche (its signs are read separately)"
+        className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-amber-400/80 bg-amber-950/60"
+      >
+        <span className="font-hieroglyph glyph-gold text-[34px]">𓍷</span>
+      </span>
+    );
+  }
   const glyph = toHieroglyph(code);
   // A real sign outside the detector's 148 classes (e.g. N28 confirmed by the user): show its code.
   const unmapped = !glyph && code !== "Unknown" && code !== "unknown";
