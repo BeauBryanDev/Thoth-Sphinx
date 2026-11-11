@@ -23,7 +23,10 @@ class BeamState:
     confs: list[float] = field(default_factory=list)
     score: float = 0.0
 
-    def extend(self, code: str, conf: float, trans_score: float) -> BeamState:
+    def extend(self, code: str, 
+               conf: float, 
+               trans_score: float
+               ) -> BeamState:
         return BeamState(
             codes=self.codes + [code],
             confs=self.confs + [conf],

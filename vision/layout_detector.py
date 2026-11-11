@@ -118,7 +118,7 @@ def _vote_band_count(
     
     ratio = abs(n_y - n_x) / max(n_x, n_y)
     
-    if n_y > n_x:           # more rows than columns -> text in columns
+    if n_y > n_x:  # more rows than columns -> text in columns
         
         return 'columns', ratio
     

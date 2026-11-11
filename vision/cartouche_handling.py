@@ -27,6 +27,11 @@ from vision.spatial_primitives import (
 )
 
 
+# A cartouche this close to the image border, as a fraction of the side, is
+# dropped: a clipped bracket means a cropped photo and an incomplete name.
+EDGE_FRAC = 0.01
+
+
 def _largest_first(detections: list[Detection], 
                    idxs: list[int]
                    ) -> list[int]:
@@ -35,6 +40,30 @@ def _largest_first(detections: list[Detection],
     pairs.sort()
 
     return [i for _, i in pairs]
+
+
+def filter_edge_cartouches(
+    detections: list[Detection],
+    img_w: int,
+    img_h: int,
+) -> list[Detection]:
+    """Drop the cartouches whose box touches an image edge."""
+    edge_x = EDGE_FRAC * img_w
+    edge_y = EDGE_FRAC * img_h
+    kept: list[Detection] = []
+
+    for detection in detections:
+        if detection.is_cartouche():
+            x1, y1, x2, y2 = detection.bbox
+            if x1 <= edge_x or y1 <= edge_y:
+                continue
+
+            if x2 >= img_w - edge_x or y2 >= img_h - edge_y:
+                continue
+
+        kept.append(detection)
+
+    return kept
 
 
 def tag_cartouche_members(

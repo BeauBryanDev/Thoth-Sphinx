@@ -5,11 +5,11 @@ from typing import Any
 
 from app.llm.prompts import load
 
-VISION_DIR = Path(__file__).resolve().parents[2] / 'vision'
+VISION_DIR = Path(__file__).resolve().parents[2] / 'vision' / 'data'
 
 
 def _read_json(name: str) -> dict[str, Any]:
-    """A prior file from vision/, or {} when it is missing."""
+    """A prior file from vision/data/, or {} when it is missing."""
     path = VISION_DIR / name
     if not path.exists():
         return {}
@@ -45,7 +45,7 @@ def determinatives_block(codes: dict[str, dict[str, Any]]) -> str:
 
 @cache
 def grammar_skill() -> str:
-    """me_grammar.md with the particle and determinative lists filled in from vision/."""
+    """me_grammar.md with the particle and determinative lists filled in from vision/data/."""
     particles = _read_json('initial_particles.json').get('particles', {})
     codes = _read_json('determinatives.json').get('codes', {})
     return (

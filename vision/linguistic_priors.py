@@ -1,6 +1,6 @@
 # Linguistic priors for the segmenter: determinatives, phrase-initial
 # particles and the curated trie additions. All three come from JSON files
-# that sit next to this module.
+# in vision/data/.
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ LAYOUT_BONUS = 1.5
 # Filled on first use. Set to None to reload.
 _DETERMINATIVES_CACHE: Optional[set] = None
 _PARTICLES_CACHE: Optional[list] = None
-_PRIORS_DIR = Path(__file__).parent
+_PRIORS_DIR = Path(__file__).parent / 'data'
 
 
 def load_determinatives(path: Optional[Path] = None) -> set:

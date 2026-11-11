@@ -3,12 +3,14 @@
 #
 #   spatial_primitives  constants, Detection, box geometry
 #   onnx_decoding       raw tensor to detections, letterbox, infer function
-#   cartouche_handling  cartouche tagging, twin boxes, legacy re-entry
+#   cartouche_handling  edge filter, tagging, twin boxes, legacy re-entry
 #   quadrat_clustering  duplicate merging, line bands, quadrats
 #   reading_order       lines, slot order, synthetic Unknown slots
 
 from vision.cartouche_handling import (
+    EDGE_FRAC,
     cartouche_reentry,
+    filter_edge_cartouches,
     merge_duplicate_cartouches,
     tag_cartouche_members,
 )
@@ -79,6 +81,7 @@ __all__ = [
     'DISTINCT_MIN_CONF',
     'DSU',
     'DUP_OVERLAP',
+    'EDGE_FRAC',
     'LINE_GAP_FRAC',
     'MAX_GAP_INSERTS',
     'MEMBER_MIN_OVERLAP',
@@ -106,6 +109,7 @@ __all__ = [
     'cluster_quadrats',
     'contains_point',
     'expand_bbox',
+    'filter_edge_cartouches',
     'inset_bbox',
     'intersection_area',
     'iou',

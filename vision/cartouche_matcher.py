@@ -26,7 +26,7 @@ CONSENSUS_MIN_VOTES = 2
 CONSENSUS_MARGIN = 1.0
 CONSENSUS_FLOOR = -3.0
 
-ROYAL_NAMES_JSON = Path(__file__).parent / 'royal_names.json'
+ROYAL_NAMES_JSON = Path(__file__).parent / 'data' / 'royal_names.json'
 
 
 def normalize_code(yolo_name: str) -> str:
@@ -42,6 +42,16 @@ def normalize_code(yolo_name: str) -> str:
         return 'Aa' + yolo_name[2:]
 
     return yolo_name[0].upper() + yolo_name[1:]
+
+
+def normalize_slots(slots: list[Slot]) -> list[Slot]:
+    """The slots with canonical Gardiner codes and plain float scores."""
+    normalized: list[Slot] = []
+
+    for slot in slots:
+        normalized.append([(normalize_code(c), float(s)) for c, s in slot])
+
+    return normalized
 
 
 @dataclass
