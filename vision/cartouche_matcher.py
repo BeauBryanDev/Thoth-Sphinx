@@ -58,6 +58,7 @@ def normalize_slots(slots: list[Slot]) -> list[Slot]:
 class RoyalMatch:
     # Key in royal_names.json.
     name_key: str
+    # The name the matched spelling writes, with its kind where known.
     translit: str
     english: str
     # The spelling that matched, canonical codes.
@@ -81,16 +82,29 @@ def load_royal_names(path: Optional[Path] = None) -> dict[str, dict]:
     return data.get('names', {})
 
 
+def _name_label(key: str, meta: dict, index: int) -> str:
+    """Which name this spelling writes, e.g. mn-xpr-ra (throne name).
+    Kings with one recorded name keep their plain transliteration."""
+    names = meta.get('spelling_names')
+    if not names or index >= len(names):
+        return meta.get('translit', key)
+
+    name = names[index]
+
+    return f"{name['translit']} ({name['kind']} name)"
+
+
 def _to_match(
     key: str,
     meta: dict,
+    index: int,
     spelling: list[str],
     score: float,
     aligned: list[str],
 ) -> RoyalMatch:
     return RoyalMatch(
         name_key=key,
-        translit=meta.get('translit', key),
+        translit=_name_label(key, meta, index),
         english=meta.get('english', ''),
         spelling=list(spelling),
         score=score,
@@ -117,7 +131,7 @@ def match_cartouche(
     for key, meta in royal_names.items():
         prior = FREQ_PRIOR_WEIGHT * math.log(meta.get('freq', 1) + 1)
 
-        for spelling in meta.get('spellings', []):
+        for index, spelling in enumerate(meta.get('spellings', [])):
             if not spelling:
                 continue
 
@@ -127,7 +141,9 @@ def match_cartouche(
             score += prior
 
             if best is None or score > best.score:
-                best = _to_match(key, meta, spelling, score, aligned)
+                best = _to_match(
+                    key, meta, index, spelling, score, aligned
+                )
 
     if best is not None and best.score < threshold:
         return None

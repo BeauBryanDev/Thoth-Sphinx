@@ -1,5 +1,5 @@
 {
-  "_README": "Royal-name lexicon for cartouche correction (cartouche_matcher.py). Spellings are lists of canonical Gardiner codes in top-down reading order inside the cartouche (accounting for honorific transposition where Ra/Amun/Thoth are written first). Multiple spellings per name: typically [prenomen_variant, nomen_variant, ...]. Set verified=true only after checking against Beckerath's Handbuch der aegyptischen Koenigsnamen (2nd ed., 1999) or the monument itself. Unverified entries still match but are flagged in the result. Generated 2026-06-25 -- ALL new entries need validation. Model-compatible alternative spellings added: C10->H6 (Maat feather), U7->U6 (hoe variant), phonetic dhwtj for Thutmose, phonetic stj for Seti. Signs not in model (C3, E20, F34, F9, G29, N11, T3) dropped from alternatives -- N-W alignment handles the gaps.",
+  "_README": "Royal-name lexicon for cartouche correction (cartouche_matcher.py). Spellings are lists of canonical Gardiner codes in top-down reading order inside the cartouche (accounting for honorific transposition where Ra/Amun/Thoth are written first). Multiple spellings per name: typically [prenomen_variant, nomen_variant, ...]. Set verified=true only after checking against Beckerath's Handbuch der aegyptischen Koenigsnamen (2nd ed., 1999) or the monument itself. Unverified entries still match but are flagged in the result. Generated 2026-06-25 -- ALL new entries need validation. Model-compatible alternative spellings added: C10->H6 (Maat feather), U7->U6 (hoe variant), phonetic dhwtj for Thutmose, phonetic stj for Seti. Signs not in model (C3, E20, F34, F9, G29, N11, T3) dropped from alternatives -- N-W alignment handles the gaps. 2026-11-11: spelling_names is parallel to spellings and says which name each spelling writes (kind throne or birth, and its transliteration), so the matcher labels a throne-name cartouche as the throne name. Kings without it have one name and keep the plain translit.",
   "names": {
     "wnjs": {
       "translit": "wnjs",
@@ -104,7 +104,21 @@
       ],
       "freq": 25,
       "verified": true,
-      "source": "claude-generated, nomen ppj, prenomen mry-ra. Validate against Beckerath p.64-65"
+      "source": "claude-generated, nomen ppj, prenomen mry-ra. Validate against Beckerath p.64-65",
+      "spelling_names": [
+        {
+          "kind": "birth",
+          "translit": "ppj"
+        },
+        {
+          "kind": "throne",
+          "translit": "mry-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "mry-ra"
+        }
+      ]
     },
     "ppj_ii": {
       "translit": "ppj (nfr-ka-ra)",
@@ -123,28 +137,37 @@
       ],
       "freq": 20,
       "verified": true,
-      "source": "claude-generated, nomen ppj, prenomen nfr-ka-ra. Validate against Beckerath p.66-67"
+      "source": "claude-generated, nomen ppj, prenomen nfr-ka-ra. Validate against Beckerath p.66-67",
+      "spelling_names": [
+        {
+          "kind": "birth",
+          "translit": "ppj"
+        },
+        {
+          "kind": "throne",
+          "translit": "nfr-ka-ra"
+        }
+      ]
     },
     "tti": {
-        "translit": "tti",
-        "english": "Teti (Dynasty VI)",
-        "spellings": [
-          [
-            "X1",
-            "X1",
-            "M17"
-          ],
-          [
-            "X1",
-            "U33",
-            "M17"
-          ]
+      "translit": "tti",
+      "english": "Teti (Dynasty VI)",
+      "spellings": [
+        [
+          "X1",
+          "X1",
+          "M17"
         ],
-        "freq": 25,
-        "verified": false,
-        "source": "nomen tti; no cartouche prenomen known (Horus name sḥtp-tꜣwj is not in a cartouche). Validate against Beckerath"
-      },
-
+        [
+          "X1",
+          "U33",
+          "M17"
+        ]
+      ],
+      "freq": 25,
+      "verified": false,
+      "source": "nomen tti; no cartouche prenomen known (Horus name sḥtp-tꜣwj is not in a cartouche). Validate against Beckerath"
+    },
     "mntw_htp_ii": {
       "translit": "mntw-htp (nb-hpt-ra)",
       "english": "Mentuhotep II (Dynasty XI)",
@@ -165,7 +188,17 @@
       ],
       "freq": 30,
       "verified": true,
-      "source": "claude-generated, prenomen nb-hpt-ra, nomen mntw-htp. G14=Mut vulture used for mntw in some writings. Validate against Beckerath p.84-85"
+      "source": "claude-generated, prenomen nb-hpt-ra, nomen mntw-htp. G14=Mut vulture used for mntw in some writings. Validate against Beckerath p.84-85",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nb-hpt-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "mntw-htp"
+        }
+      ]
     },
     "jmn_m_hat_i": {
       "translit": "jmn-m-hat (shtp-jb-ra)",
@@ -196,7 +229,21 @@
       ],
       "freq": 25,
       "verified": true,
-      "source": "claude-generated, prenomen shtp-jb-ra, nomen jmn-m-hat. Validate against Beckerath p.86-87"
+      "source": "claude-generated, prenomen shtp-jb-ra, nomen jmn-m-hat. Validate against Beckerath p.86-87",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "shtp-jb-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jmn-m-hat"
+        },
+        {
+          "kind": "throne",
+          "translit": "shtp-jb-ra"
+        }
+      ]
     },
     "snwsrt_i": {
       "translit": "snwsrt (xpr-ka-ra)",
@@ -218,7 +265,17 @@
       ],
       "freq": 30,
       "verified": true,
-      "source": "claude-generated, prenomen xpr-ka-ra, nomen snwsrt. Validate against Beckerath p.88-89"
+      "source": "claude-generated, prenomen xpr-ka-ra, nomen snwsrt. Validate against Beckerath p.88-89",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "xpr-ka-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "snwsrt"
+        }
+      ]
     },
     "snwsrt_iii": {
       "translit": "snwsrt (xa-kaw-ra)",
@@ -247,7 +304,21 @@
       ],
       "freq": 30,
       "verified": true,
-      "source": "claude-generated, prenomen xa-kaw-ra, nomen snwsrt. Validate against Beckerath p.90-91"
+      "source": "claude-generated, prenomen xa-kaw-ra, nomen snwsrt. Validate against Beckerath p.90-91",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "xa-kaw-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "snwsrt"
+        },
+        {
+          "kind": "throne",
+          "translit": "xa-kaw-ra"
+        }
+      ]
     },
     "jmn_m_hat_iii": {
       "translit": "jmn-m-hat (nj-maat-ra)",
@@ -280,7 +351,25 @@
       ],
       "freq": 25,
       "verified": true,
-      "source": "claude-generated, prenomen nj-maat-ra, nomen jmn-m-hat. Validate against Beckerath p.92-93"
+      "source": "claude-generated, prenomen nj-maat-ra, nomen jmn-m-hat. Validate against Beckerath p.92-93",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nj-maat-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "nj-maat-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jmn-m-hat"
+        },
+        {
+          "kind": "throne",
+          "translit": "nj-maat-ra"
+        }
+      ]
     },
     "jaH_ms": {
       "translit": "jaH-ms (nb-phtj-ra)",
@@ -311,7 +400,25 @@
       ],
       "freq": 35,
       "verified": true,
-      "source": "claude-generated, prenomen nb-phtj-ra, nomen jaH-ms (moon+born). N11=crescent moon. Validate against Beckerath p.122-123"
+      "source": "claude-generated, prenomen nb-phtj-ra, nomen jaH-ms (moon+born). N11=crescent moon. Validate against Beckerath p.122-123",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nb-phtj-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jaH-ms"
+        },
+        {
+          "kind": "throne",
+          "translit": "nb-phtj-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jaH-ms"
+        }
+      ]
     },
     "jmn_htp_i": {
       "translit": "jmn-htp (dsr-ka-ra)",
@@ -329,11 +436,30 @@
           "R4",
           "X1",
           "Q3"
+        ],
+        [
+          "N5",
+          "A42",
+          "V30"
         ]
       ],
       "freq": 35,
       "verified": true,
-      "source": "claude-generated, prenomen dsr-ka-ra, nomen jmn-htp. Validate against Beckerath p.124-125"
+      "source": "claude-generated, prenomen dsr-ka-ra, nomen jmn-htp. Validate against Beckerath p.124-125",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "dsr-ka-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jmn-htp"
+        },
+        {
+          "kind": "throne",
+          "translit": "dsr-ka-ra"
+        }
+      ]
     },
     "dhwtj_ms_i": {
       "translit": "dhwtj-ms (aa-xpr-ka-ra)",
@@ -372,7 +498,29 @@
       ],
       "freq": 35,
       "verified": true,
-      "source": "claude-generated, prenomen aa-xpr-ka-ra, nomen dhwtj-ms. C3=ibis-headed Thoth. Validate against Beckerath p.126-127"
+      "source": "claude-generated, prenomen aa-xpr-ka-ra, nomen dhwtj-ms. C3=ibis-headed Thoth. Validate against Beckerath p.126-127",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "aa-xpr-ka-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        }
+      ]
     },
     "dhwtj_ms_ii": {
       "translit": "dhwtj-ms (aa-xpr-n-ra)",
@@ -406,7 +554,25 @@
       ],
       "freq": 25,
       "verified": true,
-      "source": "claude-generated, prenomen aa-xpr-n-ra, nomen dhwtj-ms. Validate against Beckerath p.128-129"
+      "source": "claude-generated, prenomen aa-xpr-n-ra, nomen dhwtj-ms. Validate against Beckerath p.128-129",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "aa-xpr-n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        }
+      ]
     },
     "hat_shpsw": {
       "translit": "hat-shpsw.t (maat-ka-ra)",
@@ -439,7 +605,25 @@
       ],
       "freq": 40,
       "verified": true,
-      "source": "claude-generated, prenomen maat-ka-ra, nomen hat-shpsw.t. Validate against Beckerath p.130-131"
+      "source": "claude-generated, prenomen maat-ka-ra, nomen hat-shpsw.t. Validate against Beckerath p.130-131",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "maat-ka-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "maat-ka-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "hat-shpsw.t"
+        },
+        {
+          "kind": "throne",
+          "translit": "maat-ka-ra"
+        }
+      ]
     },
     "dhwtj_ms_iii": {
       "translit": "dhwtj-ms nfr-xpr (mn-xpr-ra)",
@@ -492,11 +676,52 @@
           "F35",
           "L1",
           "O34"
+        ],
+        [
+          "G25",
+          "F31",
+          "L1",
+          "F35",
+          "O34"
         ]
       ],
       "freq": 80,
       "verified": true,
-      "source": "claude-generated, prenomen mn-xpr-ra (one of the most common cartouches in Egypt), nomen dhwtj-ms nfr-xpr. Validate against Beckerath p.132-133"
+      "source": "claude-generated, prenomen mn-xpr-ra (one of the most common cartouches in Egypt), nomen dhwtj-ms nfr-xpr. Validate against Beckerath p.132-133",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "mn-xpr-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms nfr-xpr"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms nfr-xpr"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "throne",
+          "translit": "mn-xpr-ra stp.n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms nfr-xpr"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms nfr-xpr"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms nfr-xpr"
+        }
+      ]
     },
     "jmn_htp_ii": {
       "translit": "jmn-htp (aa-xprw-ra)",
@@ -520,7 +745,17 @@
       ],
       "freq": 30,
       "verified": true,
-      "source": "claude-generated, prenomen aa-xprw-ra, nomen jmn-htp. Validate against Beckerath p.134-135"
+      "source": "claude-generated, prenomen aa-xprw-ra, nomen jmn-htp. Validate against Beckerath p.134-135",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "aa-xprw-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jmn-htp"
+        }
+      ]
     },
     "dhwtj_ms_iv": {
       "translit": "dhwtj-ms (mn-xprw-ra)",
@@ -553,7 +788,25 @@
       ],
       "freq": 25,
       "verified": true,
-      "source": "claude-generated, prenomen mn-xprw-ra, nomen dhwtj-ms. Validate against Beckerath p.138-141"
+      "source": "claude-generated, prenomen mn-xprw-ra, nomen dhwtj-ms. Validate against Beckerath p.138-141",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "mn-xprw-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        },
+        {
+          "kind": "birth",
+          "translit": "dhwtj-ms"
+        }
+      ]
     },
     "jmn_htp_iii": {
       "translit": "jmn-htp hqa-wast (nb-maat-ra)",
@@ -585,7 +838,25 @@
       ],
       "freq": 70,
       "verified": true,
-      "source": "claude-generated, prenomen nb-maat-ra, nomen jmn-htp. Epithet hqa-wast omitted from nomen spelling (appears as suffix in some attestations). Validate against Beckerath p.142-143"
+      "source": "claude-generated, prenomen nb-maat-ra, nomen jmn-htp. Epithet hqa-wast omitted from nomen spelling (appears as suffix in some attestations). Validate against Beckerath p.142-143",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nb-maat-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "nb-maat-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "jmn-htp"
+        },
+        {
+          "kind": "throne",
+          "translit": "nb-maat-ra"
+        }
+      ]
     },
     "ax_n_jtn": {
       "translit": "ax-n-jtn (nfr-xprw-ra wa-n-ra)",
@@ -606,7 +877,17 @@
       ],
       "freq": 35,
       "verified": true,
-      "source": "claude-generated, prenomen nfr-xprw-ra, nomen ax-n-jtn. N27=sun with rays for Aten (uncertain -- may be special Amarna sign). Validate against Beckerath p.144-145"
+      "source": "claude-generated, prenomen nfr-xprw-ra, nomen ax-n-jtn. N27=sun with rays for Aten (uncertain -- may be special Amarna sign). Validate against Beckerath p.144-145",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nfr-xprw-ra wa-n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "ax-n-jtn"
+        }
+      ]
     },
     "twt_anx_jmn": {
       "translit": "twt-anx-jmn (nb-xprw-ra)",
@@ -641,7 +922,21 @@
       ],
       "freq": 45,
       "verified": true,
-      "source": "claude-generated, prenomen nb-xprw-ra, nomen twt-anx-jmn with honorific transposition of Amun. The nomen writing has many variants. Validate against Beckerath p.146-147"
+      "source": "claude-generated, prenomen nb-xprw-ra, nomen twt-anx-jmn with honorific transposition of Amun. The nomen writing has many variants. Validate against Beckerath p.146-147",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nb-xprw-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "twt-anx-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "twt-anx-jmn"
+        }
+      ]
     },
     "hr_m_hb": {
       "translit": "hr-m-hb mrj.n-jmn (dsr-xprw-ra stp.n-ra)",
@@ -704,7 +999,33 @@
       ],
       "freq": 30,
       "verified": true,
-      "source": "Beckerath, Handbuch p.146-147 (T1, T2, E2, E4, E5), checked 2026-11-06. T1 dsr-xprw-ra stp.n-ra, T2 adds hqA-maat (S38, H6); nomen mrj.n-jmn hr-m-hb with Amun written first. U21 stp adze and W3 hb basin dropped (not classes); U7 -> U6. Earlier phonetic nomen G5 G17 V28 D58 is not in Beckerath and was removed"
+      "source": "Beckerath, Handbuch p.146-147 (T1, T2, E2, E4, E5), checked 2026-11-06. T1 dsr-xprw-ra stp.n-ra, T2 adds hqA-maat (S38, H6); nomen mrj.n-jmn hr-m-hb with Amun written first. U21 stp adze and W3 hb basin dropped (not classes); U7 -> U6. Earlier phonetic nomen G5 G17 V28 D58 is not in Beckerath and was removed",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "dsr-xprw-ra stp.n-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "dsr-xprw-ra stp.n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "hr-m-hb mrj.n-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "hr-m-hb mrj.n-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "hr-m-hb mrj.n-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "hr-m-hb mrj.n-jmn"
+        }
+      ]
     },
     "ra_ms_sw_i": {
       "translit": "ra-ms-sw (mn-phtj-ra)",
@@ -732,7 +1053,21 @@
       ],
       "freq": 20,
       "verified": true,
-      "source": "claude-generated, prenomen mn-phtj-ra, nomen ra-ms-sw. Validate against Beckerath p.150-151"
+      "source": "claude-generated, prenomen mn-phtj-ra, nomen ra-ms-sw. Validate against Beckerath p.150-151",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "mn-phtj-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw"
+        },
+        {
+          "kind": "throne",
+          "translit": "mn-phtj-ra"
+        }
+      ]
     },
     "tA_wsrt": {
       "translit": "tA-wsrt stpt.n-mwt (sAt-ra mrjt-jmn)",
@@ -799,7 +1134,37 @@
       ],
       "freq": 20,
       "verified": true,
-      "source": "Beckerath, Handbuch p.162-163 (T2, T4, T7, E1, E3); MET 32.2.44 foundation brick. C1 Ra -> A40, C12 Amun / Mut -> A42 (no C classes in YOLO); U21 stp adze dropped from E3 (not a class). Last two spellings are v9C reads of the brick, not real writings: E3 (vulture/adze merge into the X1 slot) and T4 (Ra read as A42, sun disc split off as N5)"
+      "source": "Beckerath, Handbuch p.162-163 (T2, T4, T7, E1, E3); MET 32.2.44 foundation brick. C1 Ra -> A40, C12 Amun / Mut -> A42 (no C classes in YOLO); U21 stp adze dropped from E3 (not a class). Last two spellings are v9C reads of the brick, not real writings: E3 (vulture/adze merge into the X1 slot) and T4 (Ra read as A42, sun disc split off as N5)",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "sAt-ra mrjt-jmn"
+        },
+        {
+          "kind": "throne",
+          "translit": "sAt-ra mrjt-jmn"
+        },
+        {
+          "kind": "throne",
+          "translit": "sAt-ra mrjt-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "tA-wsrt stpt.n-mwt"
+        },
+        {
+          "kind": "birth",
+          "translit": "tA-wsrt stpt.n-mwt"
+        },
+        {
+          "kind": "birth",
+          "translit": "tA-wsrt stpt.n-mwt"
+        },
+        {
+          "kind": "throne",
+          "translit": "sAt-ra mrjt-jmn"
+        }
+      ]
     },
     "stj_i": {
       "translit": "stj mry.n-ptH (mn-maat-ra)",
@@ -832,7 +1197,29 @@
       ],
       "freq": 60,
       "verified": true,
-      "source": "claude-generated, prenomen mn-maat-ra, nomen stj. E20=Set animal for stj (controversial sign). Validate against Beckerath p.152-153"
+      "source": "claude-generated, prenomen mn-maat-ra, nomen stj. E20=Set animal for stj (controversial sign). Validate against Beckerath p.152-153",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "mn-maat-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "stj"
+        },
+        {
+          "kind": "throne",
+          "translit": "mn-maat-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "stj"
+        },
+        {
+          "kind": "birth",
+          "translit": "stj"
+        }
+      ]
     },
     "ra_ms_sw_ii": {
       "translit": "ra-ms-sw mry-jmn (wsr-maat-ra stp.n-ra)",
@@ -847,7 +1234,8 @@
           "N5",
           "F12",
           "A42",
-          "N5"
+          "N5",
+          "N35"
         ],
         [
           "M17",
@@ -889,11 +1277,77 @@
           "F31",
           "S29",
           "S29"
+        ],
+        [
+          "N5",
+          "A42",
+          "N36",
+          "M23",
+          "S29",
+          "F31"
+        ],
+        [
+          "N5",
+          "A42",
+          "N36",
+          "F31",
+          "S29",
+          "M23"
+        ],
+        [
+          "U6",
+          "A42",
+          "A42",
+          "F31",
+          "S29",
+          "M23"
         ]
       ],
       "freq": 100,
       "verified": true,
-      "source": "claude-generated, prenomen wsr-maat-ra (short form) and wsr-maat-ra stp.n-ra (full), nomen ra-ms-sw mry-jmn with honorific transposition of Amun. HIGHEST PRIORITY for validation -- most common cartouche in Egypt. Validate against Beckerath p.154-155"
+      "source": "claude-generated, prenomen wsr-maat-ra (short form) and wsr-maat-ra stp.n-ra (full), nomen ra-ms-sw mry-jmn with honorific transposition of Amun. HIGHEST PRIORITY for validation -- most common cartouche in Egypt. Validate against Beckerath p.154-155",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra stp.n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw mry-jmn"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra stp.n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw mry-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw mry-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw mry-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw mry-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw mry-jmn"
+        }
+      ]
     },
     "mr_n_ptH": {
       "translit": "mr.n-ptH htp-hr-maat (ba-n-ra mry-jmn)",
@@ -940,7 +1394,33 @@
       ],
       "freq": 30,
       "verified": true,
-      "source": "claude-generated, prenomen ba-n-ra, nomen mr.n-ptH. G29=jabiru for ba. Validate against Beckerath p.156-157"
+      "source": "claude-generated, prenomen ba-n-ra, nomen mr.n-ptH. G29=jabiru for ba. Validate against Beckerath p.156-157",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "ba-n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "mr.n-ptH"
+        },
+        {
+          "kind": "throne",
+          "translit": "ba-n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "mr.n-ptH"
+        },
+        {
+          "kind": "throne",
+          "translit": "ba-n-ra mry-jmn"
+        },
+        {
+          "kind": "throne",
+          "translit": "ba-n-ra mry-jmn"
+        }
+      ]
     },
     "stj_ii": {
       "translit": "stj mry.n-ptH (wsr-xprw-ra stp.n-ra)",
@@ -969,7 +1449,25 @@
       ],
       "freq": 15,
       "verified": false,
-      "source": "claude-generated, prenomen wsr-xprw-ra, nomen stj. Validate against Beckerath p.158-159"
+      "source": "claude-generated, prenomen wsr-xprw-ra, nomen stj. Validate against Beckerath p.158-159",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "wsr-xprw-ra stp.n-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "stj"
+        },
+        {
+          "kind": "birth",
+          "translit": "stj"
+        },
+        {
+          "kind": "birth",
+          "translit": "stj"
+        }
+      ]
     },
     "ra_ms_sw_iii": {
       "translit": "ra-ms-sw hqa-jwnw (wsr-maat-ra mry-jmn)",
@@ -1004,11 +1502,42 @@
           "N5",
           "F12",
           "H6"
+        ],
+        [
+          "N5",
+          "F12",
+          "A42",
+          "N36",
+          "M17",
+          "Y5",
+          "N35"
         ]
       ],
       "freq": 55,
       "verified": true,
-      "source": "claude-generated, prenomen wsr-maat-ra mry-jmn (with honorific Amun prefix), nomen ra-ms-sw. Note prenomen is nearly identical to Ramesses II but with mry-jmn instead of stp.n-ra. Validate against Beckerath p.164-165"
+      "source": "claude-generated, prenomen wsr-maat-ra mry-jmn (with honorific Amun prefix), nomen ra-ms-sw. Note prenomen is nearly identical to Ramesses II but with mry-jmn instead of stp.n-ra. Validate against Beckerath p.164-165",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra mry-jmn"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra mry-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra mry-jmn"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra mry-jmn"
+        }
+      ]
     },
     "ra_ms_sw_iv": {
       "translit": "ra-ms-sw hqa-maat mry-jmn (wsr-maat-ra stp.n-jmn)",
@@ -1039,7 +1568,21 @@
       ],
       "freq": 20,
       "verified": true,
-      "source": "claude-generated, prenomen wsr-maat-ra stp.n-jmn. Nearly identical cartouche to Ramesses III. Validate against Beckerath p.166-167"
+      "source": "claude-generated, prenomen wsr-maat-ra stp.n-jmn. Nearly identical cartouche to Ramesses III. Validate against Beckerath p.166-167",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra stp.n-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw"
+        },
+        {
+          "kind": "throne",
+          "translit": "wsr-maat-ra stp.n-jmn"
+        }
+      ]
     },
     "ra_ms_sw_vi": {
       "translit": "ra-ms-sw jmn-hr-xpsh.f (nb-maat-ra mry-jmn)",
@@ -1070,7 +1613,21 @@
       ],
       "freq": 20,
       "verified": false,
-      "source": "claude-generated, prenomen nb-maat-ra mry-jmn with Amun prefix. Nomen same base as other Ramessides. Validate against Beckerath p.170-171"
+      "source": "claude-generated, prenomen nb-maat-ra mry-jmn with Amun prefix. Nomen same base as other Ramessides. Validate against Beckerath p.170-171",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nb-maat-ra mry-jmn"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw"
+        },
+        {
+          "kind": "throne",
+          "translit": "nb-maat-ra mry-jmn"
+        }
+      ]
     },
     "ra_ms_sw_ix": {
       "translit": "ra-ms-sw xa-m-wast mry-jmn (nfr-ka-ra stp.n-ra)",
@@ -1090,7 +1647,17 @@
       ],
       "freq": 15,
       "verified": false,
-      "source": "claude-generated, prenomen nfr-ka-ra. Validate against Beckerath p.174-175"
+      "source": "claude-generated, prenomen nfr-ka-ra. Validate against Beckerath p.174-175",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nfr-ka-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "ra-ms-sw"
+        }
+      ]
     },
     "shshnq_i": {
       "translit": "shshnq (hd-xpr-ra stp.n-ra)",
@@ -1114,7 +1681,21 @@
       ],
       "freq": 20,
       "verified": false,
-      "source": "claude-generated, prenomen hd-xpr-ra, nomen shshnq. Nomen signs are uncertain. Validate against Beckerath p.188-189"
+      "source": "claude-generated, prenomen hd-xpr-ra, nomen shshnq. Nomen signs are uncertain. Validate against Beckerath p.188-189",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "hd-xpr-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "shshnq"
+        },
+        {
+          "kind": "throne",
+          "translit": "hd-xpr-ra"
+        }
+      ]
     },
     "thr_q": {
       "translit": "thr-q (nfr-tm-ra)",
@@ -1134,7 +1715,17 @@
       ],
       "freq": 25,
       "verified": false,
-      "source": "claude-generated, prenomen nfr-tm-ra, nomen thr-q. Kushite pharaoh with extensive building program at Karnak. Validate against Beckerath p.198-199"
+      "source": "claude-generated, prenomen nfr-tm-ra, nomen thr-q. Kushite pharaoh with extensive building program at Karnak. Validate against Beckerath p.198-199",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "nfr-tm-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "thr-q"
+        }
+      ]
     },
     "psmtk_i": {
       "translit": "psmtk (waH-jb-ra)",
@@ -1161,7 +1752,21 @@
       ],
       "freq": 15,
       "verified": false,
-      "source": "claude-generated, prenomen waH-jb-ra, nomen psmtk. Validate against Beckerath p.202-203"
+      "source": "claude-generated, prenomen waH-jb-ra, nomen psmtk. Validate against Beckerath p.202-203",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "waH-jb-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "psmtk"
+        },
+        {
+          "kind": "throne",
+          "translit": "waH-jb-ra"
+        }
+      ]
     },
     "nkaw": {
       "translit": "nkaw (wHm-jb-ra)",
@@ -1187,7 +1792,21 @@
       ],
       "freq": 15,
       "verified": false,
-      "source": "claude-generated, prenomen wHm-jb-ra, nomen nkaw. Validate against Beckerath p.204-205"
+      "source": "claude-generated, prenomen wHm-jb-ra, nomen nkaw. Validate against Beckerath p.204-205",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "wHm-jb-ra"
+        },
+        {
+          "kind": "birth",
+          "translit": "nkaw"
+        },
+        {
+          "kind": "throne",
+          "translit": "wHm-jb-ra"
+        }
+      ]
     },
     "jaHms_ii": {
       "translit": "xnm-jb-ra (jaH-ms)",
@@ -1201,7 +1820,13 @@
       ],
       "freq": 15,
       "verified": true,
-      "source": "prenomen xnm-jb-ra = N5 W9 F34, identified by Beau on grand_glyphs.jpeg 2026-11-02. W9 is not a YOLO class and reads as W14, so the spelling records W14. Nomen jaH-ms needs N11 (not a class), so it is left out."
+      "source": "prenomen xnm-jb-ra = N5 W9 F34, identified by Beau on grand_glyphs.jpeg 2026-11-02. W9 is not a YOLO class and reads as W14, so the spelling records W14. Nomen jaH-ms needs N11 (not a class), so it is left out.",
+      "spelling_names": [
+        {
+          "kind": "throne",
+          "translit": "xnm-jb-ra"
+        }
+      ]
     },
     "djoser": {
       "translit": "dsr (ntry-xt)",

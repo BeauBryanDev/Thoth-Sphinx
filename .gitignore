@@ -244,8 +244,8 @@ _mosaic_test_2/
 # Ignore all JSON Files
 *.json
 
-# ...except the runtime lexicon priors in vision/, which cartouche_matcher.py
-# and sphinx_corrector.py load via Path(__file__).parent. Without these the
+# ...except the runtime lexicon priors in vision/data/, which cartouche_matcher.py
+# and linguistic_priors.py load from there. Without these the
 # import chain and the test suite fail on a clean checkout (i.e. in CI).
 !royal_names.json
 !determinatives.json
@@ -359,3 +359,6 @@ scripts/extract_unas_text.py
 
 frontend/.env.development
 notes.txt
+.claude
+chosen
+ramsses_the_II_wall.webp

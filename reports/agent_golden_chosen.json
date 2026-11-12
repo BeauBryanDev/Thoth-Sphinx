@@ -1,0 +1,1506 @@
+{
+  "about": "Ground truth for the agent eval on chosen/. Drafted by Claude from the photos before any agent run, cross-checked with the corpus tools, then reviewed by Beau. Only records with reviewed_by set count as gold.",
+  "conventions": {
+    "codes": "Gardiner codes in reading order. 'cartouche' marks where a cartouche sits in the line; its signs are in cartouches[].",
+    "translit": "Manuel de Codage style, as in royal_names.json (mn-xpr-ra).",
+    "partial": "Signs cut by the photo edge. Not scored.",
+    "oov_signs": "True signs that are not YOLO classes, so the detector cannot output them.",
+    "confidence": "certain | probable | unsure, Claude's own doubt before review.",
+    "tail_unsure": "Signs at the end of a line that Claude could see but not read with confidence. Not scored.",
+    "unsure lines": "Lines with confidence unsure carry best-effort sign codes for the vision diagnostic only; they have no transliteration and never count in the verdict.",
+    "truth_incomplete": "True when the photo shows text the transliteration does not cover (unread rows or columns). The scorer then measures how much of the truth the reading covers, and does not punish the extra text."
+  },
+  "images": [
+    {
+      "file": "bnm,..jpeg",
+      "layout": "columns",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "M23",
+            "X1",
+            "L2",
+            "X1",
+            "cartouche",
+            "G39",
+            "N5"
+          ],
+          "translit": "nsw-bjtj wsr-mAat-ra mrj-jmn sA-ra",
+          "confidence": "certain"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "F12",
+            "C10",
+            "N36",
+            "M17",
+            "Y5",
+            "N35"
+          ],
+          "translit": "wsr-mAat-ra mrj-jmn",
+          "name_key": "ra_ms_sw_iii",
+          "king": "Ramesses III",
+          "aliases": [
+            "Ramesses III",
+            "Ramses III",
+            "Rameses III",
+            "Usermaatre Meryamun",
+            "Usermaatre-Meryamun",
+            "wsr-mAat-ra mrj-jmn"
+          ]
+        }
+      ],
+      "transliteration": "nsw-bjtj wsr-mAat-ra mrj-jmn sA-ra",
+      "translation": "King of Upper and Lower Egypt, Usermaatre Meryamun (Ramesses III), Son of Ra [...]",
+      "key_facts": [
+        {
+          "fact": "names Ramesses III",
+          "accept": [
+            "Ramesses III",
+            "Ramses III",
+            "Rameses III",
+            "Usermaatre"
+          ]
+        },
+        {
+          "fact": "title King of Upper and Lower Egypt",
+          "accept": [
+            "Upper and Lower Egypt",
+            "Dual King",
+            "nsw-bjtj",
+            "nswt-bity"
+          ]
+        },
+        {
+          "fact": "title Son of Ra",
+          "accept": [
+            "Son of Ra",
+            "Son of Re"
+          ]
+        },
+        {
+          "fact": "epithet beloved of Amun",
+          "accept": [
+            "beloved of Amun",
+            "Meryamun",
+            "Meriamun"
+          ]
+        }
+      ],
+      "partial": [
+        "the bee L2 is cut at the top",
+        "the nomen cartouche that follows sA-ra is outside the photo"
+      ],
+      "oov_signs": [
+        "C10"
+      ],
+      "notes": "Painted sunk relief, Medinet Habu style. The seated goddess with the ankh on her knee is Maat (C10), the tall sign beside her is wsr (F12).",
+      "source": "Standard prenomen of Ramesses III (Beckerath); knowledge graph entity ramesses-iii-d20.",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": false
+    },
+    {
+      "file": "asdfghj.jpeg",
+      "layout": "columns",
+      "direction": "ltr",
+      "lines": [
+        {
+          "codes": [
+            "M23",
+            "X1",
+            "L2",
+            "X1",
+            "cartouche",
+            "M17",
+            "Y5",
+            "N35"
+          ],
+          "translit": "nsw-bjtj mn-xpr-ra jmn",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "G39",
+            "N5",
+            "cartouche",
+            "X8",
+            "S34"
+          ],
+          "translit": "sA-ra DHwtj-ms nfr-xpr dj anx",
+          "confidence": "certain"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "Y5",
+            "L1"
+          ],
+          "translit": "mn-xpr-ra",
+          "name_key": "dhwtj_ms_iii",
+          "king": "Thutmose III",
+          "aliases": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes III",
+            "Menkheperre",
+            "Menkheperra",
+            "mn-xpr-ra"
+          ]
+        },
+        {
+          "codes": [
+            "G26",
+            "F31",
+            "O34",
+            "F35",
+            "L1"
+          ],
+          "translit": "DHwtj-ms nfr-xpr",
+          "name_key": "dhwtj_ms_iii",
+          "king": "Thutmose III",
+          "aliases": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes",
+            "Thutmose Neferkheper",
+            "DHwtj-ms nfr-xpr"
+          ]
+        }
+      ],
+      "transliteration": "nsw-bjtj mn-xpr-ra jmn [...] sA-ra DHwtj-ms nfr-xpr dj anx [...]",
+      "translation": "King of Upper and Lower Egypt, Menkheperre, [beloved of] Amun [...]; Son of Ra, Thutmose Neferkheper, given life [...]",
+      "key_facts": [
+        {
+          "fact": "names Thutmose III",
+          "accept": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Menkheperre",
+            "Menkheperra"
+          ]
+        },
+        {
+          "fact": "title King of Upper and Lower Egypt",
+          "accept": [
+            "Upper and Lower Egypt",
+            "Dual King",
+            "nsw-bjtj",
+            "nswt-bity"
+          ]
+        },
+        {
+          "fact": "title Son of Ra",
+          "accept": [
+            "Son of Ra",
+            "Son of Re"
+          ]
+        },
+        {
+          "fact": "given life",
+          "accept": [
+            "given life",
+            "granted life",
+            "endowed with life"
+          ]
+        },
+        {
+          "fact": "the god Amun",
+          "accept": [
+            "Amun",
+            "Amon",
+            "Amen"
+          ]
+        }
+      ],
+      "partial": [
+        "bottom row of both columns is cut: left has a sun disc, a stroke and a seated figure (probably Amun-Ra), right has a disc and a loop"
+      ],
+      "oov_signs": [
+        "G26"
+      ],
+      "notes": "Sandstone block. Signs face left, so the left column is read first. The sun of sA-ra sits in the chipped top right corner.",
+      "source": "Standard throne and birth names of Thutmose III (royal_names.json dhwtj_ms_iii).",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": false
+    },
+    {
+      "file": "bnnm45.jpeg",
+      "layout": "columns",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "M23",
+            "X1",
+            "L2",
+            "X1",
+            "cartouche",
+            "D4",
+            "N35",
+            "I9",
+            "G17",
+            "Y5",
+            "N33",
+            "N33",
+            "N33"
+          ],
+          "translit": "nsw-bjtj mn-xpr-ra stp-n-ra jr.n=f m mnw",
+          "confidence": "certain"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "Y5",
+            "L1",
+            "N5",
+            "U21",
+            "N35"
+          ],
+          "translit": "mn-xpr-ra stp-n-ra",
+          "name_key": "dhwtj_ms_iii",
+          "king": "Thutmose III",
+          "aliases": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes III",
+            "Menkheperre",
+            "Menkheperra",
+            "Menkheperre Setepenre",
+            "mn-xpr-ra"
+          ]
+        }
+      ],
+      "transliteration": "nsw-bjtj mn-xpr-ra stp-n-ra jr.n=f m mnw[=f]",
+      "translation": "King of Upper and Lower Egypt, Menkheperre, chosen of Ra (Thutmose III): he made [it] as his monument [...]",
+      "key_facts": [
+        {
+          "fact": "names Thutmose III",
+          "accept": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Menkheperre",
+            "Menkheperra"
+          ]
+        },
+        {
+          "fact": "title King of Upper and Lower Egypt",
+          "accept": [
+            "Upper and Lower Egypt",
+            "Dual King",
+            "nsw-bjtj",
+            "nswt-bity"
+          ]
+        },
+        {
+          "fact": "he made a monument",
+          "accept": [
+            "monument",
+            "memorial"
+          ]
+        },
+        {
+          "fact": "epithet chosen of Ra",
+          "accept": [
+            "chosen of Ra",
+            "chosen of Re",
+            "Setepenre",
+            "Setepenra",
+            "elect of Ra"
+          ]
+        }
+      ],
+      "partial": [
+        "the text continues below the three nw pots"
+      ],
+      "oov_signs": [
+        "U21"
+      ],
+      "notes": "Granite obelisk. The dedication formula jr.n=f m mnw=f n jt=f continues out of frame.",
+      "source": "Dedication formula attested in the TLA corpus (jri =f mnw =f ...); prenomen variant with stp-n-ra.",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": false
+    },
+    {
+      "file": "Hatshepsut_temple_wall.jpg",
+      "layout": "rows",
+      "direction": "ltr",
+      "lines": [
+        {
+          "codes": [
+            "S34",
+            "G5",
+            "E1",
+            "D40",
+            "N28",
+            "G17",
+            "S40",
+            "X1",
+            "O49",
+            "S38",
+            "Y1",
+            "F39",
+            "X1",
+            "F34"
+          ],
+          "translit": "anx Hr kA-nxt xa-m-wAst",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "S34",
+            "M23",
+            "X1",
+            "L2",
+            "X1",
+            "cartouche",
+            "M17",
+            "Y5",
+            "N35",
+            "N5",
+            "Z1",
+            "U6",
+            "M17",
+            "M17"
+          ],
+          "translit": "anx nsw-bjtj mn-xpr-ra mry jmn-ra",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "S34",
+            "G39",
+            "N5",
+            "cartouche",
+            "X8",
+            "S34",
+            "I10",
+            "X1",
+            "N17"
+          ],
+          "translit": "anx sA-ra DHwtj-ms nfr-xpr dj anx Dt",
+          "confidence": "certain"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "Y5",
+            "L1"
+          ],
+          "translit": "mn-xpr-ra",
+          "name_key": "dhwtj_ms_iii",
+          "king": "Thutmose III",
+          "aliases": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes III",
+            "Menkheperre",
+            "Menkheperra",
+            "mn-xpr-ra"
+          ]
+        },
+        {
+          "codes": [
+            "G26",
+            "F31",
+            "F35",
+            "L1"
+          ],
+          "translit": "DHwtj-ms nfr-xpr",
+          "name_key": "dhwtj_ms_iii",
+          "king": "Thutmose III",
+          "aliases": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes III",
+            "Menkheperre",
+            "Menkheperra",
+            "mn-xpr-ra",
+            "Thutmose Neferkheper"
+          ]
+        }
+      ],
+      "transliteration": "anx Hr kA-nxt xa-m-wAst anx nsw-bjtj mn-xpr-ra mry jmn-ra anx sA-ra DHwtj-ms nfr-xpr dj anx Dt",
+      "translation": "Live the Horus, Strong Bull arising in Thebes [...]; live the King of Upper and Lower Egypt, Menkheperre, beloved of Amun-Ra; live the Son of Ra, Thutmose Neferkheper, given life forever.",
+      "key_facts": [
+        {
+          "fact": "names Thutmose III",
+          "accept": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes III",
+            "Menkheperre",
+            "Menkheperra"
+          ]
+        },
+        {
+          "fact": "Horus name Strong Bull",
+          "accept": [
+            "Strong Bull",
+            "Mighty Bull",
+            "Victorious Bull",
+            "kA-nxt",
+            "ka-nakht"
+          ]
+        },
+        {
+          "fact": "arising in Thebes",
+          "accept": [
+            "Thebes",
+            "Waset"
+          ]
+        },
+        {
+          "fact": "beloved of Amun-Ra",
+          "accept": [
+            "beloved of Amun",
+            "Amun-Ra",
+            "Amun-Re",
+            "Amon-Ra"
+          ]
+        },
+        {
+          "fact": "title King of Upper and Lower Egypt",
+          "accept": [
+            "Upper and Lower Egypt",
+            "Dual King",
+            "nsw-bjtj",
+            "nswt-bity"
+          ]
+        },
+        {
+          "fact": "title Son of Ra",
+          "accept": [
+            "Son of Ra",
+            "Son of Re"
+          ]
+        },
+        {
+          "fact": "given life forever",
+          "accept": [
+            "forever",
+            "eternally",
+            "for eternity"
+          ]
+        }
+      ],
+      "partial": [],
+      "oov_signs": [
+        "F43",
+        "G26",
+        "N28"
+      ],
+      "notes": "Painted relief, Deir el-Bahari. Each row opens with anx. In row 1 the sign after the bull is N28 (xa), not a loaf. The end of row 1 (crook, tall textured sign, then Awt-jb \"joy\") is not read with confidence.",
+      "source": "Horus, throne and birth names of Thutmose III (Beckerath; royal_names.json dhwtj_ms_iii).",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    },
+    {
+      "file": "ramsses_the_II_wall.webp",
+      "layout": "columns",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "V30",
+            "N16",
+            "N16",
+            "cartouche"
+          ],
+          "translit": "nb tAwj wsr-mAat-ra stp-n-ra",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "V30",
+            "N28",
+            "Z2",
+            "cartouche"
+          ],
+          "translit": "nb xaw ra-ms-sw mrj-jmn",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "X8",
+            "S34",
+            "W19",
+            "N5",
+            "Z1"
+          ],
+          "translit": "dj anx mj ra",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "G39",
+            "N5",
+            "V30",
+            "N28",
+            "N28",
+            "N28",
+            "cartouche"
+          ],
+          "translit": "sA-ra nb xaw ra-ms-sw mrj-jmn",
+          "confidence": "probable"
+        },
+        {
+          "codes": [
+            "G5",
+            "E1",
+            "D40",
+            "U6",
+            "C10"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "G5",
+            "E1",
+            "D40",
+            "U6",
+            "C10"
+          ],
+          "confidence": "unsure"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "F12",
+            "C10",
+            "N5",
+            "U21",
+            "N35"
+          ],
+          "translit": "wsr-mAat-ra stp-n-ra",
+          "name_key": "ra_ms_sw_ii",
+          "king": "Ramesses II",
+          "aliases": [
+            "Ramesses II",
+            "Ramses II",
+            "Rameses II",
+            "Ramesses the Great",
+            "Usermaatre Setepenre",
+            "Usermaatre",
+            "wsr-mAat-ra stp-n-ra"
+          ]
+        },
+        {
+          "codes": [
+            "C2",
+            "C12",
+            "N36",
+            "F31",
+            "S29",
+            "M23"
+          ],
+          "translit": "ra-ms-sw mrj-jmn",
+          "name_key": "ra_ms_sw_ii",
+          "king": "Ramesses II",
+          "aliases": [
+            "Ramesses II",
+            "Ramses II",
+            "Rameses II",
+            "Ramesses Meryamun",
+            "Ramesses beloved of Amun",
+            "ra-ms-sw mrj-jmn"
+          ]
+        },
+        {
+          "codes": [
+            "C2",
+            "C12",
+            "N36",
+            "F31",
+            "S29",
+            "M23"
+          ],
+          "translit": "ra-ms-sw mrj-jmn",
+          "name_key": "ra_ms_sw_ii",
+          "king": "Ramesses II",
+          "aliases": [
+            "Ramesses II",
+            "Ramses II",
+            "Rameses II",
+            "ra-ms-sw mrj-jmn"
+          ]
+        }
+      ],
+      "transliteration": "nb tAwj wsr-mAat-ra stp-n-ra nb xaw ra-ms-sw mrj-jmn dj anx mj ra sA-ra nb xaw ra-ms-sw mrj-jmn",
+      "translation": "Lord of the Two Lands, Strong Bull, Usermaatre Setepenre; Lord of Crowns, Ramesses Meryamun,  given life like Ra. Son of Ra, King of Upper and Lower Egpyt, Ramesses Meryamun Beloved of Amun",
+      "key_facts": [
+        {
+          "fact": "names Ramesses II",
+          "accept": [
+            "Ramesses II",
+            "Ramses II",
+            "Rameses II",
+            "Usermaatre Setepenre",
+            "Ramesses the Great"
+          ]
+        },
+        {
+          "fact": "Lord of the Two Lands",
+          "accept": [
+            "Two Lands"
+          ]
+        },
+        {
+          "fact": "Lord of Crowns / Appearances",
+          "accept": [
+            "Lord of Crowns",
+            "Lord of Appearances",
+            "Lord of Diadems"
+          ]
+        },
+        {
+          "fact": "given life like Ra",
+          "accept": [
+            "like Ra",
+            "like Re"
+          ]
+        },
+        {
+          "fact": "beloved of Amun",
+          "accept": [
+            "beloved of Amun",
+            "Meryamun",
+            "Meriamun"
+          ]
+        },
+        {
+          "fact": "title Son of Ra",
+          "accept": [
+            "Son of Ra",
+            "Son of Re"
+          ]
+        }
+      ],
+      "partial": [
+        "the bottom row is cut at its left end, after the cartouche"
+      ],
+      "oov_signs": [
+        "C10",
+        "C12",
+        "C2",
+        "N16",
+        "N28",
+        "U21"
+      ],
+      "notes": "A symmetric panel, not running text: two vertical cartouches under nb tAwj and nb xaw, flanked by two serekhs with the Horus name (kA-nxt mrj-mAat, sign reading unsure), dj anx mj ra beneath, and one horizontal row at the bottom. Layout and direction are a compromise; no single order is right for the whole panel.",
+      "source": "Standard throne and birth names of Ramesses II (Beckerath; royal_names.json ra_ms_sw_ii).",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    },
+    {
+      "file": "color_signs.jpg",
+      "layout": "columns",
+      "direction": "ltr",
+      "lines": [
+        {
+          "codes": [
+            "I10",
+            "D58",
+            "G43",
+            "U36",
+            "Aa1",
+            "D21"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "G39",
+            "N5",
+            "cartouche"
+          ],
+          "translit": "sA-ra Hr-m-Hb mrj-n-jmn",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "D4",
+            "Q1",
+            "M23",
+            "cartouche"
+          ],
+          "translit": "wsjr nsw Dsr-xprw-ra stp-n-ra",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "I10",
+            "S43",
+            "M17",
+            "N35",
+            "G5",
+            "G39",
+            "Z1"
+          ],
+          "translit": "Dd mdw jn Hr sA",
+          "confidence": "probable"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "M17",
+            "Y5",
+            "N35",
+            "U6",
+            "Aa15",
+            "G5",
+            "W4"
+          ],
+          "translit": "Hr-m-Hb mrj-n-jmn",
+          "name_key": "hr_m_hb",
+          "king": "Horemheb",
+          "aliases": [
+            "Horemheb",
+            "Haremhab",
+            "Horemhab",
+            "Hr-m-Hb",
+            "Horemheb Meryamun"
+          ]
+        },
+        {
+          "codes": [
+            "N5",
+            "D45",
+            "L1",
+            "Z2",
+            "N5",
+            "U21",
+            "N35"
+          ],
+          "translit": "Dsr-xprw-ra stp-n-ra",
+          "name_key": "hr_m_hb",
+          "king": "Horemheb",
+          "aliases": [
+            "Horemheb",
+            "Haremhab",
+            "Horemhab",
+            "Djeserkheperure",
+            "Djeserkheperure Setepenre",
+            "Dsr-xprw-ra"
+          ]
+        }
+      ],
+      "transliteration": "wsjr nsw Dsr-xprw-ra stp-n-ra sA-ra Hr-m-Hb mrj-n-jmn Dd mdw jn Hr sA",
+      "translation": "The Osiris, King Djeserkheperure Setepenre, Son of Ra, Horemheb Meryamun. Words spoken by Horus, son of [Isis ...]",
+      "key_facts": [
+        {
+          "fact": "names Horemheb",
+          "accept": [
+            "Horemheb",
+            "Haremhab",
+            "Horemhab",
+            "Djeserkheperure"
+          ]
+        },
+        {
+          "fact": "the Osiris King (deceased king)",
+          "accept": [
+            "Osiris"
+          ]
+        },
+        {
+          "fact": "title Son of Ra",
+          "accept": [
+            "Son of Ra",
+            "Son of Re"
+          ]
+        },
+        {
+          "fact": "the god Horus speaks",
+          "accept": [
+            "Horus"
+          ]
+        },
+        {
+          "fact": "words spoken",
+          "accept": [
+            "Words spoken",
+            "Recitation",
+            "Words to be spoken",
+            "Utterance"
+          ]
+        }
+      ],
+      "partial": [
+        "the far left column is cut at the top and bottom",
+        "the right column continues below the duck (the name Isis is out of frame)"
+      ],
+      "oov_signs": [
+        "S43",
+        "U21",
+        "W4"
+      ],
+      "notes": "Painted tomb wall, tomb of Horemheb (KV 57). The two cartouche columns face each other, so the natural reading is throne name first; with direction ltr the pipeline lists the birth-name column first. The scorer must not punish that order.",
+      "source": "Standard throne and birth names of Horemheb (Beckerath; royal_names.json hr_m_hb).",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    },
+    {
+      "file": "dfghj.webp",
+      "layout": "columns",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "M23",
+            "X1",
+            "L2",
+            "X1",
+            "cartouche"
+          ],
+          "translit": "nsw-bjtj mn-xpr-ra",
+          "confidence": "probable"
+        },
+        {
+          "codes": [
+            "cartouche"
+          ],
+          "translit": "mn-xprw-ra",
+          "confidence": "probable"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "Y5",
+            "L1"
+          ],
+          "translit": "mn-xpr-ra",
+          "name_key": "dhwtj_ms_iii",
+          "king": "Thutmose III",
+          "aliases": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Djehutymes III",
+            "Menkheperre",
+            "Menkheperra",
+            "mn-xpr-ra"
+          ]
+        },
+        {
+          "codes": [
+            "N5",
+            "Y5",
+            "L1",
+            "Z2"
+          ],
+          "translit": "mn-xprw-ra",
+          "name_key": "dhwtj_ms_iv",
+          "king": "Thutmose IV",
+          "aliases": [
+            "Thutmose IV",
+            "Tuthmosis IV",
+            "Thutmosis IV",
+            "Djehutymes IV",
+            "Menkheperure",
+            "Menkheprure",
+            "mn-xprw-ra"
+          ]
+        }
+      ],
+      "transliteration": "nsw-bjtj mn-xpr-ra mn-xprw-ra",
+      "translation": "King of Upper and Lower Egypt, Menkheperre (Thutmose III) [...]; Menkheperure (Thutmose IV) [...]",
+      "key_facts": [
+        {
+          "fact": "names Thutmose III",
+          "accept": [
+            "Thutmose III",
+            "Tuthmosis III",
+            "Thutmosis III",
+            "Menkheperre",
+            "Menkheperra"
+          ]
+        },
+        {
+          "fact": "names Thutmose IV",
+          "accept": [
+            "Thutmose IV",
+            "Tuthmosis IV",
+            "Thutmosis IV",
+            "Menkheperure",
+            "Menkheprure"
+          ]
+        },
+        {
+          "fact": "title King of Upper and Lower Egypt",
+          "accept": [
+            "Upper and Lower Egypt",
+            "Dual King",
+            "nsw-bjtj",
+            "nswt-bity"
+          ]
+        }
+      ],
+      "partial": [
+        "both outer columns are cut by the photo",
+        "the text under both cartouches is weathered and was not read"
+      ],
+      "oov_signs": [],
+      "notes": "Weathered sandstone. The two cartouches differ only by the three plural strokes under the scarab of the left one (xprw, Thutmose IV). Only the cartouches and the title above the right one are read with confidence; this image tests king identification, not running text.",
+      "source": "Throne names of Thutmose III and IV (royal_names.json).",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    },
+    {
+      "file": "tyuiug.jpg",
+      "layout": "columns",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "I10",
+            "S43",
+            "Z1",
+            "G39",
+            "N36",
+            "M17",
+            "M17",
+            "N35",
+            "F32",
+            "Z1"
+          ],
+          "translit": "Dd mdw sA=j mry n Xt=j",
+          "confidence": "probable"
+        },
+        {
+          "codes": [
+            "cartouche",
+            "D37",
+            "N35",
+            "N35",
+            "V31",
+            "N16",
+            "N16",
+            "N16"
+          ],
+          "translit": "nb-mAat-ra dj.n=j n=k tAw",
+          "confidence": "probable"
+        },
+        {
+          "codes": [
+            "V30",
+            "Z2",
+            "G5",
+            "M23",
+            "Z2",
+            "M17",
+            "W19"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "G5",
+            "X1",
+            "G5",
+            "W11",
+            "Z2",
+            "I7",
+            "V30"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "D4",
+            "N5",
+            "M17",
+            "M17",
+            "X1",
+            "E15",
+            "Z2",
+            "V30",
+            "X1",
+            "W11"
+          ],
+          "confidence": "unsure"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "C10",
+            "V30"
+          ],
+          "translit": "nb-mAat-ra",
+          "name_key": "jmn_htp_iii",
+          "king": "Amenhotep III",
+          "aliases": [
+            "Amenhotep III",
+            "Amenophis III",
+            "Amenhotpe III",
+            "Nebmaatre",
+            "Nebmaatra",
+            "Neb-Maat-Re",
+            "nb-mAat-ra"
+          ]
+        }
+      ],
+      "transliteration": "Dd mdw sA=j mry n Xt=j nb-mAat-ra dj.n=j n=k tAw",
+      "translation": "Words spoken: my beloved son of my body, Nebmaatre (Amenhotep III), I have given you [all] lands [...]",
+      "key_facts": [
+        {
+          "fact": "names Amenhotep III",
+          "accept": [
+            "Amenhotep III",
+            "Amenophis III",
+            "Amenhotpe III",
+            "Nebmaatre",
+            "Nebmaatra"
+          ]
+        },
+        {
+          "fact": "words spoken (a god speaks)",
+          "accept": [
+            "Words spoken",
+            "Recitation",
+            "Words to be spoken",
+            "Utterance"
+          ]
+        },
+        {
+          "fact": "the king is called son",
+          "accept": [
+            "my son",
+            "son of my body",
+            "beloved son"
+          ]
+        },
+        {
+          "fact": "I have given you",
+          "accept": [
+            "I have given",
+            "I give",
+            "given to you",
+            "I grant"
+          ]
+        }
+      ],
+      "partial": [
+        "all five columns are cut at the bottom",
+        "a sixth column is cut at the left edge"
+      ],
+      "oov_signs": [
+        "C10",
+        "E15",
+        "I7",
+        "N16",
+        "S43",
+        "W11"
+      ],
+      "notes": "Sandstone, Luxor temple. A god addresses the king. The two right columns are read; the three left ones were seen but not read, so their codes are best effort.",
+      "source": "Throne name of Amenhotep III (royal_names.json jmn_htp_iii); the speech formula Dd mdw ... dj.n=j n=k is standard.",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    },
+    {
+      "file": "Pyramid_of_Unas.jpg",
+      "layout": "columns",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "G43",
+            "N5",
+            "M17",
+            "G17",
+            "S29",
+            "V31",
+            "G17",
+            "G43",
+            "M17",
+            "M17"
+          ],
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "D58",
+            "I9",
+            "S34",
+            "I9",
+            "S34",
+            "I9",
+            "S34",
+            "cartouche",
+            "Q3",
+            "N35",
+            "G17"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "X8",
+            "N35",
+            "V31",
+            "S29",
+            "I10",
+            "D58",
+            "I9",
+            "S34",
+            "I9",
+            "S34",
+            "I9",
+            "S34",
+            "I9",
+            "S34"
+          ],
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "cartouche",
+            "Q3",
+            "N35",
+            "X1",
+            "I9",
+            "N35",
+            "Aa1",
+            "X1",
+            "G39",
+            "V28",
+            "Q3"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "Q3",
+            "O4",
+            "cartouche",
+            "Q3",
+            "N35",
+            "N35",
+            "Q3",
+            "O4",
+            "I9",
+            "N35",
+            "Q3",
+            "O4",
+            "cartouche",
+            "Q3"
+          ],
+          "confidence": "certain"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "E34",
+            "N35",
+            "M17",
+            "S29"
+          ],
+          "translit": "wnjs",
+          "name_key": "wnjs",
+          "king": "Unas",
+          "aliases": [
+            "Unas",
+            "Unis",
+            "Wenis",
+            "Unes",
+            "wnjs",
+            "wnis"
+          ]
+        },
+        {
+          "codes": [
+            "E34",
+            "N35",
+            "M17",
+            "S29"
+          ],
+          "translit": "wnjs",
+          "name_key": "wnjs",
+          "king": "Unas",
+          "aliases": [
+            "Unas",
+            "Unis",
+            "Wenis",
+            "Unes",
+            "wnjs",
+            "wnis"
+          ]
+        },
+        {
+          "codes": [
+            "E34",
+            "N35",
+            "M17",
+            "S29"
+          ],
+          "translit": "wnjs",
+          "name_key": "wnjs",
+          "king": "Unas",
+          "aliases": [
+            "Unas",
+            "Unis",
+            "Wenis",
+            "Unes",
+            "wnjs",
+            "wnis"
+          ]
+        },
+        {
+          "codes": [
+            "E34",
+            "N35",
+            "M17",
+            "S29"
+          ],
+          "translit": "wnjs",
+          "name_key": "wnjs",
+          "king": "Unas",
+          "aliases": [
+            "Unas",
+            "Unis",
+            "Wenis",
+            "Unes",
+            "wnjs",
+            "wnis"
+          ]
+        }
+      ],
+      "transliteration": "anx=f anx wnjs pn n mt=f n mt wnjs pn n sk=f n sk wnjs pn n nhp=f n nhp wnjs pn",
+      "translation": "He lives, this Unas lives; he is not dead, this Unas is not dead; he has not perished, this Unas life for ever [...] (the litany of Pyramid Texts Utterance 219)",
+      "key_facts": [
+        {
+          "fact": "names Unas",
+          "accept": [
+            "Unas",
+            "Unis",
+            "Wenis"
+          ]
+        },
+        {
+          "fact": "this Unas",
+          "accept": [
+            "this Unas",
+            "this Unis",
+            "this Wenis"
+          ]
+        },
+        {
+          "fact": "he lives",
+          "accept": [
+            "lives",
+            "alive",
+            "live"
+          ]
+        },
+        {
+          "fact": "he is not dead",
+          "accept": [
+            "not dead",
+            "not die",
+            "does not die",
+            "has not died"
+          ]
+        },
+        {
+          "fact": "Pyramid Texts",
+          "accept": [
+            "Pyramid Text"
+          ]
+        }
+      ],
+      "partial": [
+        "every column is cut at top and bottom: the photo is a window on long columns",
+        "the two outer columns are cut at the sides"
+      ],
+      "oov_signs": [],
+      "notes": "Pyramid of Unas. The repeated anx=f and wnjs pn with nhp and sk identify the litany of Utterance 219. Because the photo is a window, the transliteration is the litany these columns belong to, not a sign-for-sign reading: confidence probable for the text, unsure for the sign lists. The cartouche appears several times.",
+      "source": "Pyramid Texts Utterance 219 (Allen Spell 152; Piankoff), in the translations index.",
+      "transliteration_confidence": "probable",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    },
+    {
+      "file": "grand_glyphs.jpeg",
+      "layout": "rows",
+      "direction": "rtl",
+      "lines": [
+        {
+          "codes": [
+            "N5",
+            "V20",
+            "Z2",
+            "Z4",
+            "Aa1",
+            "D21",
+            "U36",
+            "G7",
+            "N35",
+            "M23",
+            "X1",
+            "L2",
+            "X1",
+            "cartouche",
+            "X8",
+            "S34"
+          ],
+          "translit": "sw 15 xr Hm n nsw-bjtj Xnm-jb-ra dj anx",
+          "confidence": "certain"
+        },
+        {
+          "codes": [
+            "X1",
+            "G7",
+            "F35",
+            "X1",
+            "D21",
+            "X8",
+            "D4",
+            "R4",
+            "X1",
+            "I9",
+            "D58",
+            "X1",
+            "O1",
+            "I9",
+            "G17"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "U36",
+            "I9",
+            "O34",
+            "G40",
+            "X1",
+            "G17",
+            "D4",
+            "X1",
+            "W19",
+            "X1",
+            "X1",
+            "W10",
+            "D36",
+            "G17"
+          ],
+          "confidence": "unsure"
+        },
+        {
+          "codes": [
+            "A1",
+            "D58",
+            "X1",
+            "O1",
+            "M17",
+            "S29",
+            "U36",
+            "I9",
+            "G17",
+            "S29",
+            "M12",
+            "N5",
+            "I9",
+            "W19"
+          ],
+          "confidence": "unsure"
+        }
+      ],
+      "cartouches": [
+        {
+          "codes": [
+            "N5",
+            "W9",
+            "F34"
+          ],
+          "translit": "Xnm-jb-ra",
+          "name_key": "jaHms_ii",
+          "king": "Amasis",
+          "aliases": [
+            "Amasis",
+            "Ahmose II",
+            "Amasis II",
+            "Khnemibre",
+            "Khnumibre",
+            "Khnemibra",
+            "Xnm-jb-ra"
+          ]
+        }
+      ],
+      "transliteration": "sw 15 xr Hm n nsw-bjtj Xnm-jb-ra dj anx",
+      "translation": "[...] day 15, under the Majesty of the King of Upper and Lower Egypt, Khnemibre (Amasis), given life Lord of the two lands [...]",
+      "key_facts": [
+        {
+          "fact": "names Amasis",
+          "accept": [
+            "Amasis",
+            "Ahmose II",
+            "Khnemibre",
+            "Khnumibre",
+            "Khnemibra"
+          ]
+        },
+        {
+          "fact": "title King of Upper and Lower Egypt",
+          "accept": [
+            "Upper and Lower Egypt",
+            "Dual King",
+            "nsw-bjtj",
+            "nswt-bity"
+          ]
+        },
+        {
+          "fact": "under the Majesty of",
+          "accept": [
+            "Majesty",
+            "Person of"
+          ]
+        },
+        {
+          "fact": "given life",
+          "accept": [
+            "given life",
+            "granted life",
+            "endowed with life"
+          ]
+        }
+      ],
+      "partial": [
+        "all four rows are cut at both ends",
+        "rows 2 to 4 were seen but not read"
+      ],
+      "oov_signs": [
+        "W9"
+      ],
+      "notes": "Late Period stela, a dating formula of Amasis. Row 1 is read; rows 2 to 4 carry best-effort sign codes only. The middle cartouche sign is W9 (Xnm), which is not a YOLO class (the detector says W14). The falcon on a standard after Hm is its Late Period determinative.",
+      "source": "King identified by Beau on 2026-11-02 (CLAUDE.md); royal_names.json jaHms_ii.",
+      "reviewed_by": "Beau, 2026-11-11",
+      "truth_incomplete": true
+    }
+  ]
+}
